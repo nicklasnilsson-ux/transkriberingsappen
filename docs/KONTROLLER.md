@@ -15,7 +15,7 @@ först när alla kontroller är gröna på exakt de filer som laddades upp.
 | Ad hoc-signering + härdad runtime: library validation utan Team ID, Sparkle laddades inte | 0.4.1 | Ingen kod får vara ad hoc-signerad med härdad runtime | `smoke-test.sh` |
 | Starttestet i CI missade felen ovan eftersom GitHubs macOS-maskiner har SIP avstängt | 0.4.0–0.4.1 | Reglerna kontrolleras statiskt (signaturflaggor, Team ID, länkade ramverk) i stället för att lita på att appen startar | `smoke-test.sh` |
 | Appen startades aldrig innan release | ≤ 0.4.0 | Appen startas från .dmg:n och ska leva i 15 sekunder utan kraschrapport | `smoke-test.sh` |
-| Det som laddades upp testades inte, bara det som byggdes | ≤ 0.4.2 | Releasen skapas som utkast; de uppladdade filerna laddas ner, jämförs (SHA-256) och röktestas innan releasen publiceras | `build.yml`, *Release-grind* |
+| Det som laddades upp testades inte, bara det som byggdes | ≤ 0.4.2 | Releasen skapas som utkast; de uppladdade filerna laddas ner, jämförs (SHA-256) och röktestas innan releasen publiceras. Grinden körs på varje PR också (med ett tillfälligt utkast som tas bort), så att den är testad innan den behövs | `build.yml`, *Release-grind* |
 | En release nådde användarna innan den var kontrollerad | ≤ 0.4.2 | Appcasten uppdateras först efter release-grinden | `build.yml` |
 | Byggen avbröts efter lång väntan i kö innan något steg körts | CI | Körs om automatiskt (högst två gånger) | `rerun-cancelled.yml` |
 | KB-Whisper-modellen blev trunkerad vid uppladdning | modeller | Varje zip testas med `unzip -t` före och efter uppladdning; trasiga byggs om | `kb-whisper-models.yml` |
