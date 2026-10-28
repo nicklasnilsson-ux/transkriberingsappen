@@ -62,6 +62,18 @@ final class AnalysisExporterTests: XCTestCase {
         XCTAssertEqual(paragraphs[1].start, 6)
     }
 
+    func testParagraphRangesForView() {
+        let segments = [
+            SegmentData(start: 0, end: 2, text: "Hej.", speaker: "A"),
+            SegmentData(start: 2, end: 3, text: " ", speaker: "B"),
+            SegmentData(start: 3, end: 4, text: "Hur mår du?", speaker: "A"),
+            SegmentData(start: 4, end: 6, text: "Bra.", speaker: "B"),
+            SegmentData(start: 6, end: 7, text: "Tack.", speaker: "B")
+        ]
+        XCTAssertEqual(AnalysisExporter.paragraphRanges(segments), [0..<3, 3..<5])
+        XCTAssertEqual(AnalysisExporter.paragraphRanges([]), [])
+    }
+
     func testFileNames() {
         XCTAssertEqual(AnalysisExporter.fileName(for: "Test 1: P01/P02"), "Test 1- P01-P02.md")
         XCTAssertEqual(AnalysisExporter.fileName(for: "  "), "Transkribering.md")

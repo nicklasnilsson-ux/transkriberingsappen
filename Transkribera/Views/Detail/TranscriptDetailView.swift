@@ -18,6 +18,7 @@ struct TranscriptDetailView: View {
     @State private var newSpeakerName = ""
     @State private var copied = false
     @AppStorage(SettingsKey.exportTimestamps) private var exportTimestamps = true
+    @AppStorage(SettingsKey.transcriptLayout) private var layout: TranscriptLayout = .paragraphs
     @AppStorage(SettingsKey.anonymize) private var anonymize = true
     @AppStorage(SettingsKey.anonymizeNames) private var anonymizeNames = true
     @AppStorage(SettingsKey.anonymizeIdentifiers) private var anonymizeIdentifiers = true
@@ -113,6 +114,17 @@ struct TranscriptDetailView: View {
                     .toggleStyle(.checkbox)
                     .help("Dölj stycken som inte innehåller sökordet")
             }
+            if !transcript.segments.isEmpty {
+                Picker("Visning", selection: $layout) {
+                    ForEach(TranscriptLayout.allCases) { layout in
+                        Text(layout.displayName).tag(layout)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .fixedSize()
+                .help("Stycken: löpande text per talare med en tidskod per stycke. Rader: varje segment med egen tidskod.")
+            }
         }
         .padding()
     }
@@ -141,7 +153,10 @@ struct TranscriptDetailView: View {
     private var segmentList: some View {
         let segments = transcript.sortedSegments
         if let rows = displaySegments(segments) {
-            segmentScroll(segments: segments, rows: rows)
+            switch layout {
+            case .paragraphs: paragraphScroll(segments: segments, rows: rows)
+            case .segments: segmentScroll(segments: segments, rows: rows)
+            }
         } else {
             ProgressView("Anonymiserar…")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -186,6 +201,75 @@ struct TranscriptDetailView: View {
                 withAnimation(.easeInOut(duration: 0.25)) {
                     proxy.scrollTo(newValue, anchor: .center)
                 }
+            }
+        }
+    }
+
+    private func paragraphScroll(segments: [TranscriptSegment], rows: [DisplaySegment]) -> some View {
+        let paragraphs = Self.paragraphs(rows)
+        let visible = (query.isEmpty || !showOnlyMatches)
+            ? paragraphs
+            : paragraphs.filter { paragraph in paragraph.contains { TextSearch.matches($0.text, query: query) } }
+        let currentTime = player?.currentTime ?? 0
+        let activeID = Self.activeSegment(in: segments, at: currentTime)?.persistentModelID
+        let activeParagraphID = paragraphs.first { paragraph in paragraph.contains { $0.id == activeID } }?.first?.id
+
+        return ScrollViewReader { proxy in
+            ScrollView {
+                if visible.isEmpty {
+                    ContentUnavailableView.search(text: query)
+                        .padding(.top, 40)
+                }
+                LazyVStack(alignment: .leading, spacing: 6) {
+                    ForEach(visible, id: \.first?.id) { paragraph in
+                        ParagraphRow(
+                            rows: paragraph,
+                            query: query,
+                            activeID: activeID,
+                            currentTime: currentTime,
+                            isEditing: isEditing,
+                            onSeek: { player?.seek(to: $0) }
+                        )
+                        .id(paragraph.first?.id)
+                        .contextMenu { paragraphMenu(paragraph) }
+                    }
+                }
+                .frame(maxWidth: 760, alignment: .leading)
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 12)
+            }
+            .onChange(of: activeParagraphID) { _, newValue in
+                guard followPlayback, player?.isPlaying == true, !isEditing, let newValue else { return }
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    proxy.scrollTo(newValue, anchor: .center)
+                }
+            }
+        }
+    }
+
+    /// Delar upp raderna i stycken på samma sätt som "Exportera för analys".
+    private static func paragraphs(_ rows: [DisplaySegment]) -> [[DisplaySegment]] {
+        let data = rows.map { SegmentData(start: $0.segment.start, end: $0.segment.end, text: $0.text, speaker: $0.speaker) }
+        return AnalysisExporter.paragraphRanges(data).map { Array(rows[$0]) }
+    }
+
+    @ViewBuilder
+    private func paragraphMenu(_ paragraph: [DisplaySegment]) -> some View {
+        if let first = paragraph.first {
+            let text = paragraph.map { $0.text.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+                .joined(separator: " ")
+            Button("Spela upp stycket") { player?.seek(to: first.segment.start) }
+            Button("Kopiera stycket") { copyToPasteboard(text) }
+            Button("Kopiera med tidsstämpel") {
+                var line = "[\(TimeFormatting.short(first.segment.start))] "
+                if let speaker = first.speaker { line += "\(speaker): " }
+                copyToPasteboard(line + text)
+            }
+            if let speaker = first.segment.speaker {
+                Divider()
+                Button("Byt namn på \(speaker)…") { beginRename(speaker) }
             }
         }
     }
@@ -421,7 +505,7 @@ private struct AnonymizedState {
 }
 
 /// Ett segment som det visas: anonymiserad eller original text och talare.
-private struct DisplaySegment: Identifiable {
+struct DisplaySegment: Identifiable {
     let segment: TranscriptSegment
     let text: String
     let speaker: String?
