@@ -330,12 +330,10 @@ struct TranscriptDetailView: View {
 
     /// Segment för kopiering och export: anonymiserade när inställningen är på.
     private var outputSegments: [SegmentData] {
-        let data = transcript.segmentData
-        guard let options = anonymizationOptions else { return data }
-        if let result = currentAnonymization(for: transcript.sortedSegments) {
+        if anonymizationOptions != nil, let result = currentAnonymization(for: transcript.sortedSegments) {
             return result.segments
         }
-        return Anonymizer.anonymize(data, options: options).segments
+        return transcript.outputSegments(options: anonymizationOptions)
     }
 
     // MARK: - Åtgärder
