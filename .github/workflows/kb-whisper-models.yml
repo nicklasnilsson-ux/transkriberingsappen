@@ -37,7 +37,7 @@ jobs:
         run: |
           assets=$(gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --json assets -q '.assets[].name' 2>/dev/null || true)
           missing="[]"
-          for size in base small medium large; do
+          for size in base small medium large medium-strict large-strict; do
             asset="kb-whisper-$size.zip"
             if grep -qx "$asset" <<<"$assets"; then
               # Kontrollera att filen i releasen är hel; en trasig fil tas bort och byggs om.
@@ -82,8 +82,13 @@ jobs:
 
       - name: Konvertera
         run: |
-          python scripts/kb-whisper/convert.py --size "${{ matrix.size }}" --out out \
-            ${{ matrix.size == 'large' && '--int8' || '' }}
+          # "large-strict" → storlek "large" i stilvarianten "strict".
+          name="${{ matrix.size }}"
+          size="${name%-strict}"
+          flags=()
+          [[ "$name" == *-strict ]] && flags+=(--variant strict)
+          [[ "$size" == large ]] && flags+=(--int8)
+          python scripts/kb-whisper/convert.py --size "$size" --out out "${flags[@]}"
 
       - name: Röktest med svensk talsyntes
         run: |

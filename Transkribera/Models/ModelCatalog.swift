@@ -7,6 +7,8 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
     case kbSmall = "kb-whisper-small"
     case kbMedium = "kb-whisper-medium"
     case kbLarge = "kb-whisper-large"
+    case kbMediumStrict = "kb-whisper-medium-strict"
+    case kbLargeStrict = "kb-whisper-large-strict"
     case tiny = "tiny"
     case base = "base"
     case small = "small"
@@ -40,7 +42,7 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
 
     var family: Family {
         switch self {
-        case .kbBase, .kbSmall, .kbMedium, .kbLarge: return .kb
+        case .kbBase, .kbSmall, .kbMedium, .kbLarge, .kbMediumStrict, .kbLargeStrict: return .kb
         default: return .openAI
         }
     }
@@ -58,6 +60,8 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
         case .kbSmall: return "KB Small"
         case .kbMedium: return "KB Medium"
         case .kbLarge: return "KB Large"
+        case .kbMediumStrict: return "KB Medium ordagrann"
+        case .kbLargeStrict: return "KB Large ordagrann"
         case .tiny: return "Tiny"
         case .base: return "Base"
         case .small: return "Small"
@@ -71,8 +75,8 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .kbBase: return "135 MB"
         case .kbSmall: return "450 MB"
-        case .kbMedium: return "1,4 GB"
-        case .kbLarge: return "1,3 GB"
+        case .kbMedium, .kbMediumStrict: return "1,4 GB"
+        case .kbLarge, .kbLargeStrict: return "1,3 GB"
         case .tiny: return "75 MB"
         case .base: return "145 MB"
         case .small: return "480 MB"
@@ -87,8 +91,8 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
         case .tiny, .base, .kbBase: return 5
         case .small, .kbSmall: return 4
         case .largeV3Turbo, .largeV3TurboCompressed: return 3
-        case .kbMedium: return 2
-        case .kbLarge: return 1
+        case .kbMedium, .kbMediumStrict: return 2
+        case .kbLarge, .kbLargeStrict: return 1
         }
     }
 
@@ -96,8 +100,8 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
     /// (FLEURS, Common Voice, NST): https://kb-labb.github.io/posts/2025-03-07-welcome-KB-Whisper/
     var swedishAccuracy: Int {
         switch self {
-        case .kbLarge: return 5
-        case .kbMedium, .kbSmall: return 4
+        case .kbLarge, .kbLargeStrict: return 5
+        case .kbMedium, .kbMediumStrict, .kbSmall: return 4
         case .kbBase, .largeV3Turbo, .largeV3TurboCompressed: return 3
         case .small: return 2
         case .tiny, .base: return 1
@@ -113,6 +117,8 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
         case .kbSmall: return 7.3
         case .kbMedium: return 6.6
         case .kbLarge: return 5.4
+        case .kbMediumStrict: return 6.8
+        case .kbLargeStrict: return 5.3
         case .tiny: return 59.2
         case .base: return 39.6
         case .small: return 20.6
@@ -147,6 +153,10 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
             return "Lite färre fel än Small men tre gånger så stor och långsammare. Passar om datorn har för lite minne för Large."
         case .kbLarge:
             return "Färst fel, särskilt på namn, facktermer, dialekter och dåligt ljud. Tar 3–5 gånger så lång tid som Small. Välj den när varje ord måste stämma."
+        case .kbMediumStrict:
+            return "Som Medium, men skriver mer ordagrant och stryker mindre. Bra för intervjuer om datorn har för lite minne för Large."
+        case .kbLargeStrict:
+            return "Som Large, men skriver mer ordagrant och stryker mindre. Bäst för intervjuer där du vill citera exakt vad som sades."
         case .tiny:
             return "Minsta modellen, bra för att snabbt testa appen. Gör många fel på svenska."
         case .base:
@@ -168,7 +178,7 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
     /// Ungefär hur mycket minne modellen behöver medan den körs.
     var minimumMemoryGB: Int {
         switch self {
-        case .kbLarge: return 16
+        case .kbLarge, .kbLargeStrict: return 16
         default: return 8
         }
     }
