@@ -46,6 +46,9 @@ jobs:
       - name: Enhetstester (TranskriberaCore)
         run: swift test --package-path Packages/TranskriberaCore
 
+      - name: Alla modeller i väljaren går att ladda ner
+        run: ./scripts/check-models.sh
+
       - name: Cache för Swift-paket
         uses: actions/cache@v4
         with:
