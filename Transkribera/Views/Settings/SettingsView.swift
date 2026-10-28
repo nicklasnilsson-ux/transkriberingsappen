@@ -126,8 +126,11 @@ private struct ModelSettingsView: View {
                     NSWorkspace.shared.activateFileViewerSelecting([AppPaths.modelsDirectory])
                 }
             } footer: {
-                Text("Modellerna sparas på din Mac. Ta bort dem du inte använder för att frigöra utrymme.")
-                    .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Modellerna sparas på din Mac. Ta bort dem du inte använder för att frigöra utrymme.")
+                        .foregroundStyle(.secondary)
+                    ModelSourceNote()
+                }
             }
         }
         .formStyle(.grouped)

@@ -69,9 +69,9 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
     /// Ungefärlig nedladdningsstorlek.
     var downloadSize: String {
         switch self {
-        case .kbBase: return "150 MB"
-        case .kbSmall: return "480 MB"
-        case .kbMedium: return "1,5 GB"
+        case .kbBase: return "135 MB"
+        case .kbSmall: return "450 MB"
+        case .kbMedium: return "1,4 GB"
         case .kbLarge: return "1,6 GB"
         case .tiny: return "75 MB"
         case .base: return "145 MB"
@@ -104,6 +104,30 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+    /// Andel felaktiga ord (WER) på svensk testdata, enligt KBLab:s mätning på FLEURS:
+    /// https://kb-labb.github.io/posts/2025-03-07-welcome-KB-Whisper/
+    /// `nil` = inte uppmätt av KBLab.
+    var swedishWordErrorRate: Double? {
+        switch self {
+        case .kbBase: return 9.1
+        case .kbSmall: return 7.3
+        case .kbMedium: return 6.6
+        case .kbLarge: return 5.4
+        case .tiny: return 59.2
+        case .base: return 39.6
+        case .small: return 20.6
+        case .largeV3Turbo, .largeV3TurboCompressed: return nil
+        }
+    }
+
+    /// T.ex. "7 av 100 ord fel på svenska".
+    var swedishErrorText: String {
+        guard let wer = swedishWordErrorRate else {
+            return "Ej uppmätt på svenska (OpenAI Large v3: 8 av 100 ord fel)"
+        }
+        return "\(Int(wer.rounded())) av 100 ord fel på svenska"
+    }
+
     /// Kort etikett om språkstöd.
     var languageNote: String {
         switch family {
@@ -118,7 +142,7 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
         case .kbBase:
             return "Liten och snabb. Gör ändå färre fel på svenska än OpenAI:s Small."
         case .kbSmall:
-            return "Rekommenderas för svenska. Slår OpenAI:s största modell på svenska fast den är en tredjedel så stor."
+            return "Rekommenderas för svenska. Gör färre fel än OpenAI:s Large v3, en modell sex gånger så stor."
         case .kbMedium:
             return "Ännu färre fel, men tar ungefär dubbelt så lång tid som KB Small."
         case .kbLarge:

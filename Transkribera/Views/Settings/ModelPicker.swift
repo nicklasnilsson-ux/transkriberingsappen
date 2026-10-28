@@ -40,6 +40,7 @@ private struct ModelList: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
+                ModelAdvice()
                 ForEach(WhisperModel.Family.allCases) { family in
                     VStack(alignment: .leading, spacing: 4) {
                         Text(family.title)
@@ -60,9 +61,7 @@ private struct ModelList: View {
                         }
                     }
                 }
-                Text("Fart och svenska är jämförda mellan modellerna i listan. Noggrannheten bygger på KBLab:s mätningar av ordfel på svenska.")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                ModelSourceNote()
                     .padding(.horizontal, 8)
             }
             .padding(10)
@@ -92,9 +91,13 @@ struct ModelInfoRow: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+            Text(model.swedishErrorText)
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(.secondary)
             HStack(spacing: 14) {
                 Meter(label: "Fart", value: model.speed)
                 Meter(label: "Svenska", value: model.swedishAccuracy)
+                    .help(model.swedishErrorText)
                 Spacer()
                 Label(isDownloaded ? "Finns på datorn" : "Laddas ner automatiskt första gången",
                       systemImage: isDownloaded ? "checkmark.circle.fill" : "arrow.down.circle")
@@ -103,6 +106,39 @@ struct ModelInfoRow: View {
             }
         }
         .accessibilityElement(children: .combine)
+    }
+}
+
+/// Kort vägledning överst i väljaren.
+private struct ModelAdvice: View {
+    var body: some View {
+        Label {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Pratas det svenska? Välj en KB-modell.").font(.callout.weight(.medium))
+                Text("KB Small gör färre fel på svenska än OpenAI:s Large v3, fast den är sex gånger mindre. Större KB-modeller blir ännu säkrare men långsammare. För andra språk passar OpenAI-modellerna bättre.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        } icon: {
+            Image(systemName: "lightbulb").foregroundStyle(.yellow)
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+}
+
+/// Källhänvisning för felsiffrorna.
+struct ModelSourceNote: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text("Felsiffrorna är KBLab:s mätningar på det svenska testet FLEURS. Riktigt ljud med brus eller dialekt ger fler fel för alla modeller, men ordningen mellan dem brukar hålla.")
+            Link("Källa: KBLab, Kungliga biblioteket", destination: URL(string: "https://kb-labb.github.io/posts/2025-03-07-welcome-KB-Whisper/")!)
+        }
+        .font(.caption2)
+        .foregroundStyle(.tertiary)
+        .fixedSize(horizontal: false, vertical: true)
     }
 }
 
