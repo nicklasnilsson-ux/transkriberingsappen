@@ -1,4 +1,4 @@
-.PHONY: project app dmg test open clean
+.PHONY: project app dmg test update-packages open clean
 
 project:  ## Generera Transkribera.xcodeproj
 	xcodegen generate
@@ -12,8 +12,12 @@ app:  ## Bygg dist/Transkribera.app
 dmg: app  ## Bygg dist/Transkribera-dev.dmg
 	./scripts/make-dmg.sh dev
 
-test:  ## Kör enhetstester för kärnlogiken
+test:  ## Kör enhetstester för kärnlogiken och releaseskripten
 	swift test --package-path Packages/TranskriberaCore
+	python3 -m unittest discover -s scripts
+
+update-packages:  ## Uppdatera de låsta paketversionerna i Package.resolved
+	UPDATE_PACKAGES=1 ./scripts/build-app.sh
 
 clean:
 	rm -rf build dist Transkribera.xcodeproj

@@ -18,7 +18,11 @@ if [[ -z "${SPARKLE_PRIVATE_KEY:-}" ]]; then
   exit 0
 fi
 
-gh api "repos/$GITHUB_REPOSITORY/releases/generate-notes" -f tag_name="$TAG" -q .body > "$NOTES" || : > "$NOTES"
+# Uppdateringsdialogen visar avsnittet i CHANGELOG.md, annars GitHubs genererade lista.
+"$PYTHON" scripts/changelog.py notes "${SHORT_VERSION%%-beta*}" > "$NOTES"
+if [[ ! -s "$NOTES" ]]; then
+  gh api "repos/$GITHUB_REPOSITORY/releases/generate-notes" -f tag_name="$TAG" -q .body > "$NOTES" || : > "$NOTES"
+fi
 
 git config user.name "github-actions[bot]"
 git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

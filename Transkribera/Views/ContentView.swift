@@ -8,6 +8,8 @@ final class AppState {
     var isImporterPresented = false
     var isAnalysisExportPresented = false
     var selection: Transcript?
+    /// Visas vid start om databasen inte kunde öppnas (se `Database`).
+    var databaseProblem: String?
 }
 
 struct ContentView: View {
@@ -54,6 +56,17 @@ struct ContentView: View {
             Button("OK", role: .cancel) { queue.importError = nil }
         } message: {
             Text(queue.importError ?? "")
+        }
+        .alert(
+            "Tidigare transkriberingar kunde inte läsas in",
+            isPresented: Binding(
+                get: { appState.databaseProblem != nil },
+                set: { if !$0 { appState.databaseProblem = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) { appState.databaseProblem = nil }
+        } message: {
+            Text(appState.databaseProblem ?? "")
         }
     }
 }
