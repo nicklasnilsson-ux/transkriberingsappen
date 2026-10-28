@@ -73,8 +73,14 @@ final class TranscriberService {
     // MARK: - Modeller
 
     static func localFolder(for model: WhisperModel) -> URL {
-        AppPaths.modelsDirectory
-            .appending(path: "models/argmaxinc/whisperkit-coreml/openai_whisper-\(model.variant)", directoryHint: .isDirectory)
+        switch model.source {
+        case .whisperKit(let variant):
+            return AppPaths.modelsDirectory
+                .appending(path: "models/argmaxinc/whisperkit-coreml/openai_whisper-\(variant)", directoryHint: .isDirectory)
+        case .kbRelease:
+            return AppPaths.modelsDirectory
+                .appending(path: "kb-whisper/\(model.rawValue)", directoryHint: .isDirectory)
+        }
     }
 
     func isDownloaded(_ model: WhisperModel) -> Bool {
@@ -110,22 +116,28 @@ final class TranscriberService {
                 folder = Self.localFolder(for: model)
             } else {
                 phase = .downloadingModel(fraction: 0)
-                folder = try await WhisperKit.download(
-                    variant: model.variant,
-                    downloadBase: AppPaths.modelsDirectory,
-                    progressCallback: { [weak self] progress in
-                        let fraction = progress.fractionCompleted
-                        Task { @MainActor in
-                            guard let self, case .downloadingModel = self.phase else { return }
-                            self.phase = .downloadingModel(fraction: fraction)
-                        }
+                let report: @Sendable (Double) -> Void = { [weak self] fraction in
+                    Task { @MainActor in
+                        guard let self, case .downloadingModel = self.phase else { return }
+                        self.phase = .downloadingModel(fraction: fraction)
                     }
-                )
+                }
+                switch model.source {
+                case .whisperKit(let variant):
+                    folder = try await WhisperKit.download(
+                        variant: variant,
+                        downloadBase: AppPaths.modelsDirectory,
+                        progressCallback: { progress in report(progress.fractionCompleted) }
+                    )
+                case .kbRelease(let asset):
+                    folder = Self.localFolder(for: model)
+                    try await ModelDownloader.download(asset: asset, to: folder, progress: report)
+                }
             }
 
             phase = .loadingModel
             let config = WhisperKitConfig(
-                model: model.variant,
+                model: model.rawValue,
                 downloadBase: AppPaths.modelsDirectory,
                 modelFolder: folder.path,
                 tokenizerFolder: AppPaths.modelsDirectory,

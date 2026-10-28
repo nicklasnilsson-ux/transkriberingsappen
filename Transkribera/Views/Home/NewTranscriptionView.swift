@@ -95,22 +95,23 @@ struct QuickSettingsView: View {
             Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 10) {
                 GridRow {
                     Text("Modell").foregroundStyle(.secondary)
-                    Picker("Modell", selection: $modelRaw) {
-                        ForEach(WhisperModel.allCases) { model in
-                            Text(model.displayName).tag(model.rawValue)
-                        }
-                    }
-                    .labelsHidden()
-                    .frame(maxWidth: 280)
-                    .help("Större modeller ger bättre text men tar längre tid och mer plats")
+                    ModelPicker(selection: $modelRaw)
+                        .frame(maxWidth: 280)
                 }
                 GridRow {
                     Color.clear.gridCellUnsizedAxes([.horizontal, .vertical])
-                    Text(transcriber.isDownloaded(model)
-                         ? "\(model.summary) · Finns på datorn"
-                         : "\(model.summary) · Laddas ner automatiskt första gången")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(transcriber.isDownloaded(model)
+                             ? "\(model.summary) · Finns på datorn"
+                             : "\(model.summary) · Laddas ner automatiskt första gången")
+                        if model.isSwedishOnly && language != "sv" {
+                            Label("KB-modellerna är tränade för svenska. Välj en OpenAI-modell för andra språk.", systemImage: "exclamationmark.triangle")
+                                .foregroundStyle(.orange)
+                        }
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: 420, alignment: .leading)
                 }
                 GridRow {
                     Text("Språk").foregroundStyle(.secondary)
