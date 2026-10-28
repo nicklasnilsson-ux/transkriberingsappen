@@ -5,7 +5,7 @@ En native macOS-app för att transkribera ljud och video **helt lokalt** på din
 ## Funktioner
 
 - **Dra och släpp** eller välj ljud- och videofiler (MP4, MOV, M4A, MP3, WAV, AIFF …). Flera filer läggs i kö.
-- **Lokal transkribering** med valfri Whisper-modell (Tiny → Large v3 Turbo). Modellen laddas ner första gången.
+- **Lokal transkribering** med valfri Whisper-modell. Först i listan ligger [KB-Whisper](https://huggingface.co/collections/KBLab/kb-whisper) från Kungliga biblioteket, som gör betydligt färre fel på svenska; därefter OpenAI:s flerspråkiga modeller (Tiny → Large v3 Turbo). Väljaren visar storlek, fart, svenskstyrka och karaktär för varje modell. Modellen laddas ner första gången.
 - **Språkval**: svenska som standard, automatisk identifiering eller ett annat språk. Kan även översätta till engelska.
 - **Talaridentifiering** (valfritt) med SpeakerKit: "Talare 1", "Talare 2" …, och du kan byta namn på dem.
 - **Inbyggd spelare**: klicka på ett segment så hoppar uppspelningen dit. Segmentet och ordet som spelas markeras och listan följer med.
@@ -35,7 +35,7 @@ Alternativt i Terminal: `xattr -dr com.apple.quarantine /Applications/Transkribe
 
 - **Mötesinspelning** kräver *Skärm- och systemljudsinspelning* (Systeminställningar › Integritet och säkerhet). macOS frågar första gången.
 - **Mikrofon** frågas om när du spelar in med mikrofonen påslagen.
-- Nätverk används bara för att ladda ner modeller från Hugging Face. Ljudet lämnar aldrig datorn.
+- Nätverk används bara för att ladda ner modeller (OpenAI-modellerna från Hugging Face, KB-Whisper från repots release [`kb-whisper-v1`](../../releases/tag/kb-whisper-v1)). Ljudet lämnar aldrig datorn.
 
 ## Bygga själv
 
@@ -63,6 +63,7 @@ Transkribera/
 Packages/TranskriberaCore/      Ren Swift-logik med tester: export, sök, tidsformat
 scripts/                        Bygg, signera/notarisera och skapa .dmg
 .github/workflows/build.yml     CI: testar, bygger och publicerar .dmg
+.github/workflows/kb-whisper-models.yml  CI: konverterar KB-Whisper till CoreML och publicerar dem
 docs/PLAN.md                    Projektplanen (reviderad)
 ```
 

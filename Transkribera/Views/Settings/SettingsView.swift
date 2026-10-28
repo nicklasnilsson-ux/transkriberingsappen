@@ -56,40 +56,35 @@ private struct ModelSettingsView: View {
     var body: some View {
         let transcriber = queue.transcriber
         Form {
-            Picker("Standardmodell", selection: $modelRaw) {
-                ForEach(WhisperModel.allCases) { model in
-                    Text(model.displayName).tag(model.rawValue)
-                }
+            LabeledContent("Standardmodell") {
+                ModelPicker(selection: $modelRaw)
+                    .frame(maxWidth: 260)
             }
 
-            Section("Modeller på den här datorn") {
-                ForEach(WhisperModel.allCases) { model in
-                    HStack {
-                        VStack(alignment: .leading) {
-                            Text(model.displayName)
-                            Text(model.summary)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        if transcriber.isDownloaded(model) {
-                            Button("Radera", role: .destructive) {
-                                transcriber.deleteDownloadedModel(model)
-                                refresh += 1
-                            }
-                            .disabled(transcriber.isBusy)
-                        } else {
-                            Button("Ladda ner") {
-                                Task {
-                                    _ = try? await transcriber.prepare(model: model)
+            ForEach(WhisperModel.Family.allCases) { family in
+                Section(family.title) {
+                    ForEach(family.models) { model in
+                        HStack(alignment: .top, spacing: 12) {
+                            ModelInfoRow(model: model, isDownloaded: transcriber.isDownloaded(model))
+                            if transcriber.isDownloaded(model) {
+                                Button("Radera", role: .destructive) {
+                                    transcriber.deleteDownloadedModel(model)
                                     refresh += 1
                                 }
+                                .disabled(transcriber.isBusy)
+                            } else {
+                                Button("Ladda ner") {
+                                    Task {
+                                        _ = try? await transcriber.prepare(model: model)
+                                        refresh += 1
+                                    }
+                                }
+                                .disabled(transcriber.isBusy)
                             }
-                            .disabled(transcriber.isBusy)
                         }
                     }
+                    .id(refresh)
                 }
-                .id(refresh)
             }
 
             if transcriber.isBusy {
