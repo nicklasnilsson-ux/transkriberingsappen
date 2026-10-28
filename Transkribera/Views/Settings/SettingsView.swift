@@ -81,7 +81,7 @@ private struct ModelSettingsView: View {
                         } else {
                             Button("Ladda ner") {
                                 Task {
-                                    try? await transcriber.prepare(model: model)
+                                    _ = try? await transcriber.prepare(model: model)
                                     refresh += 1
                                 }
                             }
