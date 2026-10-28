@@ -7,6 +7,7 @@ import UniformTypeIdentifiers
 struct TranscriptDetailView: View {
     @Bindable var transcript: Transcript
     @Environment(TranscriptionQueue.self) private var queue
+    @Environment(AppState.self) private var appState
 
     @State private var player: PlayerController?
     @State private var query = ""
@@ -213,6 +214,9 @@ struct TranscriptDetailView: View {
                 ForEach(ExportFormat.allCases) { format in
                     Button(format.displayName) { export(as: format) }
                 }
+                Divider()
+                Button("Exportera för analys…") { appState.isAnalysisExportPresented = true }
+                    .help("En Markdown-fil per session, anpassad för analys i t.ex. Claude")
                 Divider()
                 Toggle("Tidsstämplar i text och Markdown", isOn: $exportTimestamps)
             } label: {

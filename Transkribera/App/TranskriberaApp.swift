@@ -35,6 +35,10 @@ struct TranskriberaApp: App {
                 Button("Öppna fil…") { appState.isImporterPresented = true }
                     .keyboardShortcut("o")
             }
+            CommandGroup(after: .importExport) {
+                Button("Exportera för analys…") { appState.isAnalysisExportPresented = true }
+                    .keyboardShortcut("e", modifiers: [.command, .shift])
+            }
         }
 
         Settings {
