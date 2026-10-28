@@ -4,13 +4,13 @@ Allt som ändras för användaren, version för version. Avsnittet för en versi
 releasens text på GitHub och i uppdateringsdialogen. CI stoppar en ny version som saknar
 avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren.
 
-## [Kommande]
+## [0.5.0] – 2026-10-28
 
 ### Nytt
 - Talare sätts per ord, så att ett kort svar direkt efter en fråga hamnar hos rätt talare.
   Du kan ange antal talare om du vet det.
 - Ordlista med namn och fackord som hjälper modellen att stava rätt.
-- KB-Whisper Medium och Large finns i en mer ordagrann variant.
+- KB-Whisper Medium finns i en mer ordagrann variant som stryker mindre.
 - Pianissimo (KlangAI) som modellval för svenska.
 
 ### Förbättrat
