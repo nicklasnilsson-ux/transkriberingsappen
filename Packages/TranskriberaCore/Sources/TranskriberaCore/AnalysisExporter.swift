@@ -75,35 +75,51 @@ public enum AnalysisExporter {
     // MARK: - Stycken
 
     static func paragraphs(_ segments: [SegmentData]) -> [Paragraph] {
+        paragraphRanges(segments).map { range in
+            Paragraph(
+                start: segments[range.lowerBound].start,
+                speaker: segments[range.lowerBound].speaker,
+                text: segments[range].map(\.text.trimmed).filter { !$0.isEmpty }.joined(separator: " ")
+            )
+        }
+    }
+
+    /// Delar upp segmenten i stycken: ett nytt stycke vid varje talarbyte, eller
+    /// vid pauser och efter ett visst antal segment om talare saknas. Används
+    /// både av exporten och av styckevyn i appen. Tomma segment hamnar i
+    /// stycket före och påbörjar aldrig ett eget (utom först).
+    public static func paragraphRanges(_ segments: [SegmentData]) -> [Range<Int>] {
         let hasSpeakers = segments.contains { $0.speaker != nil }
-        var result: [Paragraph] = []
+        var ranges: [Range<Int>] = []
+        var lastSpeaker: String?
         var countInParagraph = 0
         var previousEnd: Double?
 
-        for segment in segments {
-            let text = segment.text.trimmed
+        for (index, segment) in segments.enumerated() {
+            let isEmpty = segment.text.trimmed.isEmpty
             let startsNew: Bool
-            if let last = result.last {
-                if hasSpeakers {
-                    startsNew = last.speaker != segment.speaker
-                } else {
-                    let pause = segment.start - (previousEnd ?? segment.start)
-                    startsNew = pause >= pauseBreak || countInParagraph >= maxSegmentsWithoutSpeakers
-                }
-            } else {
+            if ranges.isEmpty {
                 startsNew = true
+            } else if isEmpty {
+                startsNew = false
+            } else if hasSpeakers {
+                startsNew = lastSpeaker != segment.speaker
+            } else {
+                let pause = segment.start - (previousEnd ?? segment.start)
+                startsNew = pause >= pauseBreak || countInParagraph >= maxSegmentsWithoutSpeakers
             }
 
             if startsNew {
-                result.append(Paragraph(start: segment.start, speaker: segment.speaker, text: text))
-                countInParagraph = 1
+                ranges.append(index..<index + 1)
+                lastSpeaker = segment.speaker
+                countInParagraph = isEmpty ? 0 : 1
             } else {
-                result[result.count - 1].text += " " + text
-                countInParagraph += 1
+                ranges[ranges.count - 1] = ranges[ranges.count - 1].lowerBound..<index + 1
+                if !isEmpty { countInParagraph += 1 }
             }
-            previousEnd = segment.end
+            if !isEmpty { previousEnd = segment.end }
         }
-        return result
+        return ranges
     }
 
     static func uniqueSpeakers(_ segments: [SegmentData]) -> [String] {
