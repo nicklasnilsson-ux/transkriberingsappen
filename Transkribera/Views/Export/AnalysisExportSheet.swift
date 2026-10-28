@@ -125,6 +125,6 @@ struct AnalysisExportSheet: View {
 
     /// Segmenten som exporteras.
     static func segments(for transcript: Transcript) -> [SegmentData] {
-        transcript.segmentData
+        transcript.outputSegments()
     }
 }
