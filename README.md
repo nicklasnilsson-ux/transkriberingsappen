@@ -83,4 +83,4 @@ Appen är *ad hoc*-signerad tills följande repo-secrets läggs in, då signeras
 
 ## Licens
 
-WhisperKit och SpeakerKit är MIT-licensierade av Argmax. Whisper-modellerna kommer från OpenAI (MIT).
+Transkribera är licensierad under [MIT-licensen](LICENSE). WhisperKit och SpeakerKit är MIT-licensierade av Argmax. Whisper-modellerna kommer från OpenAI (MIT).
