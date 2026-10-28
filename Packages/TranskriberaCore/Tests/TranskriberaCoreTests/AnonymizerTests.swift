@@ -81,8 +81,10 @@ final class AnonymizerTests: XCTestCase {
     }
 
     func testOrganizations() {
+        var options = rules
+        options.organizations = true
         XCTAssertEqual(
-            anonymize("Hon jobbar på Volvo AB och har kontakt med Försäkringskassan."),
+            anonymize("Hon jobbar på Volvo AB och har kontakt med Försäkringskassan.", options),
             "Hon jobbar på [ORGANISATION 1] och har kontakt med [ORGANISATION 2]."
         )
     }
@@ -92,11 +94,61 @@ final class AnonymizerTests: XCTestCase {
         XCTAssertEqual(anonymize(text), text)
     }
 
+    func testOrganizationsAreKeptByDefault() {
+        let text = "Hon jobbar på Volvo AB och har kontakt med Försäkringskassan."
+        XCTAssertEqual(anonymize(text), text)
+    }
+
     func testNameFirstInSentenceIsFoundWhenSeenElsewhere() {
+        var options = rules
+        options.uncertainNames = true
         XCTAssertEqual(
-            anonymize("Bertil kommer imorgon. Jag har pratat med Bertil."),
+            anonymize("Bertil kommer imorgon. Jag har pratat med Bertil.", options),
             "[NAMN 1] kommer imorgon. Jag har pratat med [NAMN 1]."
         )
+    }
+
+    func testUncertainNamesAreKeptByDefault() {
+        let text = "Vi bokför i Fortnox och lönerna ligger i Visma."
+        XCTAssertEqual(anonymize(text), text)
+
+        var options = rules
+        options.uncertainNames = true
+        XCTAssertEqual(anonymize(text, options), "Vi bokför i [NAMN 1] och lönerna ligger i [NAMN 2].")
+    }
+
+    func testWordsThatAlsoAppearInLowercaseAreKept() {
+        var options = rules
+        options.uncertainNames = true
+        let text = "Prislistan Euro visar minus. Vi fakturerar i euro. I kolumnen Rabatt står ingen rabatt."
+        XCTAssertEqual(anonymize(text, options), text)
+    }
+
+    func testCommonFirstNamesAreHiddenAsPersons() {
+        XCTAssertEqual(
+            anonymize("Jag och Rasmus jobbar här. Rasmus sköter lagret."),
+            "Jag och [PERSON 1] jobbar här. [PERSON 1] sköter lagret."
+        )
+    }
+
+    func testAlwaysHide() {
+        var options = rules
+        options.alwaysHide = TextCleaning.wordList("Joj, rasmus\nKlåd")
+        XCTAssertEqual(
+            anonymize("Joj sa att rasmus och klåd hade rätt. Fråga Rasmus.", options),
+            "[PERSON 1] sa att [PERSON 2] och [PERSON 3] hade rätt. Fråga [PERSON 2]."
+        )
+    }
+
+    func testNeverHide() {
+        var options = rules
+        options.neverHide = ["Anna"]
+        let text = "Jag pratade med Anna om saken."
+        XCTAssertEqual(anonymize(text, options), text)
+    }
+
+    func testWordList() {
+        XCTAssertEqual(TextCleaning.wordList(" Euro, Rabatt;\n\nVisma "), ["Euro", "Rabatt", "Visma"])
     }
 
     func testSpeakerNamesAreAnonymized() {

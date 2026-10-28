@@ -2,9 +2,9 @@
 
 Körs av .github/workflows/kb-whisper-models.yml på en macOS-runner:
 
-    python convert.py --size small --out out [--int8]
+    python convert.py --size small --out out [--int8] [--variant strict]
 
-Resultat: out/kb-whisper-<size>/ med AudioEncoder.mlmodelc, TextDecoder.mlmodelc,
+Resultat: out/kb-whisper-<size>[-strict]/ med AudioEncoder.mlmodelc, TextDecoder.mlmodelc,
 MelSpectrogram.mlmodelc, config.json och generation_config.json – samma layout
 som https://huggingface.co/argmaxinc/whisperkit-coreml använder.
 """
@@ -17,7 +17,7 @@ import shutil
 import subprocess
 import sys
 
-from huggingface_hub import hf_hub_download
+from huggingface_hub import hf_hub_download, snapshot_download
 
 # Behåll .mlpackage efter kompilering så att vi kan kvantisera i efterhand.
 import argmaxtools.test_utils as test_utils
@@ -57,15 +57,34 @@ def main():
     parser.add_argument("--size", required=True, choices=["tiny", "base", "small", "medium", "large"])
     parser.add_argument("--out", required=True)
     parser.add_argument("--int8", action="store_true", help="Kvantisera vikterna till 8 bitar")
+    parser.add_argument(
+        "--variant", default="standard", choices=["standard", "strict"],
+        help="KBLab:s stilvariant: standard eller strict (mer ordagrann)",
+    )
     args = parser.parse_args()
 
-    source = f"KBLab/kb-whisper-{args.size}"
+    repo = f"KBLab/kb-whisper-{args.size}"
+    model_name = f"kb-whisper-{args.size}" + ("" if args.variant == "standard" else f"-{args.variant}")
+    revision = None if args.variant == "standard" else args.variant
+    if revision:
+        # whisperkittools tar bara ett modellnamn, inte en revision. Ladda ner varianten till
+        # en lokal mapp och ange sökvägen; den laddas då därifrån i stället för från hubben.
+        source = os.path.join("hf", "KBLab", model_name)
+        snapshot_download(
+            repo_id=repo,
+            revision=revision,
+            local_dir=source,
+            allow_patterns=["*.json", "*.safetensors", "*.txt", "*.model"],
+            ignore_patterns=["*/*"],
+        )
+    else:
+        source = repo
     work = os.path.abspath(os.path.join(args.out, "work"))
     sys.argv = ["whisperkit-generate-model", "--model-version", source, "--output-dir", work]
     generate_model.cli()
 
     built = os.path.join(work, source.replace("/", "_"))
-    final = os.path.abspath(os.path.join(args.out, f"kb-whisper-{args.size}"))
+    final = os.path.abspath(os.path.join(args.out, model_name))
     os.makedirs(final, exist_ok=True)
 
     for name in ["AudioEncoder", "TextDecoder", "MelSpectrogram"]:
@@ -77,7 +96,7 @@ def main():
         shutil.copytree(compiled, os.path.join(final, f"{name}.mlmodelc"))
 
     for filename in ["config.json", "generation_config.json"]:
-        with open(hf_hub_download(repo_id=source, filename=filename)) as f:
+        with open(hf_hub_download(repo_id=repo, filename=filename, revision=revision)) as f:
             data = json.load(f)
         with open(os.path.join(final, filename), "w") as f:
             json.dump(data, f)
@@ -87,7 +106,8 @@ def main():
     ).stdout.strip()
     with open(os.path.join(final, "conversion.json"), "w") as f:
         json.dump({
-            "source": source,
+            "source": repo,
+            "revision": revision or "standard",
             "whisperkittools": whisperkittools_commit,
             "weights": "int8 (linear_symmetric)" if args.int8 else "float16",
         }, f, indent=2)

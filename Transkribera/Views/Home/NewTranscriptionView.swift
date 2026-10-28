@@ -74,6 +74,8 @@ struct QuickSettingsView: View {
     @AppStorage(SettingsKey.model) private var modelRaw = WhisperModel.default.rawValue
     @AppStorage(SettingsKey.language) private var language = "sv"
     @AppStorage(SettingsKey.identifySpeakers) private var identifySpeakers = false
+    @AppStorage(SettingsKey.speakerCount) private var speakerCount = 0
+    @AppStorage(SettingsKey.vocabulary) private var vocabulary = ""
     @Environment(TranscriptionQueue.self) private var queue
 
     var body: some View {
@@ -126,8 +128,21 @@ struct QuickSettingsView: View {
                 }
                 GridRow {
                     Text("Talare").foregroundStyle(.secondary)
-                    Toggle("Skilj på vem som pratar", isOn: $identifySpeakers)
-                        .help("Märker texten med Talare 1, Talare 2 … som du sedan kan byta namn på. Tar lite längre tid.")
+                    HStack(spacing: 12) {
+                        Toggle("Skilj på vem som pratar", isOn: $identifySpeakers)
+                            .help("Märker texten med Talare 1, Talare 2 … som du sedan kan byta namn på. Tar lite längre tid.")
+                        if identifySpeakers {
+                            SpeakerCountPicker(selection: $speakerCount)
+                                .labelsHidden()
+                                .fixedSize()
+                        }
+                    }
+                }
+                GridRow {
+                    Text("Ordlista").foregroundStyle(.secondary)
+                    TextField("Namn och fackord, t.ex. TG, bruttovinst, Fortnox", text: $vocabulary)
+                        .frame(maxWidth: 280)
+                        .help("Ord som förekommer i inspelningen, med komma emellan. Hjälper modellen att stava dem rätt.")
                 }
             }
 

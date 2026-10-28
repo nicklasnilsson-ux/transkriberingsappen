@@ -185,6 +185,11 @@ final class TranscriberService {
                 skipSpecialTokens: true,
                 withoutTimestamps: false,
                 wordTimestamps: options.wordTimestamps || options.identifySpeakers,
+                promptTokens: Self.promptTokens(for: options.vocabulary, tokenizer: kit.tokenizer),
+                // Tystnad klipps redan bort av VAD-uppdelningen. Spärrarna nedan kastar annars
+                // bort hela 30-sekundersfönster när en svag röst gör modellen osäker.
+                firstTokenLogProbThreshold: nil,
+                noSpeechThreshold: nil,
                 chunkingStrategy: .vad
             )
 
@@ -209,7 +214,7 @@ final class TranscriberService {
             var segments: [SegmentData]
             if options.identifySpeakers {
                 phase = .identifyingSpeakers
-                segments = try await diarizedSegments(samples: samples, results: results)
+                segments = try await diarizedSegments(samples: samples, results: results, numberOfSpeakers: options.numberOfSpeakers)
             } else {
                 segments = Self.segments(from: results)
             }
@@ -227,6 +232,18 @@ final class TranscriberService {
             liveText = ""
             throw error
         }
+    }
+
+    // MARK: - Ordlista
+
+    /// Whisper kan få en text "före" ljudet som ledtråd. Står namn och fackord där
+    /// stavas de oftare rätt, t.ex. "TG", "bruttovinst" eller "Fortnox".
+    static func promptTokens(for vocabulary: String, tokenizer: WhisperTokenizer?) -> [Int]? {
+        let words = TextCleaning.wordList(vocabulary)
+        guard let tokenizer, !words.isEmpty else { return nil }
+        let tokens = tokenizer.encode(text: " " + words.joined(separator: ", ") + ".")
+            .filter { $0 < tokenizer.specialTokens.specialTokenBegin }
+        return tokens.isEmpty ? nil : tokens
     }
 
     // MARK: - Konvertering
@@ -258,7 +275,7 @@ final class TranscriberService {
 
     // MARK: - Talaridentifiering (SpeakerKit)
 
-    private func diarizedSegments(samples: [Float], results: [TranscriptionResult]) async throws -> [SegmentData] {
+    private func diarizedSegments(samples: [Float], results: [TranscriptionResult], numberOfSpeakers: Int?) async throws -> [SegmentData] {
         let kit: SpeakerKit
         if let speakerKit {
             kit = speakerKit
@@ -272,35 +289,17 @@ final class TranscriberService {
             speakerKit = kit
         }
 
-        let diarization = try await kit.diarize(audioArray: samples)
-        let speakerSegments = diarization.addSpeakerInfo(to: results, strategy: .subsegment)
-
-        // Numrera talarna i den ordning de först hörs: "Talare 1", "Talare 2" …
-        var speakerNames: [Int: String] = [:]
-        func name(for info: SpeakerInfo) -> String? {
-            guard let id = info.speakerId else { return nil }
-            if let existing = speakerNames[id] { return existing }
-            let new = "Talare \(speakerNames.count + 1)"
-            speakerNames[id] = new
-            return new
+        let diarizationOptions = PyannoteDiarizationOptions(numberOfSpeakers: numberOfSpeakers)
+        let diarization = try await kit.diarize(audioArray: samples, options: diarizationOptions)
+        let turns = diarization.segments.compactMap { segment -> SpeakerTurn? in
+            guard let id = segment.speaker.speakerId else { return nil }
+            return SpeakerTurn(start: Double(segment.startTime), end: Double(segment.endTime), speaker: id)
         }
 
-        let segments: [SegmentData] = speakerSegments
-            .flatMap { $0 }
-            .sorted { $0.startTime < $1.startTime }
-            .compactMap { segment in
-                let text = TextCleaning.clean(segment.text)
-                guard !text.isEmpty else { return nil }
-                return SegmentData(
-                    start: Double(segment.startTime),
-                    end: Double(segment.endTime),
-                    text: text,
-                    speaker: name(for: segment.speaker),
-                    words: segment.speakerWords.map { Self.word(from: $0.wordTiming) }
-                )
-            }
+        // Talare sätts per ord, så att repliker utan paus emellan ändå delas upp rätt.
+        let segments = SpeakerAssignment.assign(Self.segments(from: results), turns: turns)
 
         // Om diariseringen inte gav något (t.ex. inga ordtidsstämplar) – fall tillbaka.
-        return segments.isEmpty ? Self.segments(from: results) : segments
+        return segments.contains { $0.speaker != nil } ? segments : Self.segments(from: results)
     }
 }

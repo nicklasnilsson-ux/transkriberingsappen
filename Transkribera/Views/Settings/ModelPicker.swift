@@ -206,6 +206,9 @@ struct ModelGuideView: View {
                 section("Liten modell, bättre resultat",
                         "Skillnaden är så stor att KB Small, som bara är en sjättedel så stor, gör färre fel på svenska än OpenAI:s största modell Large v3. Mest märks det på vanligt vardagstal och namn.")
 
+                section("Ordagrann eller vanlig",
+                        "De vanliga KB-modellerna skriver som en undertext och stryker ibland upprepningar och småord. De ordagranna varianterna skriver mer exakt vad som sägs. Välj KB Large ordagrann för intervjuer där du vill kunna citera.")
+
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Fel per 100 ord på svenska").font(.headline)
                     Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 4) {

@@ -5,6 +5,9 @@ enum Lexicon {
     /// Ett ord som börjar med stor bokstav, t.ex. "Anna", "Anna-Karin", "O'Brien".
     static let capitalizedWord = TextPattern(#"(?<![\p{L}\p{N}])\p{Lu}[\p{L}\p{M}'’]*(?:-\p{L}[\p{L}\p{M}'’]*)*"#)
 
+    /// Ett ord som börjar med liten bokstav.
+    static let lowercaseWord = TextPattern(#"(?<![\p{L}\p{N}])\p{Ll}[\p{L}\p{M}'’]*(?:-\p{L}[\p{L}\p{M}'’]*)*"#)
+
     /// Ord efter ett namn som gör det till en organisation, t.ex. "Volvo AB", "Lunds universitet".
     static let organizationFollower = TextPattern(
         #" +(?:ab|kommun|kommuns|universitet|universitetet|högskola|högskolan|sjukhus|sjukhuset|landsting|förening|föreningen|skola|skolan|gymnasium|gymnasiet|vårdcentral|vårdcentralen|församling|stift)(?![\p{L}])"#,
@@ -57,7 +60,22 @@ enum Lexicon {
         "jesper", "linus", "albin", "anton", "ludvig", "leo", "arvid", "melvin", "theo", "vincent", "max",
         "ali", "mohammed", "mohammad", "ahmed", "omar", "hassan", "ibrahim", "lars-erik", "per-olof", "jan-erik",
         "göran", "leif", "kent", "roger", "ulf", "tommy", "bo", "åke", "rolf", "kjell", "torbjörn", "håkan",
-        "gunnar", "ingvar", "sten", "stig", "rune", "arne", "tomas", "jakob", "jacob", "david", "samuel"
+        "gunnar", "ingvar", "sten", "stig", "rune", "arne", "tomas", "jakob", "jacob", "david", "samuel",
+        "rasmus", "dennis", "jimmy", "johnny", "robert", "roland", "lennart", "kenneth", "conny", "glenn",
+        "sixten", "elof", "algot", "edvin", "alvin", "casper", "kasper", "colin", "milo", "otto", "harry",
+        "charlie", "frank", "julius", "malte", "melker", "loke", "valter", "walter", "wilhelm", "vilhelm",
+        "ivar", "einar", "folke", "tage", "sune", "evert", "allan", "ove", "ronny", "benny", "tony", "mikko",
+        "niclas", "nikolas", "nicholas", "mikkel", "jens", "lukas", "jonatan", "felix", "oliver", "isac",
+        "joel", "kevin", "andré", "andre", "carl", "claes", "klas", "christian", "kristian", "anders-petter",
+        "mohamed", "yusuf", "mustafa", "abdi", "karim", "amir", "reza",
+        // Fler kvinnonamn
+        "lovisa", "ellen", "tilda", "tindra", "molly", "nellie", "ronja", "signe", "edith", "ester",
+        "greta", "iris", "lea", "leah", "lova", "luna", "meja", "minna", "nova",
+        "stella", "thea", "tyra", "vilma", "hedvig", "sigrid", "märta", "ingegerd", "barbro", "gunnel",
+        "solveig", "yvonne", "marianne", "lotta", "jeanette", "sandra", "rebecka", "rebecca", "emilia",
+        "isabelle", "isabella", "natalie", "nathalie", "michaela", "mikaela", "angelica", "angelika",
+        "erika", "jennifer", "carina", "katja", "paulina", "pauline", "sanna", "sara-lena", "therése",
+        "zara", "yasmin", "sofi", "elina", "kajsa", "ebba-lotta", "ann-christin", "ann-marie"
     ]
 
     static let places: Set<String> = [

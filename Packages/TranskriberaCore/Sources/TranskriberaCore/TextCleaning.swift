@@ -16,6 +16,13 @@ public enum TextCleaning {
         return collapsed.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    /// Delar upp en lista som användaren skrivit, med komma, semikolon eller radbrytning mellan orden.
+    public static func wordList(_ text: String) -> [String] {
+        text.split(whereSeparator: { $0 == "," || $0 == ";" || $0.isNewline })
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+    }
+
     /// Whisper hittar ibland på text i tystnad, t.ex. "[Musik]" eller "(tystnad)".
     /// Returnerar true om segmentet bara består av en sådan markering.
     public static func isNonSpeechMarker(_ text: String) -> Bool {
