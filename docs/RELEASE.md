@@ -70,8 +70,9 @@ EdDSA-nyckel, så går uppdateringen från ad hoc till Developer ID igenom.
 
 ## Tekniska detaljer
 
-- `scripts/codesign-app.sh` signerar appen inifrån och ut (Sparkles delar först). Med härdad
-  runtime måste allt ha samma signatur som appen, annars startar den inte.
+- `scripts/codesign-app.sh` signerar appen inifrån och ut (Sparkles delar först). Härdad
+  runtime används bara med Developer ID: med ad hoc-signering vägrar macOS då ladda Sparkle
+  (0.4.0 och 0.4.1 startade inte av det skälet). Röktestet stoppar ett sådant bygge.
 - `scripts/make-dmg.sh` gör både `.dmg` (för nya användare) och `.zip` (för Sparkle).
 - `scripts/appcast.py` signerar zip-filen och skriver appcasten. Tester: `scripts/test_appcast.py`.
 - `scripts/publish-appcast.sh` committar appcasten till branchen `appcast`.
