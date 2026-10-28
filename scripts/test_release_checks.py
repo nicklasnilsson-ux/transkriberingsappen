@@ -10,6 +10,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
+import appcast  # noqa: E402
 import changelog  # noqa: E402
 import upgrade_store  # noqa: E402
 
@@ -67,6 +68,17 @@ def core_data_store(path: str) -> None:
             ZTRANSCRIPT INTEGER, ZEND FLOAT, ZSTART FLOAT, ZSPEAKER VARCHAR, ZTEXT VARCHAR, ZWORDSDATA BLOB);
     """)
     db.commit()
+
+
+class ReleaseNotesTests(unittest.TestCase):
+    def test_wrapped_bullet_stays_in_one_item(self):
+        html = appcast.markdown_to_html("### Nytt\n- Talare sätts per ord,\n  även korta svar.\n- Ordlista.\n")
+        self.assertEqual(html, "<h3>Nytt</h3>\n<ul>\n<li>Talare sätts per ord, även korta svar.</li>\n<li>Ordlista.</li>\n</ul>")
+
+    def test_changelog_renders_without_stray_paragraphs(self):
+        text = (HERE.parent / "CHANGELOG.md").read_text(encoding="utf-8")
+        html = appcast.markdown_to_html(changelog.section(text, "0.5.0"))
+        self.assertNotIn("<p>", html)
 
 
 class UpgradeStoreTests(unittest.TestCase):
