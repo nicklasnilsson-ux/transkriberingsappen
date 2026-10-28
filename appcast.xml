@@ -6,6 +6,20 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.4.1</title>
+      <pubDate>Wed, 28 Oct 2026 20:18:05 GMT</pubDate>
+      <sparkle:version>5</sparkle:version>
+      <sparkle:shortVersionString>0.4.1</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.4.1</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;What&amp;#x27;s Changed&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Rätta kraschen vid start i 0.4.0 och röktesta appen i CI (0.4.1) by @nicklasnilsson-ux in &lt;a href="https://github.com/nicklasnilsson-ux/transkriberingsappen/pull/12"&gt;https://github.com/nicklasnilsson-ux/transkriberingsappen/pull/12&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;b&gt;Full Changelog&lt;/b&gt;: &lt;a href="https://github.com/nicklasnilsson-ux/transkriberingsappen/compare/v0.4.0...v0.4.1"&gt;https://github.com/nicklasnilsson-ux/transkriberingsappen/compare/v0.4.0...v0.4.1&lt;/a&gt;&lt;/p&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.4.1/Transkribera-v0.4.1.zip" length="2831884" type="application/octet-stream" sparkle:edSignature="U+EDVGfcJc+bjNVFreUIDkba6HwOI7PrHrG1UDQCHl2vdF9WBHU3FWg3Vg1L3gg/n6kGNrNwCls0J4iOIb5zBw==" />
+    </item>
+    <item>
       <title>Version 0.4.0</title>
       <pubDate>Wed, 28 Oct 2026 20:05:06 GMT</pubDate>
       <sparkle:version>4</sparkle:version>
