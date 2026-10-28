@@ -23,6 +23,10 @@ struct TranscriptDetailView: View {
     @AppStorage(SettingsKey.anonymizeNames) private var anonymizeNames = true
     @AppStorage(SettingsKey.anonymizeIdentifiers) private var anonymizeIdentifiers = true
     @AppStorage(SettingsKey.anonymizeSensitive) private var anonymizeSensitive = true
+    @AppStorage(SettingsKey.anonymizeOrganizations) private var anonymizeOrganizations = false
+    @AppStorage(SettingsKey.anonymizeUncertainNames) private var anonymizeUncertainNames = false
+    @AppStorage(SettingsKey.anonymizeAlwaysHide) private var alwaysHide = ""
+    @AppStorage(SettingsKey.anonymizeNeverHide) private var neverHide = ""
     @State private var anonymized: AnonymizedState?
 
     var body: some View {
@@ -383,10 +387,14 @@ struct TranscriptDetailView: View {
 
     private var anonymizationOptions: AnonymizationOptions? {
         guard anonymize else { return nil }
-        return AnonymizationOptions(
+        return AnonymizationSettings.options(
             names: anonymizeNames,
             identifiers: anonymizeIdentifiers,
-            sensitiveTopics: anonymizeSensitive
+            sensitiveTopics: anonymizeSensitive,
+            organizations: anonymizeOrganizations,
+            uncertainNames: anonymizeUncertainNames,
+            alwaysHide: alwaysHide,
+            neverHide: neverHide
         )
     }
 

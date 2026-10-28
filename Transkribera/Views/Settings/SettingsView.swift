@@ -22,6 +22,8 @@ private struct TranscriptionSettingsView: View {
     @AppStorage(SettingsKey.language) private var language = "sv"
     @AppStorage(SettingsKey.task) private var task = "transcribe"
     @AppStorage(SettingsKey.identifySpeakers) private var identifySpeakers = false
+    @AppStorage(SettingsKey.speakerCount) private var speakerCount = 0
+    @AppStorage(SettingsKey.vocabulary) private var vocabulary = ""
     @AppStorage(SettingsKey.wordTimestamps) private var wordTimestamps = true
     @AppStorage(SettingsKey.recordMicrophone) private var recordMicrophone = true
 
@@ -44,8 +46,20 @@ private struct TranscriptionSettingsView: View {
 
             Section {
                 Toggle("Skilj på vem som pratar", isOn: $identifySpeakers)
+                SpeakerCountPicker(selection: $speakerCount)
+                    .disabled(!identifySpeakers)
             } footer: {
-                Text("Märker texten med Talare 1, Talare 2 … som du kan byta namn på. Laddar ner en extra modell (cirka 30 MB) första gången och tar lite längre tid.")
+                Text("Märker texten med Talare 1, Talare 2 … som du kan byta namn på. Vet du hur många som pratar blir uppdelningen säkrare. Laddar ner en extra modell (cirka 30 MB) första gången och tar lite längre tid.")
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
+                TextField("Ordlista", text: $vocabulary, prompt: Text("TG, TB, bruttovinst, Fortnox"), axis: .vertical)
+                    .lineLimit(2...4)
+            } header: {
+                Text("Ordlista")
+            } footer: {
+                Text("Namn och fackord som brukar förekomma, med komma emellan. Modellen får dem som ledtråd och stavar dem oftare rätt. Håll listan kort.")
                     .foregroundStyle(.secondary)
             }
 
@@ -76,6 +90,10 @@ private struct PrivacySettingsView: View {
     @AppStorage(SettingsKey.anonymizeNames) private var names = true
     @AppStorage(SettingsKey.anonymizeIdentifiers) private var identifiers = true
     @AppStorage(SettingsKey.anonymizeSensitive) private var sensitive = true
+    @AppStorage(SettingsKey.anonymizeOrganizations) private var organizations = false
+    @AppStorage(SettingsKey.anonymizeUncertainNames) private var uncertainNames = false
+    @AppStorage(SettingsKey.anonymizeAlwaysHide) private var alwaysHide = ""
+    @AppStorage(SettingsKey.anonymizeNeverHide) private var neverHide = ""
 
     var body: some View {
         Form {
@@ -87,13 +105,30 @@ private struct PrivacySettingsView: View {
             }
 
             Section {
-                Toggle("Namn på personer, platser och organisationer", isOn: $names)
+                Toggle("Namn på personer och platser", isOn: $names)
+                Toggle("Företag och organisationer", isOn: $organizations)
+                    .help("Av som standard. Namn som Fortnox och Visma behövs oftast för att förstå texten.")
+                Toggle("Andra ord som ser ut som namn", isOn: $uncertainNames)
+                    .help("Döljer även ord med stor bokstav som inte går att känna igen. Säkrare, men döljer ofta vanliga ord som Euro eller Rabatt.")
                 Toggle("Personnummer, telefon, e-post, adresser, konto- och kortnummer, regnummer", isOn: $identifiers)
                 Toggle("Hälsa, religion, politisk åsikt m.m.", isOn: $sensitive)
             } header: {
                 Text("Vad som döljs")
             } footer: {
                 Text("Hälsa, religion och liknande hittas bara delvis, via en ordlista. Ingen automatisk anonymisering är helt säker, så läs igenom texten innan du delar den.")
+                    .foregroundStyle(.secondary)
+            }
+            .disabled(!anonymize)
+
+            Section {
+                TextField("Dölj alltid", text: $alwaysHide, prompt: Text("Rasmus, Joj"), axis: .vertical)
+                    .lineLimit(1...3)
+                TextField("Dölj aldrig", text: $neverHide, prompt: Text("Euro, Rabatt, Visma"), axis: .vertical)
+                    .lineLimit(1...3)
+            } header: {
+                Text("Egna undantag")
+            } footer: {
+                Text("Skriv ord med komma emellan. Namnen under Dölj alltid döljs som personer även när de är felstavade på samma sätt eller skrivna med liten bokstav.")
                     .foregroundStyle(.secondary)
             }
             .disabled(!anonymize)
@@ -184,5 +219,20 @@ private struct ModelSettingsView: View {
             }
         }
         .formStyle(.grouped)
+    }
+}
+
+/// Antal talare: automatiskt (0) eller ett känt antal.
+struct SpeakerCountPicker: View {
+    @Binding var selection: Int
+
+    var body: some View {
+        Picker("Antal talare", selection: $selection) {
+            Text("Automatiskt antal").tag(0)
+            ForEach(2...8, id: \.self) { count in
+                Text("\(count) talare").tag(count)
+            }
+        }
+        .help("Vet du hur många som pratar blir uppdelningen säkrare.")
     }
 }

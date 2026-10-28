@@ -71,16 +71,41 @@ public enum AnonymizationGroup: String, CaseIterable, Sendable {
 }
 
 public struct AnonymizationOptions: Hashable, Sendable {
+    /// Personer och platser.
     public var names: Bool
     public var identifiers: Bool
     public var sensitiveTopics: Bool
+    /// Företag, myndigheter och andra organisationer. Av som standard: de behövs oftast
+    /// för att förstå texten och är sällan personuppgifter.
+    public var organizations: Bool
+    /// Ord med stor bokstav som inte går att typbestämma (varken känt förnamn, plats
+    /// eller organisation). Av som standard, eftersom det oftast är vanliga ord som
+    /// "Euro" eller "Rabatt".
+    public var uncertainNames: Bool
+    /// Namn och ord som alltid döljs som personer, oavsett stor eller liten bokstav.
+    public var alwaysHide: [String]
+    /// Ord som aldrig döljs.
+    public var neverHide: [String]
     /// Använd Apples språkanalys (NaturalLanguage) som komplement till de inbyggda reglerna.
     public var useSystemNameRecognition: Bool
 
-    public init(names: Bool = true, identifiers: Bool = true, sensitiveTopics: Bool = true, useSystemNameRecognition: Bool = true) {
+    public init(
+        names: Bool = true,
+        identifiers: Bool = true,
+        sensitiveTopics: Bool = true,
+        organizations: Bool = false,
+        uncertainNames: Bool = false,
+        alwaysHide: [String] = [],
+        neverHide: [String] = [],
+        useSystemNameRecognition: Bool = true
+    ) {
         self.names = names
         self.identifiers = identifiers
         self.sensitiveTopics = sensitiveTopics
+        self.organizations = organizations
+        self.uncertainNames = uncertainNames
+        self.alwaysHide = alwaysHide
+        self.neverHide = neverHide
         self.useSystemNameRecognition = useSystemNameRecognition
     }
 
@@ -131,7 +156,16 @@ public enum Anonymizer {
             var spans: [Span] = []
             if options.identifiers { spans += identifierSpans(in: segment.text) }
             if options.sensitiveTopics { spans += sensitiveSpans(in: segment.text) }
-            if options.names { spans += names.spans(in: segment.text) }
+            if options.names { spans += names.alwaysHiddenSpans(in: segment.text) }
+            if options.names || options.organizations {
+                spans += names.spans(in: segment.text).filter { span in
+                    switch span.category {
+                    case .organization: return options.organizations
+                    case .name: return options.names && options.uncertainNames
+                    default: return options.names
+                    }
+                }
+            }
             let (text, replaced) = apply(spans, to: segment.text, registry: registry)
             count += replaced
 
@@ -366,9 +400,32 @@ struct NameDetector {
     /// Bestämd kategori per namn eller namnord, så att t.ex. ett efternamn som
     /// förekommer ensamt behandlas som samma person som det fullständiga namnet.
     private var decided: [String: AnonymizationCategory] = [:]
+    /// Ord som också förekommer med liten bokstav i texten är vanliga ord, inte namn
+    /// ("Rabatt" i en kolumnrubrik, "euro" i löpande text).
+    private var commonWords = Set<String>()
+    /// Ord som användaren vill att vi aldrig döljer.
+    private var neverHide = Set<String>()
+    /// Namn som användaren vill att vi alltid döljer.
+    private var alwaysHide: [(pattern: TextPattern, parts: [String])] = []
 
     init(texts: [String], speakers: [String], options: AnonymizationOptions) {
-        guard options.names else { return }
+        guard options.names || options.organizations else { return }
+
+        neverHide = Set(options.neverHide.flatMap(Self.speakerParts))
+        for text in texts {
+            for range in Lexicon.lowercaseWord.matches(in: text) {
+                commonWords.insert(String(text[range]))
+            }
+        }
+        for entry in options.alwaysHide {
+            let parts = Self.speakerParts(entry)
+            guard !parts.isEmpty else { continue }
+            let escaped = parts.map(NSRegularExpression.escapedPattern(for:)).joined(separator: #"\s+"#)
+            alwaysHide.append((TextPattern(#"(?<![\p{L}\p{N}])"# + escaped + #"(?![\p{L}\p{N}])"#, caseInsensitive: true), parts))
+            knownNames.formUnion(parts)
+            decided[Self.key(for: parts)] = .person
+            for part in parts { decided[part] = .person }
+        }
 
         for text in texts {
             for token in Self.tokens(in: text) where !token.isSentenceInitial && Self.isCandidate(token, in: text) {
@@ -417,6 +474,21 @@ struct NameDetector {
         speaker.range(of: #"^\s*(?:talare|speaker|spk|person)[ _-]?\d+\s*$"#, options: [.regularExpression, .caseInsensitive]) != nil
     }
 
+    /// Namn som användaren angett. De döljs som personer även med liten bokstav eller
+    /// i en form som reglerna annars skulle missa.
+    func alwaysHiddenSpans(in text: String) -> [Anonymizer.Span] {
+        alwaysHide.flatMap { entry in
+            entry.pattern.matches(in: text).map { range in
+                Anonymizer.Span(
+                    range: range,
+                    category: .person,
+                    key: Self.key(for: entry.parts),
+                    aliases: entry.parts.count > 1 ? entry.parts : []
+                )
+            }
+        }
+    }
+
     func spans(in text: String) -> [Anonymizer.Span] {
         groups(in: text).map { group in
             var range = group.range
@@ -455,6 +527,13 @@ struct NameDetector {
     }
 
     private func isName(_ token: Token, in text: String) -> Bool {
+        if Lexicon.contains(neverHide, token.key) { return false }
+        if Lexicon.contains(commonWords, token.key),
+           decided[token.key] == nil,
+           !Lexicon.contains(Lexicon.firstNames, token.key),
+           !Lexicon.contains(Lexicon.places, token.key) {
+            return false
+        }
         guard Self.isCandidate(token, in: text) else {
             // Förkortningar räknas bara om de är kända platser (USA m.fl.).
             return Lexicon.contains(Lexicon.places, token.key) && !Lexicon.stopwords.contains(token.key)
