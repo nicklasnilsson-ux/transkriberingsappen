@@ -20,6 +20,7 @@ först när alla kontroller är gröna på exakt de filer som laddades upp.
 | Byggen avbröts efter lång väntan i kö innan något steg körts | CI | Körs om automatiskt (högst två gånger) | `rerun-cancelled.yml` |
 | KB Large ordagrann visades i modellväljaren fast konverteringen hade misslyckats, så nedladdningen skulle ge fel | före 0.5.0 | Varje modell i väljaren (`WhisperModel.offered`) ska gå att ladda ner: zip-filen i sin release, WhisperKit-varianten på Hugging Face | `check-models.sh` |
 | KB-Whisper-modellen blev trunkerad vid uppladdning | modeller | Varje zip testas med `unzip -t` före och efter uppladdning; trasiga byggs om | `kb-whisper-models.yml` |
+| Radbrutna punkter i CHANGELOG.md blev lösa stycken i uppdateringsdialogen | 0.5.0 | Test att varje punkt blir en hel listpunkt, även för den aktuella CHANGELOG.md | `test_release_checks.py` |
 | Byggnumret måste öka, annars hittar Sparkle inte versionen | – | Byggnumret jämförs med appcasten | `appcast.py check` |
 
 ## Skydd mot det som inte har hänt än

@@ -108,6 +108,10 @@ def markdown_to_html(text: str) -> str:
                 in_list = True
             out.append(f"<li>{inline(bullet.group(1))}</li>")
             continue
+        # Indragen rad direkt efter en punkt hör till samma punkt (radbrytning i CHANGELOG.md).
+        if in_list and line and raw[:1].isspace():
+            out[-1] = out[-1][: -len("</li>")] + f" {inline(line)}</li>"
+            continue
         if in_list:
             out.append("</ul>")
             in_list = False
