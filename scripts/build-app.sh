@@ -34,4 +34,6 @@ xcodebuild \
 mkdir -p dist
 rm -rf dist/Transkribera.app
 cp -R "$DERIVED_DATA/Build/Products/$CONFIGURATION/Transkribera.app" dist/
+# Ad hoc-signera om allt inifrån och ut, så att Sparkle får samma signatur som appen.
+./scripts/codesign-app.sh -
 echo "Klar: dist/Transkribera.app"
