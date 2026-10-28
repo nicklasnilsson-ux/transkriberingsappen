@@ -146,8 +146,12 @@ public enum TranscriptExporter {
         for segment in segments {
             let text = segment.text.trimmed
             let limit = options.maxSubtitleCharacters
-            guard limit > 0, text.count > limit, !segment.words.isEmpty else {
+            guard limit > 0, text.count > limit else {
                 cues.append(Cue(start: segment.start, end: segment.end, text: text, speaker: segment.speaker))
+                continue
+            }
+            guard !segment.words.isEmpty else {
+                cues += splitByCharacters(text, start: segment.start, end: segment.end, limit: limit, speaker: segment.speaker)
                 continue
             }
             var currentWords: [WordTimingData] = []
@@ -174,6 +178,29 @@ public enum TranscriptExporter {
             if cue.end <= cue.start { cue.end = cue.start + 0.5 }
             return cue
         }
+    }
+
+    /// Delar på ordgränser utan ordtidsstämplar (t.ex. efter redigering eller anonymisering)
+    /// och fördelar tiden efter antal tecken.
+    static func splitByCharacters(_ text: String, start: Double, end: Double, limit: Int, speaker: String?) -> [Cue] {
+        var lines: [String] = []
+        for word in text.split(separator: " ") {
+            if let last = lines.last, last.count + 1 + word.count <= limit {
+                lines[lines.count - 1] += " " + word
+            } else {
+                lines.append(String(word))
+            }
+        }
+        let total = Double(lines.reduce(0) { $0 + $1.count })
+        guard total > 0 else { return [] }
+        var cues: [Cue] = []
+        var cursor = start
+        for (index, line) in lines.enumerated() {
+            let lineEnd = index == lines.count - 1 ? end : cursor + (end - start) * Double(line.count) / total
+            cues.append(Cue(start: cursor, end: lineEnd, text: line, speaker: speaker))
+            cursor = lineEnd
+        }
+        return cues
     }
 
     static func srt(_ cues: [Cue], options: ExportOptions) -> String {

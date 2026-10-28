@@ -68,6 +68,12 @@ Views: ContentView (NavigationSplitView)
 - ScreenCaptureKit spelar in systemljud (exkl. appens eget ljud), mikrofon på macOS 15+.
 - Stoppa → M4A sparas → transkriberas automatiskt.
 
+### Anonymisering ✅
+- `Anonymizer` i TranskriberaCore: regler för personnummer (datum + kontrollsiffra), telefon, e-post, adresser, kontonummer/IBAN, kortnummer och regnummer.
+- Namn via versaler i löpande text, ordlistor och Apples NaturalLanguage; samma namn får samma platshållare (`[PERSON 1]`), även talarnamn.
+- Känsliga ämnen (hälsa, religion, politik, sexuell läggning, facktillhörighet) via ordlista – bara delvis.
+- På som standard; originalet sparas och visning/kopiering/export följer inställningen.
+
 ## Nästa steg (förslag)
 
 1. Testa på riktig Mac: behörighetsflöden för inspelning, långa filer (> 1 h) och minnesanvändning.

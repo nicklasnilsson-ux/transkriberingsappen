@@ -76,6 +76,14 @@ final class Transcript {
         )
     }
 
+    /// Segment för kopiering och export: anonymiserade när inställningen är på
+    /// (se `AnonymizationSettings`). Originaltexten i databasen ändras aldrig.
+    func outputSegments(options: AnonymizationOptions? = AnonymizationSettings.options()) -> [SegmentData] {
+        let data = segmentData
+        guard let options else { return data }
+        return Anonymizer.anonymize(data, options: options).segments
+    }
+
     var fullText: String {
         TranscriptExporter.fullText(segmentData)
     }

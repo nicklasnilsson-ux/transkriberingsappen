@@ -8,6 +8,8 @@ struct SettingsView: View {
                 .tabItem { Label("Transkribering", systemImage: "waveform") }
             ModelSettingsView()
                 .tabItem { Label("Modeller", systemImage: "cpu") }
+            PrivacySettingsView()
+                .tabItem { Label("Integritet", systemImage: "hand.raised") }
         }
         .frame(width: 520)
         .padding(20)
@@ -62,6 +64,37 @@ private struct TranscriptionSettingsView: View {
                         .foregroundStyle(.secondary)
                 }
             }
+        }
+        .formStyle(.grouped)
+    }
+}
+
+private struct PrivacySettingsView: View {
+    @AppStorage(SettingsKey.anonymize) private var anonymize = true
+    @AppStorage(SettingsKey.anonymizeNames) private var names = true
+    @AppStorage(SettingsKey.anonymizeIdentifiers) private var identifiers = true
+    @AppStorage(SettingsKey.anonymizeSensitive) private var sensitive = true
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle("Anonymisera känsliga uppgifter", isOn: $anonymize)
+            } footer: {
+                Text("Uppgifterna ersätts med t.ex. [PERSON 1] när du läser, kopierar och exporterar. Originaltexten sparas och visas igen om du stänger av det här. Allt sker lokalt på datorn.")
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
+                Toggle("Namn på personer, platser och organisationer", isOn: $names)
+                Toggle("Personnummer, telefon, e-post, adresser, kontonummer och regnummer", isOn: $identifiers)
+                Toggle("Hälsa, religion, politisk åsikt m.m.", isOn: $sensitive)
+            } header: {
+                Text("Vad som döljs")
+            } footer: {
+                Text("Hälsa, religion och liknande hittas bara delvis, via en ordlista. Ingen automatisk anonymisering är helt säker, så läs igenom texten innan du delar den.")
+                    .foregroundStyle(.secondary)
+            }
+            .disabled(!anonymize)
         }
         .formStyle(.grouped)
     }
