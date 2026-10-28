@@ -117,14 +117,20 @@ struct ModelInfoRow: View {
 
 /// Kort vägledning överst i väljaren.
 private struct ModelAdvice: View {
+    @State private var showsGuide = false
+
     var body: some View {
         Label {
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text("Pratas det svenska? Välj en KB-modell.").font(.callout.weight(.medium))
                 Text("KB Small räcker för de flesta möten och intervjuer. Välj KB Large när varje ord måste stämma, t.ex. för citat eller dåligt ljud, och du inte har bråttom. Andra språk: välj en OpenAI-modell.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+                Button("Vilken modell ska jag välja?") { showsGuide = true }
+                    .buttonStyle(.link)
+                    .font(.caption)
+                    .popover(isPresented: $showsGuide, arrowEdge: .trailing) { ModelGuideView() }
             }
         } icon: {
             Image(systemName: "lightbulb").foregroundStyle(.yellow)
@@ -180,5 +186,94 @@ private struct Meter: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(label) \(value) av 5")
+    }
+}
+
+/// Längre förklaring i klartext om hur modellerna skiljer sig åt. Visas från
+/// "Vilken modell ska jag välja?" i väljaren och i Inställningar.
+struct ModelGuideView: View {
+    private let rows: [WhisperModel] = WhisperModel.allCases.filter { $0.swedishWordErrorRate != nil }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                Text("Vilken modell ska jag välja?")
+                    .font(.title3.weight(.semibold))
+
+                section("Svenska: välj en KB-modell",
+                        "KB-modellerna kommer från Kungliga biblioteket (KBLab). De bygger på OpenAI:s Whisper men är vidaretränade på över 50 000 timmar svenskt tal, främst undertextad tv och riksdagsdebatter men också dialektinspelningar. Därför gör de mycket färre fel på svenska än OpenAI:s egna modeller.")
+
+                section("Liten modell, bättre resultat",
+                        "Skillnaden är så stor att KB Small, som bara är en sjättedel så stor, gör färre fel på svenska än OpenAI:s största modell Large v3. Mest märks det på vanligt vardagstal och namn.")
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Fel per 100 ord på svenska").font(.headline)
+                    Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 4) {
+                        ForEach(rows) { model in
+                            GridRow {
+                                Text(model.displayName)
+                                bar(for: model)
+                                Text(Self.format(model.swedishWordErrorRate ?? 0))
+                                    .monospacedDigit()
+                                    .foregroundStyle(.secondary)
+                                    .gridColumnAlignment(.trailing)
+                            }
+                            .font(.callout)
+                        }
+                        GridRow {
+                            Text("OpenAI Large v3")
+                            bar(rate: 7.8, highlighted: false)
+                            Text(Self.format(7.8))
+                                .monospacedDigit()
+                                .foregroundStyle(.secondary)
+                        }
+                        .font(.callout)
+                    }
+                    Text("OpenAI Large v3 är den modell som Large v3 Turbo bygger på. Turbo är snabbare men brukar göra något fler fel.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                section("Vilken KB-modell?",
+                        "KB Small räcker för de flesta möten och intervjuer, särskilt om du ändå läser igenom texten. KB Large gör ungefär en fjärdedel färre fel, märks mest på namn, facktermer, dialekter och dåligt ljud, men tar 3–5 gånger så lång tid och behöver mer minne. KB Medium är bara lite bättre än Small, så den passar mest om datorn har för lite minne för Large. KB Base är snabbast och duger för utkast.")
+
+                section("Andra språk",
+                        "KB-modellerna är tränade för svenska och blir sämre på andra språk. Pratas det engelska eller blandade språk, välj Large v3 Turbo eller dess komprimerade version.")
+
+                ModelSourceNote()
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(width: 460, height: 560)
+    }
+
+    private func section(_ title: String, _ text: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title).font(.headline)
+            Text(text)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private func bar(for model: WhisperModel) -> some View {
+        bar(rate: model.swedishWordErrorRate ?? 0, highlighted: model.isSwedishOnly)
+    }
+
+    /// Stapel där 60 fel per 100 ord fyller hela bredden.
+    private func bar(rate: Double, highlighted: Bool) -> some View {
+        let width = 180.0
+        return ZStack(alignment: .leading) {
+            Capsule().fill(Color.secondary.opacity(0.15)).frame(width: width, height: 8)
+            Capsule()
+                .fill(highlighted ? Color.accentColor : Color.secondary.opacity(0.6))
+                .frame(width: max(4, width * min(rate, 60) / 60), height: 8)
+        }
+    }
+
+    private static func format(_ rate: Double) -> String {
+        rate.formatted(.number.precision(.fractionLength(1)).locale(Locale(identifier: "sv_SE")))
     }
 }

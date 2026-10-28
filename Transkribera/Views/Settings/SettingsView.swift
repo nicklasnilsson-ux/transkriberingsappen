@@ -71,6 +71,7 @@ private struct ModelSettingsView: View {
     @AppStorage(SettingsKey.model) private var modelRaw = WhisperModel.default.rawValue
     @Environment(TranscriptionQueue.self) private var queue
     @State private var refresh = 0
+    @State private var showsGuide = false
 
     var body: some View {
         let transcriber = queue.transcriber
@@ -80,6 +81,20 @@ private struct ModelSettingsView: View {
                     ModelPicker(selection: $modelRaw)
                         .frame(maxWidth: 260)
                 }
+                Button("Vilken modell ska jag välja?") { showsGuide = true }
+                    .help("Jämförelse av modellerna och råd om när du ska välja vilken")
+                    .sheet(isPresented: $showsGuide) {
+                        VStack(spacing: 0) {
+                            ModelGuideView()
+                            Divider()
+                            HStack {
+                                Spacer()
+                                Button("Klar") { showsGuide = false }
+                                    .keyboardShortcut(.defaultAction)
+                            }
+                            .padding(12)
+                        }
+                    }
             } footer: {
                 Text("KB-modellerna är bäst på svenska. Välj en OpenAI-modell för andra språk. Modellen laddas ner automatiskt första gången den används.")
                     .foregroundStyle(.secondary)
