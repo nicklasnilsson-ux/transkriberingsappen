@@ -31,7 +31,7 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Välj senaste Xcode
         uses: maxim-lobanov/setup-xcode@v1
@@ -50,7 +50,7 @@ jobs:
         run: ./scripts/check-models.sh
 
       - name: Cache för Swift-paket
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: build/SourcePackages
           key: spm-${{ runner.os }}-${{ hashFiles('project.yml', 'Package.resolved') }}
@@ -166,7 +166,7 @@ jobs:
         run: cat Package.resolved
 
       - name: Ladda upp byggartefakt
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Transkribera-${{ steps.version.outputs.name }}
           path: dist/Transkribera-*.dmg
@@ -174,7 +174,7 @@ jobs:
 
       - name: Ladda upp bygglogg vid fel
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: xcodebuild-log
           path: build/xcodebuild.log
@@ -213,7 +213,7 @@ jobs:
 
       - name: Skapa releasen som utkast
         if: github.event.pull_request.head.repo.fork != true
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.version.outputs.draft }}
           name: Transkribera ${{ steps.version.outputs.name }}
