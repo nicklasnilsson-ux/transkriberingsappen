@@ -27,6 +27,22 @@ if [[ "$version" != "$EXPECTED_VERSION" || "$build" != "$EXPECTED_BUILD" ]]; the
 fi
 
 codesign --verify --deep --strict --verbose=2 "$APP"
+csrutil status || true
+
+# Ad hoc-signerad kod får inte ha härdad runtime, annars laddar macOS inte Sparkle
+# (library validation kräver samma Team ID, och ad hoc har inget).
+bad=0
+while IFS= read -r -d '' file; do
+  details="$(codesign -dv "$file" 2>&1)" || continue
+  flags="$(grep -o 'flags=[^ ]*' <<<"$details" | head -1)"
+  team="$(sed -n 's/^TeamIdentifier=//p' <<<"$details")"
+  echo "${file#"$APP/"}: $flags, Team ID ${team:-saknas}"
+  if [[ "$flags" == *adhoc* && "$flags" == *runtime* ]]; then
+    echo "::error::${file#"$APP/"} är ad hoc-signerad med härdad runtime – appen kommer inte att starta."
+    bad=1
+  fi
+done < <(find "$APP" -type f -perm +111 -print0)
+[[ $bad == 0 ]]
 
 LOG="$WORK/launch.log"
 "$APP/Contents/MacOS/Transkribera" >"$LOG" 2>&1 &
