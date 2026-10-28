@@ -14,6 +14,7 @@ enum SettingsKey {
     static let anonymizeNames = "anonymizeNames"
     static let anonymizeIdentifiers = "anonymizeIdentifiers"
     static let anonymizeSensitive = "anonymizeSensitive"
+    static let betaUpdates = "betaUpdates"
     static let transcriptLayout = "transcriptLayout"
 }
 

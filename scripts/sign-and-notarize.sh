@@ -25,9 +25,21 @@ security import "$RUNNER_TEMP/cert.p12" -P "$MACOS_CERTIFICATE_PASSWORD" -A -t c
 security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
 security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
 
-codesign --force --deep --options runtime --timestamp \
-  --entitlements Transkribera/Resources/Transkribera.entitlements \
-  --sign "$MACOS_SIGNING_IDENTITY" "$APP"
+sign() { codesign --force --options runtime --timestamp --sign "$MACOS_SIGNING_IDENTITY" "$@"; }
+
+# Sparkle: inifrån och ut, utan --deep, och Downloader.xpc behåller sina egna rättigheter.
+SPARKLE="$APP/Contents/Frameworks/Sparkle.framework"
+if [[ -d "$SPARKLE" ]]; then
+  sign "$SPARKLE/Versions/B/XPCServices/Installer.xpc"
+  sign --preserve-metadata=entitlements "$SPARKLE/Versions/B/XPCServices/Downloader.xpc"
+  sign "$SPARKLE/Versions/B/Autoupdate"
+  sign "$SPARKLE/Versions/B/Updater.app"
+  sign "$SPARKLE"
+fi
+# Övriga inbäddade ramverk och bibliotek.
+find "$APP/Contents/Frameworks" -maxdepth 1 \( -name "*.framework" -o -name "*.dylib" \) ! -name "Sparkle.framework" -print0 2>/dev/null \
+  | while IFS= read -r -d '' item; do sign "$item"; done
+sign --entitlements Transkribera/Resources/Transkribera.entitlements "$APP"
 codesign --verify --strict --verbose=2 "$APP"
 
 if [[ -n "${APPLE_ID:-}" && -n "${APPLE_APP_PASSWORD:-}" && -n "${APPLE_TEAM_ID:-}" ]]; then

@@ -10,6 +10,8 @@ struct SettingsView: View {
                 .tabItem { Label("Modeller", systemImage: "cpu") }
             PrivacySettingsView()
                 .tabItem { Label("Integritet", systemImage: "hand.raised") }
+            UpdateSettingsView()
+                .tabItem { Label("Uppdateringar", systemImage: "arrow.triangle.2.circlepath") }
         }
         .frame(width: 520)
         .padding(20)
