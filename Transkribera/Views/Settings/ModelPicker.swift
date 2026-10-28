@@ -96,7 +96,8 @@ struct ModelInfoRow: View {
                 Meter(label: "Fart", value: model.speed)
                 Meter(label: "Svenska", value: model.swedishAccuracy)
                 Spacer()
-                Text(isDownloaded ? "Nedladdad" : "Laddas ner vid första användningen")
+                Label(isDownloaded ? "Finns på datorn" : "Laddas ner automatiskt första gången",
+                      systemImage: isDownloaded ? "checkmark.circle.fill" : "arrow.down.circle")
                     .font(.caption2)
                     .foregroundStyle(isDownloaded ? .green : .secondary)
             }

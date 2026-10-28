@@ -11,11 +11,11 @@ enum RecordingError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .noDisplay:
-            return "Hittade ingen skärm att spela in ljud från."
+            return "Hittade ingen skärm att spela in ljud från. Kontrollera att en bildskärm är ansluten."
         case .nothingRecorded:
-            return "Inget ljud spelades in."
+            return "Inget ljud spelades in. Kontrollera att ljud faktiskt spelades upp på datorn under inspelningen."
         case .permissionDenied:
-            return "Transkribera saknar behörighet. Öppna Systeminställningar › Integritet och säkerhet › Skärm- och systemljudsinspelning och slå på Transkribera."
+            return "Transkribera behöver tillåtelse att spela in datorns ljud. Slå på Transkribera under Systeminställningar › Integritet och säkerhet › Skärm- och systemljudsinspelning och försök igen."
         }
     }
 }

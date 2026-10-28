@@ -23,25 +23,44 @@ private struct TranscriptionSettingsView: View {
 
     var body: some View {
         Form {
-            Picker("Språk", selection: $language) {
-                ForEach(Language.all) { language in
-                    Text(language.name).tag(language.id)
+            Section {
+                Picker("Språk", selection: $language) {
+                    ForEach(Language.all) { language in
+                        Text(language.name).tag(language.id)
+                    }
                 }
+                Picker("Resultat", selection: $task) {
+                    Text("Text på originalspråket").tag("transcribe")
+                    Text("Översätt till engelska").tag("translate")
+                }
+            } footer: {
+                Text("Välj språket som talas. Automatiskt fungerar oftast, men ett angivet språk ger säkrare resultat. Inställningarna gäller nya transkriberingar.")
+                    .foregroundStyle(.secondary)
             }
-            Picker("Uppgift", selection: $task) {
-                Text("Transkribera (samma språk)").tag("transcribe")
-                Text("Översätt till engelska").tag("translate")
+
+            Section {
+                Toggle("Skilj på vem som pratar", isOn: $identifySpeakers)
+            } footer: {
+                Text("Märker texten med Talare 1, Talare 2 … som du kan byta namn på. Laddar ner en extra modell (cirka 30 MB) första gången och tar lite längre tid.")
+                    .foregroundStyle(.secondary)
             }
-            Toggle("Identifiera talare (SpeakerKit)", isOn: $identifySpeakers)
-            Text("Laddar ner en extra modell (~30 MB) första gången och tar lite längre tid.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Toggle("Tidsstämplar per ord", isOn: $wordTimestamps)
-            Text("Behövs för att markera ordet som spelas upp och för att dela långa undertexter.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+
+            Section {
+                Toggle("Tidsstämplar per ord", isOn: $wordTimestamps)
+            } footer: {
+                Text("Gör att ordet som spelas upp markeras i texten och att långa undertexter delas upp bättre vid export.")
+                    .foregroundStyle(.secondary)
+            }
+
             if MeetingRecorder.supportsMicrophone {
-                Toggle("Spela in mikrofonen vid mötesinspelning", isOn: $recordMicrophone)
+                Section {
+                    Toggle("Spela även in min mikrofon", isOn: $recordMicrophone)
+                } header: {
+                    Text("Mötesinspelning")
+                } footer: {
+                    Text("Ta med din egen röst. Annars spelas bara datorns ljud in, alltså de andra deltagarna.")
+                        .foregroundStyle(.secondary)
+                }
             }
         }
         .formStyle(.grouped)
@@ -56,22 +75,28 @@ private struct ModelSettingsView: View {
     var body: some View {
         let transcriber = queue.transcriber
         Form {
-            LabeledContent("Standardmodell") {
-                ModelPicker(selection: $modelRaw)
-                    .frame(maxWidth: 260)
+            Section {
+                LabeledContent("Modell") {
+                    ModelPicker(selection: $modelRaw)
+                        .frame(maxWidth: 260)
+                }
+            } footer: {
+                Text("KB-modellerna är bäst på svenska. Välj en OpenAI-modell för andra språk. Modellen laddas ner automatiskt första gången den används.")
+                    .foregroundStyle(.secondary)
             }
 
             ForEach(WhisperModel.Family.allCases) { family in
-                Section(family.title) {
+                Section {
                     ForEach(family.models) { model in
                         HStack(alignment: .top, spacing: 12) {
                             ModelInfoRow(model: model, isDownloaded: transcriber.isDownloaded(model))
                             if transcriber.isDownloaded(model) {
-                                Button("Radera", role: .destructive) {
+                                Button("Ta bort", role: .destructive) {
                                     transcriber.deleteDownloadedModel(model)
                                     refresh += 1
                                 }
                                 .disabled(transcriber.isBusy)
+                                .help("Frigör utrymme. Modellen laddas ner igen om du använder den.")
                             } else {
                                 Button("Ladda ner") {
                                     Task {
@@ -80,24 +105,29 @@ private struct ModelSettingsView: View {
                                     }
                                 }
                                 .disabled(transcriber.isBusy)
+                                .help("Hämta modellen nu så att den är redo direkt")
                             }
                         }
                     }
                     .id(refresh)
-                }
-            }
-
-            if transcriber.isBusy {
-                HStack {
-                    ProgressView().controlSize(.small)
-                    Text(transcriber.statusText).font(.caption)
+                } header: {
+                    Text(family.title)
                 }
             }
 
             Section {
+                if transcriber.isBusy {
+                    HStack {
+                        ProgressView().controlSize(.small)
+                        Text(transcriber.statusText).font(.caption)
+                    }
+                }
                 Button("Visa modellmappen i Finder") {
                     NSWorkspace.shared.activateFileViewerSelecting([AppPaths.modelsDirectory])
                 }
+            } footer: {
+                Text("Modellerna sparas på din Mac. Ta bort dem du inte använder för att frigöra utrymme.")
+                    .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)

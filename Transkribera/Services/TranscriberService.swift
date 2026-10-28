@@ -54,8 +54,8 @@ final class TranscriberService {
         switch phase {
         case .idle: return loadedModel.map { "\($0.displayName) är redo" } ?? "Redo"
         case .downloadingModel(let fraction): return "Laddar ner modell… \(Int(fraction * 100)) %"
-        case .loadingModel: return "Laddar modell (första gången kan ta några minuter)…"
-        case .preparingAudio: return "Förbereder ljud…"
+        case .loadingModel: return "Förbereder modellen (första gången kan ta några minuter)…"
+        case .preparingAudio: return "Läser in ljudet…"
         case .transcribing(let fraction): return "Transkriberar… \(Int(fraction * 100)) %"
         case .identifyingSpeakers: return "Identifierar talare…"
         case .failed(let message): return "Fel: \(message)"

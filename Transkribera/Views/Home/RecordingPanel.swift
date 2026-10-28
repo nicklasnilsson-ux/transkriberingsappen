@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import TranskriberaCore
 
@@ -30,18 +31,22 @@ struct RecordingPanel: View {
                 Button {
                     Task { await toggle() }
                 } label: {
-                    Text(recorder.isRecording ? "Stoppa och transkribera" : "Starta mötesinspelning")
+                    Text(recorder.isRecording ? "Stoppa och transkribera" : "Starta inspelning")
                         .frame(minWidth: 170)
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(recorder.isRecording ? Color.red : Color.accentColor)
                 .controlSize(.large)
                 .disabled(recorder.state == .starting || recorder.state == .finishing)
+                .help(recorder.isRecording
+                      ? "Avslutar inspelningen och börjar transkribera den"
+                      : "Spelar in allt ljud som hörs på datorn tills du stoppar")
             }
 
             if MeetingRecorder.supportsMicrophone {
                 Toggle("Spela även in min mikrofon", isOn: $recordMicrophone)
                     .disabled(recorder.isBusy)
+                    .help("Ta med din egen röst. Annars spelas bara datorns ljud in, alltså de andra deltagarna.")
             }
 
             if let error = recorder.errorMessage {
@@ -49,6 +54,13 @@ struct RecordingPanel: View {
                     .font(.callout)
                     .foregroundStyle(.orange)
                     .fixedSize(horizontal: false, vertical: true)
+                if error == RecordingError.permissionDenied.errorDescription {
+                    Button("Öppna Systeminställningar") {
+                        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
+                            NSWorkspace.shared.open(url)
+                        }
+                    }
+                }
             }
         }
         .padding(18)
@@ -59,9 +71,9 @@ struct RecordingPanel: View {
     private var statusText: some View {
         switch recorder.state {
         case .idle:
-            Text("Spelar in datorns ljud, t.ex. ett Google Meet- eller Teams-möte.")
+            Text("Spelar in datorns ljud, t.ex. ett Teams- eller Meet-möte, och transkriberar när du stoppar.")
         case .starting:
-            Text("Startar…")
+            Text("Startar inspelningen…")
         case .recording(let since):
             TimelineView(.periodic(from: since, by: 1)) { context in
                 Text("Spelar in · \(TimeFormatting.short(context.date.timeIntervalSince(since)))")

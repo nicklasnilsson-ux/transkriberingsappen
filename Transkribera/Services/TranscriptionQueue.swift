@@ -36,7 +36,7 @@ final class TranscriptionQueue {
 
         for url in urls {
             guard MediaStore.isSupported(url) else {
-                rejected.append(url.lastPathComponent)
+                rejected.append("\(url.lastPathComponent) (formatet stöds inte)")
                 continue
             }
             do {
@@ -53,7 +53,7 @@ final class TranscriptionQueue {
         }
 
         if !rejected.isEmpty {
-            importError = "Kunde inte importera: " + rejected.joined(separator: ", ")
+            importError = rejected.joined(separator: "\n")
         }
         return first
     }
