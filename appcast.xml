@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='utf-8'?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+  <channel>
+    <title>Transkribera</title>
+    <link>https://github.com/nicklasnilsson-ux/transkriberingsappen</link>
+    <description>Uppdateringar för Transkribera</description>
+    <language>sv</language>
+    <item>
+      <title>Version 0.4.0</title>
+      <pubDate>Wed, 28 Oct 2026 20:05:06 GMT</pubDate>
+      <sparkle:version>4</sparkle:version>
+      <sparkle:shortVersionString>0.4.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.4.0</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;What&amp;#x27;s Changed&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Visa transkriberingen som stycken per talare som standard by @nicklasnilsson-ux in &lt;a href="https://github.com/nicklasnilsson-ux/transkriberingsappen/pull/10"&gt;https://github.com/nicklasnilsson-ux/transkriberingsappen/pull/10&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Automatiska uppdateringar med Sparkle och betakanal (0.4.0) by @nicklasnilsson-ux in &lt;a href="https://github.com/nicklasnilsson-ux/transkriberingsappen/pull/11"&gt;https://github.com/nicklasnilsson-ux/transkriberingsappen/pull/11&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;b&gt;Full Changelog&lt;/b&gt;: &lt;a href="https://github.com/nicklasnilsson-ux/transkriberingsappen/compare/v0.3.0...v0.4.0"&gt;https://github.com/nicklasnilsson-ux/transkriberingsappen/compare/v0.3.0...v0.4.0&lt;/a&gt;&lt;/p&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.4.0/Transkribera-v0.4.0.zip" length="2829421" type="application/octet-stream" sparkle:edSignature="Ny7OUEO+1KBrHn3iO83OQNLI8ckMa+BT/rqXsVEV1kUrE+Y0twJPb/WLbBB02YPoXVns9lokfQXleyVXrXi/Cw==" />
+    </item>
+  </channel>
+</rss>
