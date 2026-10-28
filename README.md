@@ -67,11 +67,14 @@ scripts/                        Bygg, signera/notarisera och skapa .dmg
 .github/workflows/build.yml     CI: testar, bygger och publicerar .dmg
 .github/workflows/kb-whisper-models.yml  CI: konverterar KB-Whisper till CoreML och publicerar dem
 docs/PLAN.md                    Projektplanen (reviderad)
+docs/RELEASE.md                 Releaseprocess, betakanal och testning
 ```
 
 ## Releaser och signering
 
 Varje push och pull request byggs på GitHub Actions (macOS 15) och en `.dmg` laddas upp som artefakt. En GitHub Release med `.dmg`-filen skapas automatiskt när `main` får en ny version, det vill säga när `MARKETING_VERSION` i `project.yml` ändras till en version som inte släppts än. Det går också att pusha en tagg som `v0.2.0`.
+
+Från version 0.4.0 uppdaterar appen sig själv med [Sparkle](https://sparkle-project.org). Releasen lägger in den nya versionen, signerad med EdDSA-nyckeln i secreten `SPARKLE_PRIVATE_KEY`, i appcasten på branchen [`appcast`](../../tree/appcast). Betaversioner släpps från *Actions → Bygg → Run workflow → beta*. Hela processen, med testning, står i [docs/RELEASE.md](docs/RELEASE.md).
 
 Appen är *ad hoc*-signerad tills följande repo-secrets läggs in, då signeras och notariseras den automatiskt så att varningen ovan försvinner (kräver Apple Developer Program):
 

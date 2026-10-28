@@ -15,3 +15,4 @@ dist/
 # Genereras av XcodeGen från project.yml
 Transkribera/Resources/Info.plist
 Transkribera/Resources/Transkribera.entitlements
+__pycache__/

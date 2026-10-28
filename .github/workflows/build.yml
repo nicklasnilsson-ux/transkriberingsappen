@@ -6,12 +6,19 @@ on:
     tags: ["v*"]
   pull_request:
   workflow_dispatch:
+    inputs:
+      channel:
+        description: "Släpp som beta (bara för den som valt betaversioner i appen)"
+        type: choice
+        options: [inget, beta]
+        default: inget
 
 permissions:
   contents: write
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # En betaversion (manuell körning) ska inte avbryta bygget av main och tvärtom.
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 
 jobs:
@@ -42,27 +49,68 @@ jobs:
           key: spm-${{ runner.os }}-${{ hashFiles('project.yml') }}
           restore-keys: spm-${{ runner.os }}-
 
-      - name: Bygg appen
-        run: ./scripts/build-app.sh
-
       - name: Versionsnamn
         id: version
         env:
           GH_TOKEN: ${{ github.token }}
+          INPUT_CHANNEL: ${{ inputs.channel }}
         run: |
-          VERSION="v$(sed -n 's/^ *MARKETING_VERSION: *"\{0,1\}\([0-9.]*\)"\{0,1\}/\1/p' project.yml | head -1)"
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
-            echo "name=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
-            echo "release=true" >> "$GITHUB_OUTPUT"
-          elif [[ "$GITHUB_EVENT_NAME" == "push" && "$GITHUB_REF" == "refs/heads/main" ]] \
-               && ! gh release view "$VERSION" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+          MARKETING="$(sed -n 's/^ *MARKETING_VERSION: *"\{0,1\}\([0-9.]*\)"\{0,1\}/\1/p' project.yml | head -1)"
+          BUILD="$(sed -n 's/^ *CURRENT_PROJECT_VERSION: *"\{0,1\}\([0-9]*\)"\{0,1\}/\1/p' project.yml | head -1)"
+          released() { gh release view "$1" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; }
+          channel=stable release=false short="$MARKETING" build="$BUILD"
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" && "$INPUT_CHANNEL" == "beta" ]]; then
+            # Beta av kommande version: byggnumret hamnar mellan förra och nästa stabila version,
+            # t.ex. 3.42 mellan 3 och 4, så att den stabila versionen sedan ersätter betan.
+            if released "v$MARKETING"; then
+              echo "::error::v$MARKETING är redan släppt. Höj MARKETING_VERSION och CURRENT_PROJECT_VERSION i project.yml innan du släpper en beta."
+              exit 1
+            fi
+            channel=beta release=true
+            short="$MARKETING-beta.$GITHUB_RUN_NUMBER"
+            build="$((BUILD - 1)).$GITHUB_RUN_NUMBER"
+            name="v$short"
+          elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            name="$GITHUB_REF_NAME" release=true
+          elif [[ "$GITHUB_EVENT_NAME" == "push" && "$GITHUB_REF" == "refs/heads/main" ]] && ! released "v$MARKETING"; then
             # Ny version i project.yml som inte släppts än → publicera release automatiskt.
-            echo "name=${VERSION}" >> "$GITHUB_OUTPUT"
-            echo "release=true" >> "$GITHUB_OUTPUT"
+            name="v$MARKETING" release=true
           else
-            echo "name=dev-$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
-            echo "release=false" >> "$GITHUB_OUTPUT"
+            name="dev-$(git rev-parse --short HEAD)"
           fi
+          {
+            echo "name=$name"
+            echo "release=$release"
+            echo "channel=$channel"
+            echo "short=$short"
+            echo "build=$build"
+          } >> "$GITHUB_OUTPUT"
+          echo "Version: $name ($short, bygge $build, kanal $channel, release $release)"
+
+      - name: Python för releaseskripten
+        run: |
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install --quiet cryptography
+          echo "PYTHON=$RUNNER_TEMP/venv/bin/python" >> "$GITHUB_ENV"
+
+      - name: Tester för releaseskripten
+        run: $PYTHON -m unittest discover -s scripts
+
+      - name: Kontrollera byggnumret mot appcasten
+        if: steps.version.outputs.release == 'true'
+        run: |
+          if git fetch --quiet origin appcast 2>/dev/null; then
+            git show FETCH_HEAD:appcast.xml > "$RUNNER_TEMP/appcast.xml"
+            $PYTHON scripts/appcast.py check "$RUNNER_TEMP/appcast.xml" --version "${{ steps.version.outputs.build }}"
+          else
+            echo "Ingen appcast än."
+          fi
+
+      - name: Bygg appen
+        env:
+          MARKETING_VERSION_OVERRIDE: ${{ steps.version.outputs.short }}
+          BUILD_NUMBER_OVERRIDE: ${{ steps.version.outputs.build }}
+        run: ./scripts/build-app.sh
 
       - name: Signera och notarisera (om certifikat finns)
         env:
@@ -99,9 +147,25 @@ jobs:
           tag_name: ${{ steps.version.outputs.name }}
           name: Transkribera ${{ steps.version.outputs.name }}
           target_commitish: ${{ github.sha }}
-          files: dist/Transkribera-*.dmg
+          prerelease: ${{ steps.version.outputs.channel == 'beta' }}
+          make_latest: ${{ steps.version.outputs.channel == 'beta' && 'false' || 'true' }}
+          files: |
+            dist/Transkribera-*.dmg
+            dist/Transkribera-*.zip
           generate_release_notes: true
           body: |
+            ${{ steps.version.outputs.channel == 'beta' && '**Betaversion.** Kan innehålla fel. Välj *Inställningar → Uppdateringar → Få betaversioner* i appen för att få betor automatiskt.' || '' }}
+
             Ladda ner **Transkribera-${{ steps.version.outputs.name }}.dmg** nedan, öppna den och dra Transkribera till Program.
             Kräver en Mac med Apple Silicon (M1 eller senare) och macOS 14 Sonoma eller senare.
             Är appen osignerad: se [README](https://github.com/${{ github.repository }}#installera) för hur du öppnar den första gången.
+            Har du redan Transkribera 0.4.0 eller senare uppdateras appen själv.
+
+      - name: Uppdatera appcast (automatiska uppdateringar)
+        if: steps.version.outputs.release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          ./scripts/publish-appcast.sh "${{ steps.version.outputs.name }}" \
+            "${{ steps.version.outputs.short }}" "${{ steps.version.outputs.build }}" "${{ steps.version.outputs.channel }}"

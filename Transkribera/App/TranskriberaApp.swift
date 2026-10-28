@@ -7,6 +7,7 @@ struct TranskriberaApp: App {
     @State private var appState = AppState()
     @State private var queue: TranscriptionQueue
     @State private var recorder = MeetingRecorder()
+    @StateObject private var updater = AppUpdater()
 
     init() {
         let schema = Schema([Transcript.self, TranscriptSegment.self])
@@ -29,6 +30,9 @@ struct TranskriberaApp: App {
         }
         .modelContainer(container)
         .commands {
+            CommandGroup(after: .appInfo) {
+                CheckForUpdatesButton(updater: updater)
+            }
             CommandGroup(replacing: .newItem) {
                 Button("Ny transkribering") { appState.selection = nil }
                     .keyboardShortcut("n")
@@ -44,6 +48,17 @@ struct TranskriberaApp: App {
         Settings {
             SettingsView()
                 .environment(queue)
+                .environmentObject(updater)
         }
+    }
+}
+
+/// Menyvalet "Sök efter uppdateringar…" i appmenyn.
+private struct CheckForUpdatesButton: View {
+    @ObservedObject var updater: AppUpdater
+
+    var body: some View {
+        Button("Sök efter uppdateringar…") { updater.checkForUpdates() }
+            .disabled(!updater.canCheckForUpdates)
     }
 }
