@@ -37,18 +37,21 @@ actor ParakeetTranscriber {
         loadedFolder = nil
     }
 
-    /// Transkriberar 16 kHz mono-ljud. `progress` får andelen klar (0–1) och senaste texten.
+    /// Transkriberar 16 kHz mono-ljud. `progress` får andelen klar (0–1) och, om den finns, senaste texten.
     func transcribe(
         samples: [Float],
         progress: @escaping @Sendable (Double, String) -> Void
     ) async throws -> [SegmentData] {
         guard let manager else { throw TranscriberError.notLoaded }
 
-        await manager.setWindowHandler { window in
-            let fraction = window.windowCount > 0 ? Double(window.index + 1) / Double(window.windowCount) : 0
-            progress(min(1, fraction), window.text)
+        // FluidAudio rapporterar bara andel klar (för ljud över ca 15 s), ingen löpande text.
+        let stream = await manager.transcriptionProgressStream
+        let watcher = Task {
+            do {
+                for try await fraction in stream { progress(min(1, fraction), "") }
+            } catch {}
         }
-        defer { Task { await manager.setWindowHandler(nil) } }
+        defer { watcher.cancel() }
 
         let layers = await manager.decoderLayerCount
         var state = try TdtDecoderState(decoderLayers: layers)
