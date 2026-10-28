@@ -50,6 +50,8 @@ jobs:
     if: needs.check.outputs.missing != '[]'
     strategy:
       fail-fast: false
+      # Lämna macOS-runners över till appbyggena i andra PR:er.
+      max-parallel: 2
       matrix:
         size: ${{ fromJSON(needs.check.outputs.missing) }}
     runs-on: macos-15
