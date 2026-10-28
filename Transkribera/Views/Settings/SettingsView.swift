@@ -86,7 +86,7 @@ private struct PrivacySettingsView: View {
 
             Section {
                 Toggle("Namn på personer, platser och organisationer", isOn: $names)
-                Toggle("Personnummer, telefon, e-post, adresser, kontonummer och regnummer", isOn: $identifiers)
+                Toggle("Personnummer, telefon, e-post, adresser, konto- och kortnummer, regnummer", isOn: $identifiers)
                 Toggle("Hälsa, religion, politisk åsikt m.m.", isOn: $sensitive)
             } header: {
                 Text("Vad som döljs")
