@@ -12,16 +12,19 @@ struct TranscriptionOutput {
 
 enum TranscriberError: LocalizedError {
     case emptyAudio
+    case modelNotLoaded
 
     var errorDescription: String? {
         switch self {
         case .emptyAudio: return "Filen innehåller inget ljud som går att transkribera."
+        case .modelNotLoaded: return "Modellen kunde inte läsas in. Försök igen."
         }
     }
 }
 
-/// Sköter nedladdning/laddning av Whisper-modellen och körningen av själva
-/// transkriberingen. Allt körs lokalt på datorn med WhisperKit (CoreML).
+/// Sköter nedladdning/laddning av modellen och körningen av själva transkriberingen.
+/// Allt körs lokalt på datorn: Whisper-modellerna med WhisperKit och Pianissimo med
+/// FluidAudio (båda CoreML).
 @MainActor
 @Observable
 final class TranscriberService {
@@ -42,6 +45,7 @@ final class TranscriberService {
 
     @ObservationIgnored private var whisperKit: WhisperKit?
     @ObservationIgnored private var speakerKit: SpeakerKit?
+    @ObservationIgnored private let parakeet = ParakeetTranscriber()
 
     var isBusy: Bool {
         switch phase {
@@ -80,13 +84,19 @@ final class TranscriberService {
         case .kbRelease:
             return AppPaths.modelsDirectory
                 .appending(path: "kb-whisper/\(model.rawValue)", directoryHint: .isDirectory)
+        case .pianissimoRelease:
+            return AppPaths.modelsDirectory
+                .appending(path: "pianissimo/\(model.rawValue)", directoryHint: .isDirectory)
         }
     }
 
     func isDownloaded(_ model: WhisperModel) -> Bool {
         let folder = Self.localFolder(for: model)
-        return ["AudioEncoder", "TextDecoder", "MelSpectrogram"].allSatisfy { name in
-            FileManager.default.fileExists(atPath: folder.appending(path: "\(name).mlmodelc").path)
+        let files = model.usesParakeet
+            ? ParakeetTranscriber.requiredFiles
+            : ["AudioEncoder", "TextDecoder", "MelSpectrogram"].map { "\($0).mlmodelc" }
+        return files.allSatisfy { name in
+            FileManager.default.fileExists(atPath: folder.appending(path: name).path)
         }
     }
 
@@ -94,73 +104,82 @@ final class TranscriberService {
         if loadedModel == model {
             whisperKit = nil
             loadedModel = nil
+            let parakeet = parakeet
+            Task { await parakeet.unload() }
         }
         try? FileManager.default.removeItem(at: Self.localFolder(for: model))
     }
 
     /// Laddar ner (vid behov) och laddar in modellen i minnet.
-    @discardableResult
-    func prepare(model: WhisperModel) async throws -> WhisperKit {
-        if let whisperKit, loadedModel == model {
-            return whisperKit
-        }
+    func prepare(model: WhisperModel) async throws {
+        if loadedModel == model, model.usesParakeet || whisperKit != nil { return }
         if let previous = whisperKit {
             await previous.unloadModels()
         }
         whisperKit = nil
+        await parakeet.unload()
         loadedModel = nil
 
         do {
-            let folder: URL
-            if isDownloaded(model) {
-                folder = Self.localFolder(for: model)
-            } else {
-                phase = .downloadingModel(fraction: 0)
-                let report: @Sendable (Double) -> Void = { [weak self] fraction in
-                    Task { @MainActor in
-                        guard let self, case .downloadingModel = self.phase else { return }
-                        self.phase = .downloadingModel(fraction: fraction)
-                    }
-                }
-                switch model.source {
-                case .whisperKit(let variant):
-                    folder = try await WhisperKit.download(
-                        variant: variant,
-                        downloadBase: AppPaths.modelsDirectory,
-                        progressCallback: { progress in report(progress.fractionCompleted) }
-                    )
-                case .kbRelease(let asset):
-                    folder = Self.localFolder(for: model)
-                    try await ModelDownloader.download(asset: asset, to: folder, progress: report)
-                }
-            }
-
+            let folder = try await downloadIfNeeded(model)
             phase = .loadingModel
-            let config = WhisperKitConfig(
-                model: model.rawValue,
-                downloadBase: AppPaths.modelsDirectory,
-                modelFolder: folder.path,
-                tokenizerFolder: AppPaths.modelsDirectory,
-                verbose: false,
-                logLevel: .error,
-                prewarm: true,
-                load: true,
-                download: false
-            )
-            let kit = try await WhisperKit(config)
-            whisperKit = kit
+            if model.usesParakeet {
+                try await parakeet.load(folder: folder)
+            } else {
+                let config = WhisperKitConfig(
+                    model: model.rawValue,
+                    downloadBase: AppPaths.modelsDirectory,
+                    modelFolder: folder.path,
+                    tokenizerFolder: AppPaths.modelsDirectory,
+                    verbose: false,
+                    logLevel: .error,
+                    prewarm: true,
+                    load: true,
+                    download: false
+                )
+                whisperKit = try await WhisperKit(config)
+            }
             loadedModel = model
             phase = .idle
-            return kit
         } catch {
             phase = .failed(error.localizedDescription)
             throw error
         }
     }
 
+    private func downloadIfNeeded(_ model: WhisperModel) async throws -> URL {
+        if isDownloaded(model) { return Self.localFolder(for: model) }
+
+        phase = .downloadingModel(fraction: 0)
+        let report: @Sendable (Double) -> Void = { [weak self] fraction in
+            Task { @MainActor in
+                guard let self, case .downloadingModel = self.phase else { return }
+                self.phase = .downloadingModel(fraction: fraction)
+            }
+        }
+        switch model.source {
+        case .whisperKit(let variant):
+            return try await WhisperKit.download(
+                variant: variant,
+                downloadBase: AppPaths.modelsDirectory,
+                progressCallback: { progress in report(progress.fractionCompleted) }
+            )
+        case .kbRelease(let asset):
+            let folder = Self.localFolder(for: model)
+            try await ModelDownloader.download(asset: asset, to: folder, progress: report)
+            return folder
+        case .pianissimoRelease(let asset):
+            let folder = Self.localFolder(for: model)
+            try await ModelDownloader.download(
+                asset: asset, release: ModelDownloader.pianissimoRelease, to: folder, progress: report
+            )
+            return folder
+        }
+    }
+
     // MARK: - Transkribering
 
-    /// Transkriberar en mediefil. `onSegments` anropas löpande med de segment som hittats hittills.
+    /// Transkriberar en mediefil. Texten som hittats hittills visas löpande i `liveText`.
     func transcribe(
         fileURL: URL,
         duration: Double,
@@ -168,7 +187,7 @@ final class TranscriberService {
     ) async throws -> TranscriptionOutput {
         liveText = ""
         do {
-            let kit = try await prepare(model: options.model)
+            try await prepare(model: options.model)
 
             phase = .preparingAudio
             let samples = try await AudioLoader.loadSamples(from: fileURL)
@@ -176,31 +195,11 @@ final class TranscriberService {
             let totalSeconds = max(duration, Double(samples.count) / AudioLoader.sampleRate)
 
             phase = .transcribing(fraction: 0)
-            let decodeOptions = DecodingOptions(
-                task: options.translateToEnglish ? .translate : .transcribe,
-                language: options.languageCode,
-                temperatureFallbackCount: 3,
-                usePrefillPrompt: true,
-                detectLanguage: options.languageCode == nil,
-                skipSpecialTokens: true,
-                withoutTimestamps: false,
-                wordTimestamps: options.wordTimestamps || options.identifySpeakers,
-                promptTokens: Self.promptTokens(for: options.vocabulary, tokenizer: kit.tokenizer),
-                // Tystnad klipps redan bort av VAD-uppdelningen. Spärrarna nedan kastar annars
-                // bort hela 30-sekundersfönster när en svag röst gör modellen osäker.
-                firstTokenLogProbThreshold: nil,
-                noSpeechThreshold: nil,
-                chunkingStrategy: .vad
-            )
-
-            let results = try await kit.transcribe(
-                audioArray: samples,
-                decodeOptions: decodeOptions,
-                callback: nil,
-                segmentCallback: { [weak self] segments in
-                    guard let last = segments.last else { return }
-                    let fraction = min(1, Double(last.end) / totalSeconds)
-                    let text = TextCleaning.clean(last.text)
+            var segments: [SegmentData]
+            let language: String?
+            if options.model.usesParakeet {
+                segments = try await parakeet.transcribe(samples: samples) { [weak self] fraction, text in
+                    let text = TextCleaning.clean(text)
                     Task { @MainActor in
                         guard let self else { return }
                         if case .transcribing(let current) = self.phase, fraction > current {
@@ -209,20 +208,23 @@ final class TranscriberService {
                         if !text.isEmpty { self.liveText = text }
                     }
                 }
-            )
+                language = "sv"
+            } else {
+                guard let kit = whisperKit else { throw TranscriberError.modelNotLoaded }
+                let results = try await whisperTranscribe(kit: kit, samples: samples, totalSeconds: totalSeconds, options: options)
+                segments = Self.segments(from: results)
+                language = options.languageCode ?? results.first?.language
+            }
 
-            var segments: [SegmentData]
             if options.identifySpeakers {
                 phase = .identifyingSpeakers
-                segments = try await diarizedSegments(samples: samples, results: results, numberOfSpeakers: options.numberOfSpeakers)
-            } else {
-                segments = Self.segments(from: results)
+                segments = try await diarizedSegments(samples: samples, segments: segments, numberOfSpeakers: options.numberOfSpeakers)
             }
             segments = segments.filter { !TextCleaning.isNonSpeechMarker($0.text) }
 
             phase = .idle
             liveText = ""
-            return TranscriptionOutput(segments: segments, language: options.languageCode ?? results.first?.language)
+            return TranscriptionOutput(segments: segments, language: language)
         } catch {
             if error is CancellationError {
                 phase = .idle
@@ -232,6 +234,48 @@ final class TranscriberService {
             liveText = ""
             throw error
         }
+    }
+
+    private func whisperTranscribe(
+        kit: WhisperKit,
+        samples: [Float],
+        totalSeconds: Double,
+        options: TranscriptionOptions
+    ) async throws -> [TranscriptionResult] {
+        let decodeOptions = DecodingOptions(
+            task: options.translateToEnglish ? .translate : .transcribe,
+            language: options.languageCode,
+            temperatureFallbackCount: 3,
+            usePrefillPrompt: true,
+            detectLanguage: options.languageCode == nil,
+            skipSpecialTokens: true,
+            withoutTimestamps: false,
+            wordTimestamps: options.wordTimestamps || options.identifySpeakers,
+            promptTokens: Self.promptTokens(for: options.vocabulary, tokenizer: kit.tokenizer),
+            // Tystnad klipps redan bort av VAD-uppdelningen. Spärrarna nedan kastar annars
+            // bort hela 30-sekundersfönster när en svag röst gör modellen osäker.
+            firstTokenLogProbThreshold: nil,
+            noSpeechThreshold: nil,
+            chunkingStrategy: .vad
+        )
+
+        return try await kit.transcribe(
+            audioArray: samples,
+            decodeOptions: decodeOptions,
+            callback: nil,
+            segmentCallback: { [weak self] segments in
+                guard let last = segments.last else { return }
+                let fraction = min(1, Double(last.end) / totalSeconds)
+                let text = TextCleaning.clean(last.text)
+                Task { @MainActor in
+                    guard let self else { return }
+                    if case .transcribing(let current) = self.phase, fraction > current {
+                        self.phase = .transcribing(fraction: fraction)
+                    }
+                    if !text.isEmpty { self.liveText = text }
+                }
+            }
+        )
     }
 
     // MARK: - Ordlista
@@ -275,7 +319,7 @@ final class TranscriberService {
 
     // MARK: - Talaridentifiering (SpeakerKit)
 
-    private func diarizedSegments(samples: [Float], results: [TranscriptionResult], numberOfSpeakers: Int?) async throws -> [SegmentData] {
+    private func diarizedSegments(samples: [Float], segments: [SegmentData], numberOfSpeakers: Int?) async throws -> [SegmentData] {
         let kit: SpeakerKit
         if let speakerKit {
             kit = speakerKit
@@ -297,9 +341,9 @@ final class TranscriberService {
         }
 
         // Talare sätts per ord, så att repliker utan paus emellan ändå delas upp rätt.
-        let segments = SpeakerAssignment.assign(Self.segments(from: results), turns: turns)
+        let assigned = SpeakerAssignment.assign(segments, turns: turns)
 
-        // Om diariseringen inte gav något (t.ex. inga ordtidsstämplar) – fall tillbaka.
-        return segments.contains { $0.speaker != nil } ? segments : Self.segments(from: results)
+        // Om diariseringen inte gav något – behåll segmenten utan talare.
+        return assigned.contains { $0.speaker != nil } ? assigned : segments
     }
 }

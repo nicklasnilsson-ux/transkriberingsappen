@@ -145,7 +145,7 @@ private struct ModelAdvice: View {
 struct ModelSourceNote: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text("Felsiffrorna är KBLab:s mätningar på det svenska testet FLEURS. Riktigt ljud med brus eller dialekt ger fler fel för alla modeller, men ordningen mellan dem brukar hålla.")
+            Text("Felsiffrorna är KBLab:s mätningar (Pianissimo: Klangs) på det svenska testet FLEURS. Riktigt ljud med brus eller dialekt ger fler fel för alla modeller, men ordningen mellan dem brukar hålla.")
             Link("Källa: KBLab, Kungliga biblioteket", destination: URL(string: "https://kb-labb.github.io/posts/2025-03-07-welcome-KB-Whisper/")!)
         }
         .font(.caption2)
@@ -208,6 +208,12 @@ struct ModelGuideView: View {
 
                 section("Ordagrann eller vanlig",
                         "De vanliga KB-modellerna skriver som en undertext och stryker ibland upprepningar och småord. De ordagranna varianterna skriver mer exakt vad som sägs. Välj KB Large ordagrann för intervjuer där du vill kunna citera.")
+
+                section("Pianissimo: snabbast",
+                        "Pianissimo från Klang bygger inte på Whisper utan på NVIDIA:s Parakeet och är vidaretränad på omkring 50 000 timmar svenskt tal. Den gör ungefär lika få fel som KB Medium men är många gånger snabbare, och sätter själv punkt och stor bokstav. Välj den för långa inspelningar när tiden är viktigare än det sista ordet.")
+                Link("Pianissimo av KlangAI, licens CC BY 4.0",
+                     destination: URL(string: "https://huggingface.co/KlangAI/pianissimo-sv")!)
+                    .font(.caption)
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Fel per 100 ord på svenska").font(.headline)

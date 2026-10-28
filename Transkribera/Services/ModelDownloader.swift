@@ -1,9 +1,11 @@
 import Foundation
 
-/// Laddar ner KB-Whisper-modellerna, som ligger som zip-filer i en GitHub Release
-/// (se `.github/workflows/kb-whisper-models.yml`), och packar upp dem.
+/// Laddar ner modellerna som ligger som zip-filer i GitHub Releases (se
+/// `.github/workflows/kb-whisper-models.yml` och `pianissimo-model.yml`), och packar upp dem.
 enum ModelDownloader {
-    static let releaseBaseURL = URL(string: "https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/kb-whisper-v1/")!
+    static let releasesURL = URL(string: "https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/")!
+    static let kbRelease = "kb-whisper-v1"
+    static let pianissimoRelease = "pianissimo-v1"
 
     enum DownloadError: LocalizedError {
         case httpStatus(Int)
@@ -23,10 +25,11 @@ enum ModelDownloader {
     /// en mapp med samma namn som `destination`.
     static func download(
         asset: String,
+        release: String = kbRelease,
         to destination: URL,
         progress: @escaping @Sendable (Double) -> Void
     ) async throws {
-        let url = releaseBaseURL.appending(path: asset)
+        let url = releasesURL.appending(path: release).appending(path: asset)
         let zip = try await downloadFile(from: url, progress: progress)
         defer { try? FileManager.default.removeItem(at: zip) }
 
