@@ -6,6 +6,35 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.5.0</title>
+      <pubDate>Wed, 28 Oct 2026 23:38:35 GMT</pubDate>
+      <sparkle:version>7</sparkle:version>
+      <sparkle:shortVersionString>0.5.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.5.0</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Nytt&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Talare sätts per ord, så att ett kort svar direkt efter en fråga hamnar hos rätt talare.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Du kan ange antal talare om du vet det.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Ordlista med namn och fackord som hjälper modellen att stava rätt.&lt;/li&gt;
+&lt;li&gt;KB-Whisper Medium finns i en mer ordagrann variant som stryker mindre.&lt;/li&gt;
+&lt;li&gt;Pianissimo (KlangAI) som modellval för svenska.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Förbättrat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Färre tappade meningar när någon talar svagt.&lt;/li&gt;
+&lt;li&gt;Anonymiseringen döljer personer och platser men inte organisationer eller vanliga ord,&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;och du kan ange ord som alltid eller aldrig ska döljas.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Appen säkerhetskopierar dina transkriberingar innan en ny version öppnar dem, och kraschar&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;inte längre om databasen inte går att läsa. Då sparas den undan och du får veta var.&lt;/p&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.5.0/Transkribera-v0.5.0.zip" length="13776876" type="application/octet-stream" sparkle:edSignature="Z02kGdW4xWFbpXgv70gA+xwWT1Ket0DapkQDaO4rTolaWwmCfirY/mLnCoIS2jaRn9yOUkSmuS9lr+WqGB8uAA==" />
+    </item>
+    <item>
       <title>Version 0.4.2</title>
       <pubDate>Wed, 28 Oct 2026 20:48:50 GMT</pubDate>
       <sparkle:version>6</sparkle:version>
