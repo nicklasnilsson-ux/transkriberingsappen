@@ -1,0 +1,142 @@
+name: Pianissimo-modell
+
+# Konverterar KlangAI:s svenska Pianissimo (Parakeet TDT v3) till CoreML för
+# FluidAudio och lägger den som zip i releasen "pianissimo-v1", varifrån appen
+# laddar ner den. Exporten körs på Linux (mer minne), kvantisering, kompilering
+# och ett röktest på macOS. Körs när den här filen eller skripten ändras, eller manuellt.
+
+on:
+  push:
+    paths:
+      - .github/workflows/pianissimo-model.yml
+      - scripts/pianissimo/**
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pianissimo-model
+  cancel-in-progress: false
+
+env:
+  RELEASE_TAG: pianissimo-v1
+  ASSET: pianissimo-sv.zip
+  PACKAGES_ASSET: pianissimo-sv-mlpackage.zip
+  # Fasta versioner så att resultatet går att återskapa.
+  MOBIUS_COMMIT: 26f5fa8059d5ab3d34449adce6ff6ed86734e522
+  FLUIDAUDIO_VERSION: v0.17.7
+
+jobs:
+  check:
+    name: Finns modellen redan?
+    runs-on: ubuntu-latest
+    outputs:
+      missing: ${{ steps.check.outputs.missing }}
+    steps:
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          assets=$(gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --json assets -q '.assets[].name' 2>/dev/null || true)
+          if grep -qx "$ASSET" <<<"$assets"; then
+            echo "missing=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "missing=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  export:
+    name: Exportera till CoreML (Linux)
+    needs: check
+    if: needs.check.outputs.missing == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Frigör diskutrymme
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
+
+      - uses: astral-sh/setup-uv@v6
+
+      - name: Hämta exportverktyget (mobius)
+        run: |
+          git clone https://github.com/FluidInference/mobius ../mobius
+          git -C ../mobius checkout "$MOBIUS_COMMIT"
+          cd ../mobius/models/stt/parakeet-tdt-v3-0.6b/coreml
+          uv sync
+
+      - name: Exportera
+        run: |
+          mobius="$(cd ../mobius/models/stt/parakeet-tdt-v3-0.6b/coreml && pwd)"
+          uv run --project "$mobius" python scripts/pianissimo/convert.py --mobius "$mobius" --out out
+          du -sh out/pianissimo-sv/*
+
+      - name: Lägg paketen i releasen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd out
+          zip -qr "$PACKAGES_ASSET" pianissimo-sv
+          unzip -tq "$PACKAGES_ASSET" >/dev/null
+          ls -lh "$PACKAGES_ASSET"
+          gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 \
+            || gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" \
+                 --target "$GITHUB_SHA" --prerelease --latest=false \
+                 --title "Pianissimo (CoreML)" \
+                 --notes "KlangAI:s svenska taligenkänningsmodell Pianissimo (https://huggingface.co/KlangAI/pianissimo-sv), en vidareträning av NVIDIA Parakeet TDT v3, konverterad till CoreML för FluidAudio. Appen laddar ner den automatiskt – du behöver inte ladda ner något här. Licens: CC BY 4.0 (KlangAI)." \
+            || gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null
+          gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --clobber "$PACKAGES_ASSET"
+
+  finish:
+    name: Kvantisera, kompilera och testa (macOS)
+    needs: export
+    runs-on: macos-15
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Hämta paketen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" -p "$PACKAGES_ASSET" -D in --clobber
+          unzip -q "in/$PACKAGES_ASSET" -d in
+
+      - name: Kvantisera kodaren och kompilera
+        run: |
+          pip install "coremltools==9.0b1"
+          python scripts/pianissimo/finish.py --packages in/pianissimo-sv --out out/pianissimo-sv
+          du -sh out/pianissimo-sv/*
+
+      - name: Röktest med svensk talsyntes
+        run: |
+          voice=$(say -v '?' | grep sv_SE | head -1 | awk '{print $1}')
+          if [ -z "$voice" ]; then
+            echo "Ingen svensk röst på runnern – hoppar över röktestet."
+            exit 0
+          fi
+          say -v "$voice" -o test.aiff "Hej, det här är ett test av svensk taligenkänning. Vi pratar om bruttovinst och artikelregistret."
+          afconvert -f WAVE -d LEI16@16000 test.aiff test.wav
+          git clone --depth 1 --branch "$FLUIDAUDIO_VERSION" https://github.com/FluidInference/FluidAudio ../FluidAudio
+          (cd ../FluidAudio && swift build -c release --product fluidaudiocli)
+          ../FluidAudio/.build/release/fluidaudiocli transcribe test.wav \
+            --local-model-dir out/pianissimo-sv --model-version v3 | tee transcript.txt
+          grep -qi "test" transcript.txt
+
+      - name: Publicera i ${{ env.RELEASE_TAG }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd out
+          ditto -c -k --keepParent pianissimo-sv "$ASSET"
+          unzip -tq "$ASSET" >/dev/null
+          ls -lh "$ASSET"
+          gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --clobber "$ASSET"
+          gh release delete-asset "$RELEASE_TAG" "$PACKAGES_ASSET" -R "$GITHUB_REPOSITORY" --yes
