@@ -7,7 +7,7 @@ enum AudioLoaderError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .noAudioTrack: return "Filen innehåller inget ljudspår."
+        case .noAudioTrack: return "Filen innehåller inget ljud."
         case .readFailed(let reason): return "Kunde inte läsa ljudet: \(reason)"
         }
     }

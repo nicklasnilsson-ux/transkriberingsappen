@@ -45,7 +45,7 @@ struct ContentView: View {
             }
         }
         .alert(
-            "Import misslyckades",
+            "Några filer kunde inte läggas till",
             isPresented: Binding(
                 get: { queue.importError != nil },
                 set: { if !$0 { queue.importError = nil } }

@@ -36,11 +36,14 @@ struct TranscriptionProgressView: View {
                         .transition(.opacity)
                 }
             } else {
-                Text("Väntar i kön…")
+                Text("Väntar i kön")
                     .font(.headline)
+                Text("Startar automatiskt när filerna före är klara.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
             }
 
-            Button(isCurrent ? "Avbryt" : "Ta bort från kön", role: .cancel) {
+            Button(isCurrent ? "Avbryt transkriberingen" : "Ta bort från kön", role: .cancel) {
                 queue.cancel(transcript)
             }
             .controlSize(.large)
