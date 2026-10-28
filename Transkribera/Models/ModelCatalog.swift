@@ -1,7 +1,8 @@
 import Foundation
 
-/// Whisper-modellerna som appen erbjuder, i den ordning de visas i väljaren:
-/// först KBLab:s svenska modeller, sedan OpenAI:s flerspråkiga.
+/// Modellerna som appen erbjuder, i den ordning de visas i väljaren: först KBLab:s
+/// svenska Whisper-modeller och Klangs svenska Pianissimo, sedan OpenAI:s flerspråkiga.
+/// Alla utom Pianissimo körs med WhisperKit; Pianissimo körs med FluidAudio.
 enum WhisperModel: String, CaseIterable, Identifiable, Codable {
     case kbBase = "kb-whisper-base"
     case kbSmall = "kb-whisper-small"
@@ -9,6 +10,7 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
     case kbLarge = "kb-whisper-large"
     case kbMediumStrict = "kb-whisper-medium-strict"
     case kbLargeStrict = "kb-whisper-large-strict"
+    case pianissimo = "pianissimo-sv"
     case tiny = "tiny"
     case base = "base"
     case small = "small"
@@ -16,13 +18,14 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
     case largeV3TurboCompressed = "large-v3-v20240930_626MB"
 
     enum Family: String, CaseIterable, Identifiable {
-        case kb, openAI
+        case kb, klang, openAI
 
         var id: String { rawValue }
 
         var title: String {
             switch self {
             case .kb: return "Svenska – KB-Whisper från Kungliga biblioteket"
+            case .klang: return "Svenska – Pianissimo från Klang"
             case .openAI: return "Flerspråkiga – OpenAI Whisper"
             }
         }
@@ -36,6 +39,8 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
         case whisperKit(variant: String)
         /// En zip-fil i releasen som `.github/workflows/kb-whisper-models.yml` publicerar.
         case kbRelease(asset: String)
+        /// En zip-fil i releasen som `.github/workflows/pianissimo-model.yml` publicerar.
+        case pianissimoRelease(asset: String)
     }
 
     var id: String { rawValue }
@@ -43,6 +48,7 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
     var family: Family {
         switch self {
         case .kbBase, .kbSmall, .kbMedium, .kbLarge, .kbMediumStrict, .kbLargeStrict: return .kb
+        case .pianissimo: return .klang
         default: return .openAI
         }
     }
@@ -50,6 +56,7 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
     var source: Source {
         switch family {
         case .kb: return .kbRelease(asset: "\(rawValue).zip")
+        case .klang: return .pianissimoRelease(asset: "\(rawValue).zip")
         case .openAI: return .whisperKit(variant: rawValue)
         }
     }
@@ -62,6 +69,7 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
         case .kbLarge: return "KB Large"
         case .kbMediumStrict: return "KB Medium ordagrann"
         case .kbLargeStrict: return "KB Large ordagrann"
+        case .pianissimo: return "Pianissimo"
         case .tiny: return "Tiny"
         case .base: return "Base"
         case .small: return "Small"
@@ -77,6 +85,7 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
         case .kbSmall: return "450 MB"
         case .kbMedium, .kbMediumStrict: return "1,4 GB"
         case .kbLarge, .kbLargeStrict: return "1,3 GB"
+        case .pianissimo: return "650 MB"
         case .tiny: return "75 MB"
         case .base: return "145 MB"
         case .small: return "480 MB"
@@ -88,7 +97,7 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
     /// Relativ hastighet på Apple Silicon, 1 (långsammast) – 5 (snabbast).
     var speed: Int {
         switch self {
-        case .tiny, .base, .kbBase: return 5
+        case .tiny, .base, .kbBase, .pianissimo: return 5
         case .small, .kbSmall: return 4
         case .largeV3Turbo, .largeV3TurboCompressed: return 3
         case .kbMedium, .kbMediumStrict: return 2
@@ -101,7 +110,7 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
     var swedishAccuracy: Int {
         switch self {
         case .kbLarge, .kbLargeStrict: return 5
-        case .kbMedium, .kbMediumStrict, .kbSmall: return 4
+        case .kbMedium, .kbMediumStrict, .kbSmall, .pianissimo: return 4
         case .kbBase, .largeV3Turbo, .largeV3TurboCompressed: return 3
         case .small: return 2
         case .tiny, .base: return 1
@@ -119,6 +128,7 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
         case .kbLarge: return 5.4
         case .kbMediumStrict: return 6.8
         case .kbLargeStrict: return 5.3
+        case .pianissimo: return 6.5  // Klangs mätning på FLEURS (KB Large: 5,1 i samma mätning)
         case .tiny: return 59.2
         case .base: return 39.6
         case .small: return 20.6
@@ -137,7 +147,7 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
     /// Kort etikett om språkstöd.
     var languageNote: String {
         switch family {
-        case .kb: return "Bäst för svenska"
+        case .kb, .klang: return "Bäst för svenska"
         case .openAI: return "99 språk"
         }
     }
@@ -157,6 +167,8 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
             return "Som Medium, men skriver mer ordagrant och stryker mindre. Bra för intervjuer om datorn har för lite minne för Large."
         case .kbLargeStrict:
             return "Som Large, men skriver mer ordagrant och stryker mindre. Bäst för intervjuer där du vill citera exakt vad som sades."
+        case .pianissimo:
+            return "Svensk modell från Klang som inte bygger på Whisper. Ungefär lika träffsäker som KB Medium men många gånger snabbare, även på långa inspelningar. Ordlistan används inte."
         case .tiny:
             return "Minsta modellen, bra för att snabbt testa appen. Gör många fel på svenska."
         case .base:
@@ -193,7 +205,10 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
     var isRecommended: Bool { self == .default }
 
     /// Sant för modeller som bara är tränade för svenska.
-    var isSwedishOnly: Bool { family == .kb }
+    var isSwedishOnly: Bool { family != .openAI }
+
+    /// Sant för Pianissimo, som körs med FluidAudio i stället för WhisperKit.
+    var usesParakeet: Bool { family == .klang }
 
     static let `default`: WhisperModel = .kbSmall
 }
