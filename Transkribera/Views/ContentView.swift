@@ -6,6 +6,7 @@ import SwiftUI
 @Observable
 final class AppState {
     var isImporterPresented = false
+    var isAnalysisExportPresented = false
     var selection: Transcript?
 }
 
@@ -28,6 +29,9 @@ struct ContentView: View {
             }
         }
         .frame(minWidth: 820, minHeight: 540)
+        .sheet(isPresented: $appState.isAnalysisExportPresented) {
+            AnalysisExportSheet(preselected: appState.selection)
+        }
         .fileImporter(
             isPresented: $appState.isImporterPresented,
             allowedContentTypes: MediaStore.supportedTypes,
