@@ -1,0 +1,90 @@
+import SwiftUI
+import TranskriberaCore
+
+/// En rad i transkriberingen: tidsstämpel, talare och text.
+struct SegmentRow: View {
+    @Bindable var segment: TranscriptSegment
+    let query: String
+    let isActive: Bool
+    let currentTime: Double?
+    let isEditing: Bool
+    let onSeek: () -> Void
+
+    @State private var draft = ""
+    @FocusState private var isFocused: Bool
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            Button(action: onSeek) {
+                Text(TimeFormatting.short(segment.start))
+                    .font(.system(.callout, design: .monospaced))
+                    .foregroundStyle(isActive ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.secondary))
+                    .frame(minWidth: 52, alignment: .leading)
+            }
+            .buttonStyle(.plain)
+            .help("Spela upp från \(TimeFormatting.short(segment.start))")
+
+            VStack(alignment: .leading, spacing: 3) {
+                if let speaker = segment.speaker {
+                    Text(speaker)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(SpeakerPalette.color(for: speaker))
+                }
+
+                if isEditing {
+                    TextField("Text", text: $draft, axis: .vertical)
+                        .textFieldStyle(.plain)
+                        .font(.body)
+                        .focused($isFocused)
+                        .onAppear { draft = segment.text }
+                        .onSubmit(commit)
+                        .onChange(of: isFocused) { _, focused in
+                            if !focused { commit() }
+                        }
+                        .onDisappear(perform: commit)
+                } else {
+                    Text(SegmentText.attributed(
+                        text: segment.text,
+                        query: query,
+                        words: isActive ? segment.words : [],
+                        currentTime: isActive ? currentTime : nil
+                    ))
+                    .font(.body)
+                    .lineSpacing(3)
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.vertical, 8)
+        .padding(.horizontal, 12)
+        .background {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(isActive ? Color.accentColor.opacity(0.12) : Color.clear)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture(count: 1) {
+            if !isEditing { onSeek() }
+        }
+    }
+
+    private func commit() {
+        let trimmed = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            draft = segment.text
+            return
+        }
+        segment.updateText(trimmed)
+    }
+}
+
+/// Ger varje talare en egen, stabil färg.
+enum SpeakerPalette {
+    private static let colors: [Color] = [.blue, .orange, .green, .purple, .pink, .teal, .brown, .indigo]
+
+    static func color(for speaker: String) -> Color {
+        let hash = speaker.unicodeScalars.reduce(0) { ($0 &* 31 &+ Int($1.value)) & 0x7fffffff }
+        return colors[hash % colors.count]
+    }
+}
