@@ -14,6 +14,23 @@ enum SettingsKey {
     static let anonymizeNames = "anonymizeNames"
     static let anonymizeIdentifiers = "anonymizeIdentifiers"
     static let anonymizeSensitive = "anonymizeSensitive"
+    static let transcriptLayout = "transcriptLayout"
+}
+
+/// Hur transkriberingen visas: löpande stycken per talare (standard) eller
+/// ett segment per rad med egen tidskod.
+enum TranscriptLayout: String, CaseIterable, Identifiable {
+    case paragraphs
+    case segments
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .paragraphs: "Stycken"
+        case .segments: "Rader"
+        }
+    }
 }
 
 /// Anonymisering är på som standard. Originaltexten sparas alltid; det är bara

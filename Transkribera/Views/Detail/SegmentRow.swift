@@ -13,9 +13,6 @@ struct SegmentRow: View {
     let isEditing: Bool
     let onSeek: () -> Void
 
-    @State private var draft = ""
-    @FocusState private var isFocused: Bool
-
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
             Button(action: onSeek) {
@@ -35,16 +32,7 @@ struct SegmentRow: View {
                 }
 
                 if isEditing {
-                    TextField("Text", text: $draft, axis: .vertical)
-                        .textFieldStyle(.plain)
-                        .font(.body)
-                        .focused($isFocused)
-                        .onAppear { draft = segment.text }
-                        .onSubmit(commit)
-                        .onChange(of: isFocused) { _, focused in
-                            if !focused { commit() }
-                        }
-                        .onDisappear(perform: commit)
+                    SegmentEditor(segment: segment)
                 } else {
                     // Ordtidsstämplarna hör till originaltexten.
                     let showsOriginal = displayText == segment.text
@@ -72,6 +60,27 @@ struct SegmentRow: View {
         .onTapGesture(count: 1) {
             if !isEditing { onSeek() }
         }
+    }
+}
+
+/// Textfält för att rätta ett segment. Ändringen sparas när fältet lämnas.
+struct SegmentEditor: View {
+    @Bindable var segment: TranscriptSegment
+
+    @State private var draft = ""
+    @FocusState private var isFocused: Bool
+
+    var body: some View {
+        TextField("Text", text: $draft, axis: .vertical)
+            .textFieldStyle(.plain)
+            .font(.body)
+            .focused($isFocused)
+            .onAppear { draft = segment.text }
+            .onSubmit(commit)
+            .onChange(of: isFocused) { _, focused in
+                if !focused { commit() }
+            }
+            .onDisappear(perform: commit)
     }
 
     private func commit() {
