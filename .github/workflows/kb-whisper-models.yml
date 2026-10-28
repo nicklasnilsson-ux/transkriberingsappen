@@ -1,0 +1,127 @@
+name: KB-Whisper-modeller
+
+# Konverterar KBLab:s svenska Whisper-modeller till WhisperKits CoreML-format och
+# lägger dem som zip-filer i releasen "kb-whisper-v1", varifrån appen laddar ner dem.
+# Körs när den här filen eller konverteringsskriptet ändras, eller manuellt.
+
+on:
+  push:
+    paths:
+      - .github/workflows/kb-whisper-models.yml
+      - scripts/kb-whisper/**
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: kb-whisper-models
+  cancel-in-progress: false
+
+env:
+  RELEASE_TAG: kb-whisper-v1
+  # Fast version av Argmax konverteringsverktyg så att resultatet går att återskapa.
+  WHISPERKITTOOLS_COMMIT: 84f77a83c8f530022ae55fbb1a64b3351ef63c7a
+
+jobs:
+  check:
+    name: Finns modellerna redan?
+    runs-on: ubuntu-latest
+    outputs:
+      missing: ${{ steps.check.outputs.missing }}
+    steps:
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          assets=$(gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --json assets -q '.assets[].name' 2>/dev/null || true)
+          missing="[]"
+          for size in base small medium large; do
+            if ! grep -qx "kb-whisper-$size.zip" <<<"$assets"; then
+              missing=$(jq -c --arg s "$size" '. + [$s]' <<<"$missing")
+            fi
+          done
+          echo "Saknas: $missing"
+          echo "missing=$missing" >> "$GITHUB_OUTPUT"
+
+  convert:
+    name: Konvertera kb-whisper-${{ matrix.size }}
+    needs: check
+    if: needs.check.outputs.missing != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        size: ${{ fromJSON(needs.check.outputs.missing) }}
+    runs-on: macos-15
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Installera whisperkittools
+        run: |
+          git clone https://github.com/argmaxinc/whisperkittools ../whisperkittools
+          git -C ../whisperkittools checkout "$WHISPERKITTOOLS_COMMIT"
+          pip install -e ../whisperkittools
+
+      - name: Konvertera
+        run: |
+          python scripts/kb-whisper/convert.py --size "${{ matrix.size }}" --out out \
+            ${{ matrix.size == 'large' && '--int8' || '' }}
+
+      - name: Röktest med svensk talsyntes
+        run: |
+          if say -v '?' | grep -q 'sv_SE'; then
+            voice=$(say -v '?' | grep sv_SE | head -1 | awk '{print $1}')
+            say -v "$voice" -o test.aiff "Hej, det här är ett test av svensk taligenkänning."
+            afconvert -f WAVE -d LEI16@16000 test.aiff test.wav
+            brew install whisperkit-cli
+            whisperkit-cli transcribe --model-path "out/kb-whisper-${{ matrix.size }}" \
+              --audio-path test.wav --language sv | tee transcript.txt
+            grep -qi "test" transcript.txt
+          else
+            echo "Ingen svensk röst på runnern – hoppar över röktestet."
+          fi
+
+      - name: Packa
+        run: |
+          cd out
+          ditto -c -k --keepParent "kb-whisper-${{ matrix.size }}" "kb-whisper-${{ matrix.size }}.zip"
+          ls -lh *.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kb-whisper-${{ matrix.size }}
+          path: out/kb-whisper-${{ matrix.size }}.zip
+          compression-level: 0
+          retention-days: 7
+
+  publish:
+    name: Publicera i release
+    needs: convert
+    if: always() && needs.convert.result != 'skipped'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Ladda upp till ${{ env.RELEASE_TAG }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls -lh dist
+          shopt -s nullglob
+          files=(dist/*.zip)
+          [ ${#files[@]} -gt 0 ] || { echo "Inga modeller att publicera"; exit 1; }
+          if ! gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" --prerelease --latest=false \
+              --title "KB-Whisper-modeller (CoreML)" \
+              --notes "KBLab:s svenska Whisper-modeller (https://huggingface.co/collections/KBLab/kb-whisper) konverterade till WhisperKits CoreML-format. Appen laddar ner dem automatiskt – du behöver inte ladda ner något här. Licens: Apache 2.0 (KBLab)."
+          fi
+          gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --clobber "${files[@]}"
