@@ -1,0 +1,17 @@
+# Xcode / XcodeGen
+*.xcodeproj
+*.xcworkspace
+!Packages/**/*.xcworkspace
+xcuserdata/
+DerivedData/
+build/
+dist/
+.build/
+.swiftpm/
+*.dmg
+*.zip
+.DS_Store
+
+# Genereras av XcodeGen från project.yml
+Transkribera/Resources/Info.plist
+Transkribera/Resources/Transkribera.entitlements
