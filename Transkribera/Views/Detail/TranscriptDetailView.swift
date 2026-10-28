@@ -33,6 +33,14 @@ struct TranscriptDetailView: View {
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             .padding(.horizontal)
             .padding(.bottom, 8)
+            if isEditing {
+                Label("Klicka i texten för att rätta den. Ändringarna sparas automatiskt.", systemImage: "pencil")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal)
+                    .padding(.bottom, 8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
             Divider()
             content
         }
@@ -60,7 +68,7 @@ struct TranscriptDetailView: View {
             }
             Button("Avbryt", role: .cancel) { speakerToRename = nil }
         } message: {
-            Text("Namnet ändras i alla segment där \(speakerToRename ?? "") pratar.")
+            Text("Det nya namnet används överallt där \(speakerToRename ?? "") pratar.")
         }
     }
 
@@ -81,6 +89,7 @@ struct TranscriptDetailView: View {
                 TextField("Titel", text: $transcript.title)
                     .textFieldStyle(.plain)
                     .font(.title2.weight(.semibold))
+                    .help("Klicka för att byta namn")
                 Text(transcript.createdAt.formatted(date: .long, time: .shortened))
                     .font(.callout)
                     .foregroundStyle(.secondary)
@@ -93,6 +102,7 @@ struct TranscriptDetailView: View {
                     .foregroundStyle(.secondary)
                 Toggle("Visa bara träffar", isOn: $showOnlyMatches)
                     .toggleStyle(.checkbox)
+                    .help("Dölj stycken som inte innehåller sökordet")
             }
         }
         .padding()
@@ -107,9 +117,10 @@ struct TranscriptDetailView: View {
             ContentUnavailableView {
                 Label("Transkriberingen misslyckades", systemImage: "exclamationmark.triangle")
             } description: {
-                Text(transcript.errorMessage ?? "Okänt fel")
+                Text(transcript.errorMessage ?? "Okänt fel.")
             } actions: {
                 Button("Försök igen") { queue.retranscribe(transcript) }
+                    .help("Transkribera filen igen med nuvarande inställningar")
                     .buttonStyle(.borderedProminent)
             }
         default:
@@ -160,7 +171,7 @@ struct TranscriptDetailView: View {
     @ViewBuilder
     private func segmentMenu(_ segment: TranscriptSegment) -> some View {
         Button("Spela upp härifrån") { player?.seek(to: segment.start) }
-        Button("Kopiera segment") { copyToPasteboard(segment.text) }
+        Button("Kopiera stycket") { copyToPasteboard(segment.text) }
         Button("Kopiera med tidsstämpel") {
             copyToPasteboard("[\(TimeFormatting.short(segment.start))] \(segment.text)")
         }
@@ -178,13 +189,13 @@ struct TranscriptDetailView: View {
             Toggle(isOn: $isEditing) {
                 Label("Redigera", systemImage: "pencil")
             }
-            .help("Redigera texten i segmenten")
+            .help("Rätta texten direkt i transkriberingen")
             .disabled(transcript.segments.isEmpty)
 
             Toggle(isOn: $followPlayback) {
                 Label("Följ uppspelning", systemImage: "text.line.first.and.arrowtriangle.forward")
             }
-            .help("Scrolla automatiskt till segmentet som spelas upp")
+            .help("Håll stycket som spelas upp i bild")
 
             if !transcript.speakers.isEmpty {
                 Menu {
@@ -194,7 +205,7 @@ struct TranscriptDetailView: View {
                 } label: {
                     Label("Talare", systemImage: "person.2")
                 }
-                .help("Byt namn på talare")
+                .help("Ge talarna riktiga namn")
             }
 
             Button {
@@ -207,7 +218,7 @@ struct TranscriptDetailView: View {
             } label: {
                 Label(copied ? "Kopierat!" : "Kopiera text", systemImage: copied ? "checkmark" : "doc.on.doc")
             }
-            .help("Kopiera hela texten till urklipp")
+            .help("Kopiera hela transkriberingen till urklipp")
             .disabled(transcript.segments.isEmpty)
 
             Menu {
@@ -218,11 +229,11 @@ struct TranscriptDetailView: View {
                 Button("Exportera för analys…") { appState.isAnalysisExportPresented = true }
                     .help("En Markdown-fil per session, anpassad för analys i t.ex. Claude")
                 Divider()
-                Toggle("Tidsstämplar i text och Markdown", isOn: $exportTimestamps)
+                Toggle("Ta med tidsstämplar (.txt och .md)", isOn: $exportTimestamps)
             } label: {
                 Label("Exportera", systemImage: "square.and.arrow.up")
             }
-            .help("Exportera transkriberingen")
+            .help("Spara som text, Markdown, undertexter eller JSON")
             .disabled(transcript.segments.isEmpty)
         }
     }

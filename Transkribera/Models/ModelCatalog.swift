@@ -24,11 +24,11 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
 
     var summary: String {
         switch self {
-        case .tiny: return "~75 MB · snabbast, lägst kvalitet (bra för test)"
-        case .base: return "~145 MB · snabb, okej kvalitet"
-        case .small: return "~480 MB · bra balans"
-        case .largeV3Turbo: return "~1,6 GB · bäst kvalitet, snabb på Apple Silicon"
-        case .largeV3TurboCompressed: return "~630 MB · nästan lika bra, mindre minne"
+        case .tiny: return "75 MB · Snabbast men lägst kvalitet, mest för test"
+        case .base: return "145 MB · Snabb, godtagbar kvalitet"
+        case .small: return "480 MB · Balans mellan fart och kvalitet"
+        case .largeV3Turbo: return "1,6 GB · Bäst kvalitet"
+        case .largeV3TurboCompressed: return "630 MB · Nästan bäst kvalitet, mindre minne · Rekommenderas"
         }
     }
 
@@ -43,7 +43,7 @@ struct Language: Identifiable, Hashable {
 
     var id: String { code ?? "auto" }
 
-    static let automatic = Language(code: nil, name: "Identifiera automatiskt")
+    static let automatic = Language(code: nil, name: "Automatiskt (identifiera språk)")
 
     static let all: [Language] = [
         automatic,
