@@ -12,6 +12,7 @@ En native macOS-app för att transkribera ljud och video **helt lokalt** på din
 - **Redigera texten** direkt i appen.
 - **Sök** i transkriberingen med markering och filtrering av träffar.
 - **Export** till ren text, Markdown, SRT, WebVTT och JSON. Kopiera hela texten med ett klick.
+- **Exportera för analys** (Arkiv-menyn, ⇧⌘E): en Markdown-fil per session med kort huvud och ett stycke per talarbyte med tidskod – anpassat för att tematisera t.ex. användartester i Claude. Flera transkriberingar kan exporteras på en gång.
 - **Mötesinspelning**: spela in datorns systemljud (t.ex. Google Meet/Teams) och på macOS 15+ även mikrofonen. Inspelningen transkriberas när du stoppar.
 - Allt sparas lokalt med SwiftData.
 
