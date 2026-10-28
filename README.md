@@ -68,11 +68,7 @@ docs/PLAN.md                    Projektplanen (reviderad)
 
 ## Releaser och signering
 
-Varje push och pull request byggs på GitHub Actions (macOS 15) och en `.dmg` laddas upp som artefakt. När en tagg som `v0.1.0` pushas skapas en GitHub Release med `.dmg`-filen:
-
-```sh
-git tag v0.1.0 && git push origin v0.1.0
-```
+Varje push och pull request byggs på GitHub Actions (macOS 15) och en `.dmg` laddas upp som artefakt. En GitHub Release med `.dmg`-filen skapas automatiskt när `main` får en ny version, det vill säga när `MARKETING_VERSION` i `project.yml` ändras till en version som inte släppts än. Det går också att pusha en tagg som `v0.2.0`.
 
 Appen är *ad hoc*-signerad tills följande repo-secrets läggs in, då signeras och notariseras den automatiskt så att varningen ovan försvinner (kräver Apple Developer Program):
 
