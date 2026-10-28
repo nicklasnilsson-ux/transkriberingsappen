@@ -2,6 +2,7 @@ name: KB-Whisper-modeller
 
 # Konverterar KBLab:s svenska Whisper-modeller till WhisperKits CoreML-format och
 # lägger dem som zip-filer i releasen "kb-whisper-v1", varifrån appen laddar ner dem.
+# Varje konverteringsjobb laddar upp sin egen fil; trasiga filer i releasen byggs om.
 # Körs när den här filen eller konverteringsskriptet ändras, eller manuellt.
 
 on:
@@ -37,9 +38,19 @@ jobs:
           assets=$(gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --json assets -q '.assets[].name' 2>/dev/null || true)
           missing="[]"
           for size in base small medium large; do
-            if ! grep -qx "kb-whisper-$size.zip" <<<"$assets"; then
-              missing=$(jq -c --arg s "$size" '. + [$s]' <<<"$missing")
+            asset="kb-whisper-$size.zip"
+            if grep -qx "$asset" <<<"$assets"; then
+              # Kontrollera att filen i releasen är hel; en trasig fil tas bort och byggs om.
+              gh release download "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" -p "$asset" -D check --clobber
+              if unzip -tq "check/$asset" >/dev/null; then
+                rm "check/$asset"
+                continue
+              fi
+              echo "$asset är trasig – tas bort och byggs om"
+              gh release delete-asset "$RELEASE_TAG" "$asset" -R "$GITHUB_REPOSITORY" --yes
+              rm -f "check/$asset"
             fi
+            missing=$(jq -c --arg s "$size" '. + [$s]' <<<"$missing")
           done
           echo "Saknas: $missing"
           echo "missing=$missing" >> "$GITHUB_OUTPUT"
@@ -94,36 +105,16 @@ jobs:
           ditto -c -k --keepParent "kb-whisper-${{ matrix.size }}" "kb-whisper-${{ matrix.size }}.zip"
           ls -lh *.zip
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: kb-whisper-${{ matrix.size }}
-          path: out/kb-whisper-${{ matrix.size }}.zip
-          compression-level: 0
-          retention-days: 7
-
-  publish:
-    name: Publicera i release
-    needs: convert
-    if: always() && needs.convert.result != 'skipped'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          path: dist
-          merge-multiple: true
-
-      - name: Ladda upp till ${{ env.RELEASE_TAG }}
+      - name: Publicera i ${{ env.RELEASE_TAG }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          ls -lh dist
-          shopt -s nullglob
-          files=(dist/*.zip)
-          [ ${#files[@]} -gt 0 ] || { echo "Inga modeller att publicera"; exit 1; }
-          if ! gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" \
-              --target "$GITHUB_SHA" --prerelease --latest=false \
-              --title "KB-Whisper-modeller (CoreML)" \
-              --notes "KBLab:s svenska Whisper-modeller (https://huggingface.co/collections/KBLab/kb-whisper) konverterade till WhisperKits CoreML-format. Appen laddar ner dem automatiskt – du behöver inte ladda ner något här. Licens: Apache 2.0 (KBLab)."
-          fi
-          gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --clobber "${files[@]}"
+          zip="out/kb-whisper-${{ matrix.size }}.zip"
+          unzip -tq "$zip" >/dev/null
+          gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 \
+            || gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" \
+                 --target "$GITHUB_SHA" --prerelease --latest=false \
+                 --title "KB-Whisper-modeller (CoreML)" \
+                 --notes "KBLab:s svenska Whisper-modeller (https://huggingface.co/collections/KBLab/kb-whisper) konverterade till WhisperKits CoreML-format. Appen laddar ner dem automatiskt – du behöver inte ladda ner något här. Licens: Apache 2.0 (KBLab)." \
+            || gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null
+          gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --clobber "$zip"

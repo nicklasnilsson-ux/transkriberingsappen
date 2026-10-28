@@ -72,7 +72,7 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
         case .kbBase: return "135 MB"
         case .kbSmall: return "450 MB"
         case .kbMedium: return "1,4 GB"
-        case .kbLarge: return "1,6 GB"
+        case .kbLarge: return "1,3 GB"
         case .tiny: return "75 MB"
         case .base: return "145 MB"
         case .small: return "480 MB"
