@@ -4,6 +4,9 @@ import TranskriberaCore
 /// En rad i transkriberingen: tidsstämpel, talare och text.
 struct SegmentRow: View {
     @Bindable var segment: TranscriptSegment
+    /// Texten och talaren som visas (anonymiserade eller original).
+    let displayText: String
+    let displaySpeaker: String?
     let query: String
     let isActive: Bool
     let currentTime: Double?
@@ -25,7 +28,7 @@ struct SegmentRow: View {
             .help("Spela upp från \(TimeFormatting.short(segment.start))")
 
             VStack(alignment: .leading, spacing: 3) {
-                if let speaker = segment.speaker {
+                if let speaker = displaySpeaker {
                     Text(speaker)
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(SpeakerPalette.color(for: speaker))
@@ -43,10 +46,12 @@ struct SegmentRow: View {
                         }
                         .onDisappear(perform: commit)
                 } else {
+                    // Ordtidsstämplarna hör till originaltexten.
+                    let showsOriginal = displayText == segment.text
                     Text(SegmentText.attributed(
-                        text: segment.text,
+                        text: displayText,
                         query: query,
-                        words: isActive ? segment.words : [],
+                        words: isActive && showsOriginal ? segment.words : [],
                         currentTime: isActive ? currentTime : nil
                     ))
                     .font(.body)

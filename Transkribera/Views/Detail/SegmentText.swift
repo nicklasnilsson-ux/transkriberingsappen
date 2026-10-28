@@ -21,6 +21,16 @@ enum SegmentText {
             attributed[attributedRange].underlineStyle = .single
         }
 
+        // Platshållare från anonymiseringen, t.ex. "[PERSON 1]".
+        if let placeholderRegex {
+            for match in placeholderRegex.matches(in: text, range: NSRange(text.startIndex..., in: text)) {
+                if let range = Range(match.range, in: text), let attributedRange = Range(range, in: attributed) {
+                    attributed[attributedRange].foregroundColor = .secondary
+                    attributed[attributedRange].backgroundColor = Color.secondary.opacity(0.15)
+                }
+            }
+        }
+
         for range in TextSearch.ranges(of: query, in: text) {
             if let attributedRange = Range(range, in: attributed) {
                 attributed[attributedRange].backgroundColor = .yellow.opacity(0.55)
@@ -29,6 +39,8 @@ enum SegmentText {
         }
         return attributed
     }
+
+    private static let placeholderRegex = try? NSRegularExpression(pattern: Anonymizer.placeholderPattern)
 
     /// Hittar ord nr `index` i texten genom att söka ordens text i tur och ordning.
     private static func rangeOfWord(at index: Int, words: [WordTimingData], in text: String) -> Range<String.Index>? {

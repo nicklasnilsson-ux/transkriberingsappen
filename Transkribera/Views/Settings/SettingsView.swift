@@ -8,6 +8,8 @@ struct SettingsView: View {
                 .tabItem { Label("Transkribering", systemImage: "waveform") }
             ModelSettingsView()
                 .tabItem { Label("Modeller", systemImage: "cpu") }
+            PrivacySettingsView()
+                .tabItem { Label("Integritet", systemImage: "hand.raised") }
         }
         .frame(width: 520)
         .padding(20)
@@ -43,6 +45,37 @@ private struct TranscriptionSettingsView: View {
             if MeetingRecorder.supportsMicrophone {
                 Toggle("Spela in mikrofonen vid mötesinspelning", isOn: $recordMicrophone)
             }
+        }
+        .formStyle(.grouped)
+    }
+}
+
+private struct PrivacySettingsView: View {
+    @AppStorage(SettingsKey.anonymize) private var anonymize = true
+    @AppStorage(SettingsKey.anonymizeNames) private var names = true
+    @AppStorage(SettingsKey.anonymizeIdentifiers) private var identifiers = true
+    @AppStorage(SettingsKey.anonymizeSensitive) private var sensitive = true
+
+    var body: some View {
+        Form {
+            Toggle("Anonymisera känsliga uppgifter", isOn: $anonymize)
+            Text("Uppgifterna ersätts med t.ex. [PERSON 1] när du läser, kopierar och exporterar. Originaltexten sparas och visas igen om du stänger av det här. Allt sker lokalt på datorn.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            Section("Vad som ska döljas") {
+                Toggle("Namn på personer, platser och organisationer", isOn: $names)
+                Toggle("Personnummer, telefon, e-post, adresser, kontonummer och regnummer", isOn: $identifiers)
+                Toggle("Hälsa, religion, politisk åsikt m.m.", isOn: $sensitive)
+                Text("Känsliga ämnen hittas bara delvis, via en ordlista.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .disabled(!anonymize)
+
+            Text("Ingen automatisk anonymisering är helt säker. Läs igenom texten innan du delar den.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
         .formStyle(.grouped)
     }

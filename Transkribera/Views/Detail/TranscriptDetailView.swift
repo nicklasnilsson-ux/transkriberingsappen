@@ -17,10 +17,16 @@ struct TranscriptDetailView: View {
     @State private var newSpeakerName = ""
     @State private var copied = false
     @AppStorage(SettingsKey.exportTimestamps) private var exportTimestamps = true
+    @AppStorage(SettingsKey.anonymize) private var anonymize = true
+    @AppStorage(SettingsKey.anonymizeNames) private var anonymizeNames = true
+    @AppStorage(SettingsKey.anonymizeIdentifiers) private var anonymizeIdentifiers = true
+    @AppStorage(SettingsKey.anonymizeSensitive) private var anonymizeSensitive = true
+    @State private var anonymized: AnonymizedState?
 
     var body: some View {
         VStack(spacing: 0) {
             header
+            anonymizationBanner
             Group {
                 if let player {
                     PlayerView(player: player.player, isVideo: transcript.isVideo)
@@ -45,6 +51,9 @@ struct TranscriptDetailView: View {
         .onDisappear {
             player?.invalidate()
             player = nil
+        }
+        .task(id: anonymizationInput(transcript.sortedSegments)) {
+            await refreshAnonymization()
         }
         .alert("Byt namn på talare", isPresented: Binding(
             get: { speakerToRename != nil },
@@ -86,7 +95,7 @@ struct TranscriptDetailView: View {
             }
             Spacer()
             if !query.isEmpty {
-                let count = TextSearch.countMatches(of: query, in: transcript.segments.map(\.text))
+                let count = TextSearch.countMatches(of: query, in: (displaySegments(transcript.sortedSegments) ?? []).map(\.text))
                 Text(count == 1 ? "1 träff" : "\(count) träffar")
                     .font(.callout.monospacedDigit())
                     .foregroundStyle(.secondary)
@@ -116,11 +125,21 @@ struct TranscriptDetailView: View {
         }
     }
 
+    @ViewBuilder
     private var segmentList: some View {
         let segments = transcript.sortedSegments
+        if let rows = displaySegments(segments) {
+            segmentScroll(segments: segments, rows: rows)
+        } else {
+            ProgressView("Anonymiserar…")
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+
+    private func segmentScroll(segments: [TranscriptSegment], rows: [DisplaySegment]) -> some View {
         let visible = (query.isEmpty || !showOnlyMatches)
-            ? segments
-            : segments.filter { TextSearch.matches($0.text, query: query) }
+            ? rows
+            : rows.filter { TextSearch.matches($0.text, query: query) }
         let currentTime = player?.currentTime ?? 0
         let activeID = Self.activeSegment(in: segments, at: currentTime)?.persistentModelID
 
@@ -131,9 +150,12 @@ struct TranscriptDetailView: View {
                         .padding(.top, 40)
                 }
                 LazyVStack(alignment: .leading, spacing: 2) {
-                    ForEach(visible) { segment in
+                    ForEach(visible) { row in
+                        let segment = row.segment
                         SegmentRow(
                             segment: segment,
+                            displayText: row.text,
+                            displaySpeaker: row.speaker,
                             query: query,
                             isActive: segment.persistentModelID == activeID,
                             currentTime: currentTime,
@@ -141,7 +163,7 @@ struct TranscriptDetailView: View {
                             onSeek: { player?.seek(to: segment.start) }
                         )
                         .id(segment.persistentModelID)
-                        .contextMenu { segmentMenu(segment) }
+                        .contextMenu { segmentMenu(row) }
                     }
                 }
                 .padding(.horizontal, 8)
@@ -157,11 +179,12 @@ struct TranscriptDetailView: View {
     }
 
     @ViewBuilder
-    private func segmentMenu(_ segment: TranscriptSegment) -> some View {
+    private func segmentMenu(_ row: DisplaySegment) -> some View {
+        let segment = row.segment
         Button("Spela upp härifrån") { player?.seek(to: segment.start) }
-        Button("Kopiera segment") { copyToPasteboard(segment.text) }
+        Button("Kopiera segment") { copyToPasteboard(row.text) }
         Button("Kopiera med tidsstämpel") {
-            copyToPasteboard("[\(TimeFormatting.short(segment.start))] \(segment.text)")
+            copyToPasteboard("[\(TimeFormatting.short(segment.start))] \(row.text)")
         }
         if let speaker = segment.speaker {
             Divider()
@@ -180,6 +203,13 @@ struct TranscriptDetailView: View {
             .help("Redigera texten i segmenten")
             .disabled(transcript.segments.isEmpty)
 
+            Toggle(isOn: $anonymize) {
+                Label("Anonymisera", systemImage: anonymize ? "eye.slash" : "eye")
+            }
+            .help(anonymize
+                  ? "Namn och känsliga uppgifter är dolda. Klicka för att visa originalet."
+                  : "Dölj namn, personnummer och andra känsliga uppgifter")
+
             Toggle(isOn: $followPlayback) {
                 Label("Följ uppspelning", systemImage: "text.line.first.and.arrowtriangle.forward")
             }
@@ -197,7 +227,7 @@ struct TranscriptDetailView: View {
             }
 
             Button {
-                copyToPasteboard(transcript.fullText)
+                copyToPasteboard(TranscriptExporter.fullText(outputSegments))
                 copied = true
                 Task {
                     try? await Task.sleep(for: .seconds(1.5))
@@ -223,6 +253,91 @@ struct TranscriptDetailView: View {
         }
     }
 
+    // MARK: - Anonymisering
+
+    @ViewBuilder
+    private var anonymizationBanner: some View {
+        if anonymizationOptions != nil, !transcript.segments.isEmpty {
+            HStack(spacing: 6) {
+                Image(systemName: "eye.slash")
+                if isEditing {
+                    Text("Redigeringsläget visar originaltexten.")
+                } else if let result = currentAnonymization(for: transcript.sortedSegments) {
+                    Text(result.replacementCount == 1
+                         ? "Anonymiserad: 1 uppgift är dold."
+                         : "Anonymiserad: \(result.replacementCount) uppgifter är dolda.")
+                    Text("Originaltexten finns kvar.")
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("Anonymiserar…")
+                }
+                Spacer()
+                Button("Visa original") { anonymize = false }
+                    .buttonStyle(.link)
+            }
+            .font(.callout)
+            .padding(.horizontal)
+            .padding(.bottom, 8)
+        }
+    }
+
+    private var anonymizationOptions: AnonymizationOptions? {
+        guard anonymize else { return nil }
+        return AnonymizationOptions(
+            names: anonymizeNames,
+            identifiers: anonymizeIdentifiers,
+            sensitiveTopics: anonymizeSensitive
+        )
+    }
+
+    private func anonymizationInput(_ segments: [TranscriptSegment]) -> AnonymizationInput {
+        AnonymizationInput(
+            texts: segments.map(\.text),
+            speakers: segments.map(\.speaker),
+            options: anonymizationOptions
+        )
+    }
+
+    /// Resultatet om det hör till nuvarande text och inställningar.
+    private func currentAnonymization(for segments: [TranscriptSegment]) -> AnonymizationResult? {
+        guard let anonymized, anonymized.input == anonymizationInput(segments),
+              anonymized.result.segments.count == segments.count else { return nil }
+        return anonymized.result
+    }
+
+    private func refreshAnonymization() async {
+        let input = anonymizationInput(transcript.sortedSegments)
+        guard let options = input.options, !input.texts.isEmpty else { return }
+        let data = transcript.segmentData
+        let result = await Task.detached(priority: .userInitiated) {
+            Anonymizer.anonymize(data, options: options)
+        }.value
+        guard !Task.isCancelled else { return }
+        anonymized = AnonymizedState(input: input, result: result)
+    }
+
+    /// Det som visas i listan. `nil` medan anonymiseringen räknas fram, så att
+    /// originaltexten aldrig blinkar förbi.
+    private func displaySegments(_ segments: [TranscriptSegment]) -> [DisplaySegment]? {
+        guard anonymizationOptions != nil, !isEditing else {
+            return segments.map { DisplaySegment(segment: $0, text: $0.text, speaker: $0.speaker) }
+        }
+        guard let result = currentAnonymization(for: segments) else { return nil }
+        return zip(segments, result.segments).map { segment, data in
+            DisplaySegment(segment: segment, text: data.text, speaker: data.speaker)
+        }
+    }
+
+    /// Segment för kopiering och export: anonymiserade när inställningen är på.
+    private var outputSegments: [SegmentData] {
+        let data = transcript.segmentData
+        guard let options = anonymizationOptions else { return data }
+        if let result = currentAnonymization(for: transcript.sortedSegments) {
+            return result.segments
+        }
+        return Anonymizer.anonymize(data, options: options).segments
+    }
+
     // MARK: - Åtgärder
 
     private func beginRename(_ speaker: String) {
@@ -237,7 +352,7 @@ struct TranscriptDetailView: View {
 
     private func export(as format: ExportFormat) {
         let output = TranscriptExporter.export(
-            transcript.segmentData,
+            outputSegments,
             metadata: transcript.metadata,
             format: format,
             options: ExportOptions(includeTimestamps: exportTimestamps)
@@ -277,4 +392,25 @@ struct TranscriptDetailView: View {
         }
         return nil
     }
+}
+
+/// Indata till anonymiseringen. När något ändras räknas resultatet om.
+private struct AnonymizationInput: Equatable {
+    var texts: [String]
+    var speakers: [String?]
+    var options: AnonymizationOptions?
+}
+
+private struct AnonymizedState {
+    var input: AnonymizationInput
+    var result: AnonymizationResult
+}
+
+/// Ett segment som det visas: anonymiserad eller original text och talare.
+private struct DisplaySegment: Identifiable {
+    let segment: TranscriptSegment
+    let text: String
+    let speaker: String?
+
+    var id: PersistentIdentifier { segment.persistentModelID }
 }
