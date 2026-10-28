@@ -16,6 +16,10 @@ on:
 permissions:
   contents: write
 
+# Inget når användarna förrän det har klarat alla kontroller (docs/KONTROLLER.md):
+# releasen skapas som utkast, den publicerade .dmg:n laddas ner och kontrolleras, och först
+# då blir releasen synlig och hamnar i appcasten.
+
 concurrency:
   # En betaversion (manuell körning) ska inte avbryta bygget av main och tvärtom.
   group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
@@ -46,7 +50,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: build/SourcePackages
-          key: spm-${{ runner.os }}-${{ hashFiles('project.yml') }}
+          key: spm-${{ runner.os }}-${{ hashFiles('project.yml', 'Package.resolved') }}
           restore-keys: spm-${{ runner.os }}-
 
       - name: Versionsnamn
@@ -57,7 +61,8 @@ jobs:
         run: |
           MARKETING="$(sed -n 's/^ *MARKETING_VERSION: *"\{0,1\}\([0-9.]*\)"\{0,1\}/\1/p' project.yml | head -1)"
           BUILD="$(sed -n 's/^ *CURRENT_PROJECT_VERSION: *"\{0,1\}\([0-9]*\)"\{0,1\}/\1/p' project.yml | head -1)"
-          released() { gh release view "$1" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; }
+          # Ett utkast (en release som stoppades av kontrollerna) räknas inte som släppt.
+          released() { [[ "$(gh release view "$1" -R "$GITHUB_REPOSITORY" --json isDraft -q .isDraft 2>/dev/null)" == false ]]; }
           channel=stable release=false short="$MARKETING" build="$BUILD"
           if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" && "$INPUT_CHANNEL" == "beta" ]]; then
             # Beta av kommande version: byggnumret hamnar mellan förra och nästa stabila version,
@@ -77,6 +82,13 @@ jobs:
             name="v$MARKETING" release=true
           else
             name="dev-$(git rev-parse --short HEAD)"
+            # Utvecklingsbyggen får ett byggnummer över förra versionen, så att
+            # uppgraderingstestet kan uppdatera förra versionen till det här bygget.
+            if released "v$MARKETING"; then build="$BUILD.$GITHUB_RUN_NUMBER"; else build="$((BUILD - 1)).$GITHUB_RUN_NUMBER"; fi
+          fi
+          # En ny version ska ha ett avsnitt i CHANGELOG.md, redan i PR:en som höjer den.
+          if [[ "$channel" == stable ]] && ! released "v$MARKETING"; then
+            python3 scripts/changelog.py check "$MARKETING"
           fi
           {
             echo "name=$name"
@@ -90,7 +102,7 @@ jobs:
       - name: Python för releaseskripten
         run: |
           python3 -m venv "$RUNNER_TEMP/venv"
-          "$RUNNER_TEMP/venv/bin/pip" install --quiet cryptography
+          "$RUNNER_TEMP/venv/bin/pip" install --quiet -r scripts/requirements.txt
           echo "PYTHON=$RUNNER_TEMP/venv/bin/python" >> "$GITHUB_ENV"
 
       - name: Tester för releaseskripten
@@ -125,10 +137,26 @@ jobs:
       - name: Skapa .dmg
         run: ./scripts/make-dmg.sh "${{ steps.version.outputs.name }}"
 
-      - name: Röktest – startar appen?
+      - name: Röktest – signaturer, ramverk och start
         run: |
           ./scripts/smoke-test.sh "dist/Transkribera-${{ steps.version.outputs.name }}.dmg" \
             "${{ steps.version.outputs.short }}" "${{ steps.version.outputs.build }}"
+
+      - name: Uppgraderingstest – förra versionen uppdaterar sig och behåller data
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+          NAME: ${{ steps.version.outputs.name }}
+        run: |
+          previous="$(gh release list -R "$GITHUB_REPOSITORY" --exclude-drafts --exclude-pre-releases --limit 20 \
+            --json tagName -q '.[].tagName' | grep -E '^v[0-9]' | grep -vx "$NAME" | head -1)"
+          echo "Förra versionen: $previous"
+          gh release download "$previous" -R "$GITHUB_REPOSITORY" -p "Transkribera-$previous.dmg" -D "$RUNNER_TEMP/previous"
+          ./scripts/upgrade-test.sh "$RUNNER_TEMP/previous/Transkribera-$previous.dmg" \
+            "dist/Transkribera-$NAME.zip" "${{ steps.version.outputs.short }}" "${{ steps.version.outputs.build }}"
+
+      - name: Låsta paketversioner
+        run: cat Package.resolved
 
       - name: Ladda upp byggartefakt
         uses: actions/upload-artifact@v4
@@ -145,26 +173,83 @@ jobs:
           path: build/xcodebuild.log
           if-no-files-found: ignore
 
-      - name: Publicera release
+      - name: Release-text från CHANGELOG.md
+        if: steps.version.outputs.release == 'true'
+        env:
+          CHANNEL: ${{ steps.version.outputs.channel }}
+          SHORT: ${{ steps.version.outputs.short }}
+          TAG: ${{ steps.version.outputs.name }}
+        run: |
+          {
+            if [[ "$CHANNEL" == beta ]]; then
+              echo "**Betaversion.** Kan innehålla fel. Välj *Inställningar → Uppdateringar → Få betaversioner* i appen för att få betor automatiskt."
+              echo
+            fi
+            python3 scripts/changelog.py notes "${SHORT%%-beta*}"
+            echo
+            echo "Ladda ner **Transkribera-$TAG.dmg** nedan, öppna den och dra Transkribera till Program."
+            echo "Kräver en Mac med Apple Silicon (M1 eller senare) och macOS 14 Sonoma eller senare."
+            echo "Är appen osignerad: se [README](https://github.com/$GITHUB_REPOSITORY#installera) för hur du öppnar den första gången."
+            echo "Har du redan Transkribera 0.4.2 eller senare uppdateras appen själv."
+          } > "$RUNNER_TEMP/release-notes.md"
+          cat "$RUNNER_TEMP/release-notes.md"
+
+      - name: Ta bort gammalt utkast
+        if: steps.version.outputs.release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.name }}
+        run: |
+          if [[ "$(gh release view "$TAG" -R "$GITHUB_REPOSITORY" --json isDraft -q .isDraft 2>/dev/null)" == true ]]; then
+            gh release delete "$TAG" -R "$GITHUB_REPOSITORY" --yes
+          fi
+
+      - name: Skapa releasen som utkast
         if: steps.version.outputs.release == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.name }}
           name: Transkribera ${{ steps.version.outputs.name }}
           target_commitish: ${{ github.sha }}
+          draft: true
           prerelease: ${{ steps.version.outputs.channel == 'beta' }}
-          make_latest: ${{ steps.version.outputs.channel == 'beta' && 'false' || 'true' }}
           files: |
             dist/Transkribera-*.dmg
             dist/Transkribera-*.zip
           generate_release_notes: true
-          body: |
-            ${{ steps.version.outputs.channel == 'beta' && '**Betaversion.** Kan innehålla fel. Välj *Inställningar → Uppdateringar → Få betaversioner* i appen för att få betor automatiskt.' || '' }}
+          body_path: ${{ runner.temp }}/release-notes.md
 
-            Ladda ner **Transkribera-${{ steps.version.outputs.name }}.dmg** nedan, öppna den och dra Transkribera till Program.
-            Kräver en Mac med Apple Silicon (M1 eller senare) och macOS 14 Sonoma eller senare.
-            Är appen osignerad: se [README](https://github.com/${{ github.repository }}#installera) för hur du öppnar den första gången.
-            Har du redan Transkribera 0.4.0 eller senare uppdateras appen själv.
+      - name: Release-grind – kontrollera filerna som laddas upp
+        if: steps.version.outputs.release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.name }}
+        run: |
+          dir="$RUNNER_TEMP/published"
+          gh release download "$TAG" -R "$GITHUB_REPOSITORY" -D "$dir"
+          for file in "Transkribera-$TAG.dmg" "Transkribera-$TAG.zip"; do
+            [[ "$(shasum -a 256 < "$dir/$file")" == "$(shasum -a 256 < "dist/$file")" ]] \
+              || { echo "::error::$file i releasen skiljer sig från det som byggdes."; exit 1; }
+          done
+          ./scripts/smoke-test.sh "$dir/Transkribera-$TAG.dmg" \
+            "${{ steps.version.outputs.short }}" "${{ steps.version.outputs.build }}"
+          # Uppdateringsfilen (zip) ska innehålla samma app.
+          mkdir "$dir/zip" && ditto -x -k "$dir/Transkribera-$TAG.zip" "$dir/zip"
+          codesign --verify --deep --strict "$dir/zip/Transkribera.app"
+          [[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$dir/zip/Transkribera.app/Contents/Info.plist")" == "${{ steps.version.outputs.build }}" ]]
+
+      - name: Publicera releasen
+        if: steps.version.outputs.release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.name }}
+          BETA: ${{ steps.version.outputs.channel == 'beta' }}
+        run: |
+          if [[ "$BETA" == true ]]; then
+            gh release edit "$TAG" -R "$GITHUB_REPOSITORY" --draft=false --prerelease --latest=false
+          else
+            gh release edit "$TAG" -R "$GITHUB_REPOSITORY" --draft=false --latest
+          fi
 
       - name: Uppdatera appcast (automatiska uppdateringar)
         if: steps.version.outputs.release == 'true'

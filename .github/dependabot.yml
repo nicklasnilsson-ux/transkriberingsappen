@@ -1,0 +1,20 @@
+# Säkerhets- och versionsuppdateringar. Dependabot öppnar PR:er som går igenom samma
+# kontroller som allt annat (bygge, röktest, uppgraderingstest) innan de kan mergas.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: "CI"
+  - package-ecosystem: pip
+    directory: /scripts
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "Releaseskript"

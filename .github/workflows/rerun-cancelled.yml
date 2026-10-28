@@ -1,0 +1,44 @@
+name: Kör om avbrutna byggen
+
+# GitHubs macOS-maskiner är få. Ett bygge som väntat för länge i kö avbryts ibland innan
+# något steg har körts (inga loggar). Då körs det om automatiskt, högst två gånger.
+# Byggen som avbröts för att en nyare commit kom (concurrency) körs inte om.
+
+on:
+  workflow_run:
+    workflows: [Bygg]
+    types: [completed]
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  rerun:
+    if: >-
+      github.event.workflow_run.run_attempt < 3 &&
+      (github.event.workflow_run.conclusion == 'cancelled' || github.event.workflow_run.conclusion == 'failure')
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          HEAD_REPO: ${{ github.event.workflow_run.head_repository.full_name }}
+        run: |
+          latest="$(gh api "repos/$HEAD_REPO/commits/$HEAD_BRANCH" -q .sha 2>/dev/null || true)"
+          if [[ -n "$latest" && "$latest" != "$HEAD_SHA" ]]; then
+            echo "Det finns en nyare commit på $HEAD_BRANCH – kör inte om."
+            exit 0
+          fi
+          # Har något steg i något jobb hunnit starta är det ett riktigt fel eller ett manuellt stopp.
+          started="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/attempts/$ATTEMPT/jobs" \
+            -q '[.jobs[].steps[]? | select(.started_at != null and .name != "Set up job")] | length')"
+          if [[ "$started" != 0 ]]; then
+            echo "Bygget hann köra $started steg – det är inte ett köproblem, kör inte om."
+            exit 0
+          fi
+          echo "Bygget avbröts innan något steg körts (försök $ATTEMPT) – kör om."
+          gh run rerun "$RUN_ID" -R "$GITHUB_REPOSITORY"

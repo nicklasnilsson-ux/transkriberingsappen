@@ -1,0 +1,2 @@
+# Python-paket för releaseskripten (appcast.py). Låst version; Dependabot föreslår nya.
+cryptography==44.0.2

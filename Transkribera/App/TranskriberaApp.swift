@@ -4,19 +4,18 @@ import SwiftUI
 @main
 struct TranskriberaApp: App {
     private let container: ModelContainer
-    @State private var appState = AppState()
+    @State private var appState: AppState
     @State private var queue: TranscriptionQueue
     @State private var recorder = MeetingRecorder()
     @StateObject private var updater = AppUpdater()
 
     init() {
-        let schema = Schema([Transcript.self, TranscriptSegment.self])
-        let url = AppPaths.supportDirectory.appending(path: "Transkribera.store")
-        do {
-            container = try ModelContainer(for: schema, configurations: ModelConfiguration(schema: schema, url: url))
-        } catch {
-            fatalError("Kunde inte öppna databasen: \(error)")
-        }
+        // Kraschar aldrig: en databas som inte går att öppna sparas undan (se Database).
+        let database = Database.open()
+        container = database.container
+        let appState = AppState()
+        appState.databaseProblem = database.problem
+        _appState = State(initialValue: appState)
         let queue = TranscriptionQueue(transcriber: TranscriberService(), context: container.mainContext)
         _queue = State(initialValue: queue)
     }
