@@ -94,6 +94,12 @@ struct ModelInfoRow: View {
             Text(model.swedishErrorText)
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(.secondary)
+            if let warning = model.memoryWarning {
+                Label(warning, systemImage: "memorychip")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             HStack(spacing: 14) {
                 Meter(label: "Fart", value: model.speed)
                 Meter(label: "Svenska", value: model.swedishAccuracy)
@@ -115,7 +121,7 @@ private struct ModelAdvice: View {
         Label {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Pratas det svenska? Välj en KB-modell.").font(.callout.weight(.medium))
-                Text("KB Small gör färre fel på svenska än OpenAI:s Large v3, fast den är sex gånger mindre. Större KB-modeller blir ännu säkrare men långsammare. För andra språk passar OpenAI-modellerna bättre.")
+                Text("KB Small räcker för de flesta möten och intervjuer. Välj KB Large när varje ord måste stämma, t.ex. för citat eller dåligt ljud, och du inte har bråttom. Andra språk: välj en OpenAI-modell.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)

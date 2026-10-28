@@ -140,13 +140,13 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
     var characteristic: String {
         switch self {
         case .kbBase:
-            return "Liten och snabb. Gör ändå färre fel på svenska än OpenAI:s Small."
+            return "Snabbast av KB-modellerna. Bra för snabba utkast eller äldre Mac-datorer."
         case .kbSmall:
-            return "Rekommenderas för svenska. Gör färre fel än OpenAI:s Large v3, en modell sex gånger så stor."
+            return "Välj den här för vardagsbruk, t.ex. möten och intervjuer. Gör färre fel än OpenAI:s sex gånger större Large v3."
         case .kbMedium:
-            return "Ännu färre fel, men tar ungefär dubbelt så lång tid som KB Small."
+            return "Lite färre fel än Small men tre gånger så stor och långsammare. Passar om datorn har för lite minne för Large."
         case .kbLarge:
-            return "Den mest exakta svenska transkriberingen. Långsammast – välj den när kvaliteten är viktigast."
+            return "Färst fel, särskilt på namn, facktermer, dialekter och dåligt ljud. Tar 3–5 gånger så lång tid som Small. Välj den när varje ord måste stämma."
         case .tiny:
             return "Minsta modellen, bra för att snabbt testa appen. Gör många fel på svenska."
         case .base:
@@ -163,6 +163,21 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
     /// Kort sammanfattning på en rad, t.ex. under väljaren.
     var summary: String {
         "\(downloadSize) · \(languageNote) · \(characteristic)"
+    }
+
+    /// Ungefär hur mycket minne modellen behöver medan den körs.
+    var minimumMemoryGB: Int {
+        switch self {
+        case .kbLarge: return 16
+        default: return 8
+        }
+    }
+
+    /// Varning om datorn har mindre minne än modellen behöver, annars `nil`.
+    var memoryWarning: String? {
+        let installedGB = Int(ProcessInfo.processInfo.physicalMemory / 1_073_741_824)
+        guard installedGB < minimumMemoryGB else { return nil }
+        return "Din Mac har \(installedGB) GB minne. Modellen kan bli seg, så prova KB Medium eller Small."
     }
 
     var isRecommended: Bool { self == .default }
