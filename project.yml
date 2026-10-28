@@ -39,8 +39,8 @@ targets:
         CFBundleDisplayName: Transkribera
         CFBundleDevelopmentRegion: sv
         LSApplicationCategoryType: public.app-category.productivity
-        NSMicrophoneUsageDescription: Transkribera använder mikrofonen för att spela in din röst under mötesinspelningar.
-        NSAudioCaptureUsageDescription: Transkribera spelar in datorns ljud under mötesinspelningar så att det kan transkriberas.
+        NSMicrophoneUsageDescription: Transkribera spelar in mikrofonen under mötesinspelningar så att även det du själv säger kommer med i texten.
+        NSAudioCaptureUsageDescription: Transkribera spelar in datorns ljud under mötesinspelningar så att mötet kan transkriberas. Ljudet stannar på din Mac.
         NSHumanReadableCopyright: "© 2026 Nicklas Nilsson"
     entitlements:
       path: Transkribera/Resources/Transkribera.entitlements

@@ -31,7 +31,7 @@ struct NewTranscriptionView: View {
                 .symbolEffect(.bounce, value: isTargeted)
             Text("Släpp ljud- eller videofiler här")
                 .font(.title2.weight(.semibold))
-            Text("MP4, MOV, M4A, MP3, WAV, AIFF … Allt transkriberas lokalt på din Mac.")
+            Text("Till exempel MP3, M4A, WAV, MP4 eller MOV. Allt transkriberas lokalt – inget lämnar din Mac.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -43,6 +43,7 @@ struct NewTranscriptionView: View {
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
+            .help("Välj en eller flera filer att transkribera")
         }
         .padding(40)
         .frame(maxWidth: 560, minHeight: 280)
@@ -68,6 +69,7 @@ struct NewTranscriptionView: View {
 }
 
 /// Snabbval för modell, språk och talare direkt på startsidan.
+/// Gäller både filer och mötesinspelningar som startas härifrån.
 struct QuickSettingsView: View {
     @AppStorage(SettingsKey.model) private var modelRaw = WhisperModel.default.rawValue
     @AppStorage(SettingsKey.language) private var language = "sv"
@@ -79,6 +81,17 @@ struct QuickSettingsView: View {
         let model = WhisperModel(rawValue: modelRaw) ?? .default
 
         VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Inställningar")
+                    .font(.headline)
+                Spacer()
+                SettingsLink {
+                    Text("Fler inställningar…")
+                }
+                .buttonStyle(.link)
+                .help("Öppna alla inställningar, t.ex. översättning och nedladdade modeller")
+            }
+
             Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 10) {
                 GridRow {
                     Text("Modell").foregroundStyle(.secondary)
@@ -89,12 +102,13 @@ struct QuickSettingsView: View {
                     }
                     .labelsHidden()
                     .frame(maxWidth: 280)
+                    .help("Större modeller ger bättre text men tar längre tid och mer plats")
                 }
                 GridRow {
                     Color.clear.gridCellUnsizedAxes([.horizontal, .vertical])
                     Text(transcriber.isDownloaded(model)
-                         ? "\(model.summary) · nedladdad"
-                         : "\(model.summary) · laddas ner vid första användningen")
+                         ? "\(model.summary) · Finns på datorn"
+                         : "\(model.summary) · Laddas ner automatiskt första gången")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -107,10 +121,12 @@ struct QuickSettingsView: View {
                     }
                     .labelsHidden()
                     .frame(maxWidth: 280)
+                    .help("Språket som talas. Ett angivet språk ger oftast säkrare resultat än automatiskt.")
                 }
                 GridRow {
                     Text("Talare").foregroundStyle(.secondary)
-                    Toggle("Identifiera vem som pratar", isOn: $identifySpeakers)
+                    Toggle("Skilj på vem som pratar", isOn: $identifySpeakers)
+                        .help("Märker texten med Talare 1, Talare 2 … som du sedan kan byta namn på. Tar lite längre tid.")
                 }
             }
 

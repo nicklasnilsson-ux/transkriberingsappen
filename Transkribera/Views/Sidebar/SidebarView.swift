@@ -53,9 +53,10 @@ struct SidebarView: View {
             .buttonStyle(.plain)
             .foregroundStyle(.tint)
             .padding(.vertical, 4)
+            .help("Transkribera en fil eller spela in ett möte (⌘N)")
 
             if transcripts.isEmpty {
-                Text("Dina transkriberingar hamnar här.")
+                Text("Inga transkriberingar än. Släpp en fil eller spela in ett möte så hamnar resultatet här.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .padding(.top, 8)
@@ -72,7 +73,7 @@ struct SidebarView: View {
             }
         }
         .listStyle(.sidebar)
-        .searchable(text: $filter, placement: .sidebar, prompt: "Filtrera")
+        .searchable(text: $filter, placement: .sidebar, prompt: "Sök på titel")
         .navigationSplitViewColumnWidth(min: 220, ideal: 260, max: 360)
         .confirmationDialog(
             "Radera ”\(transcriptToDelete?.title ?? "")”?",
@@ -87,7 +88,9 @@ struct SidebarView: View {
                 transcriptToDelete = nil
             }
         } message: {
-            Text("Transkriberingen och den sparade mediefilen tas bort. Det går inte att ångra.")
+            Text(transcriptToDelete?.isRecording == true
+                 ? "Texten och inspelningen raderas. Det går inte att ångra."
+                 : "Texten och appens kopia av filen raderas. Originalfilen påverkas inte. Det går inte att ångra.")
         }
         .onDeleteCommand {
             if let selection { transcriptToDelete = selection }
@@ -96,9 +99,9 @@ struct SidebarView: View {
 
     @ViewBuilder
     private func menu(for transcript: Transcript) -> some View {
-        Button("Transkribera igen") { queue.retranscribe(transcript) }
+        Button("Transkribera igen med nuvarande inställningar") { queue.retranscribe(transcript) }
             .disabled(transcript.status == .transcribing || transcript.status == .queued)
-        Button("Visa mediefil i Finder") {
+        Button("Visa ljud-/videofilen i Finder") {
             NSWorkspace.shared.activateFileViewerSelecting([transcript.mediaURL])
         }
         Divider()

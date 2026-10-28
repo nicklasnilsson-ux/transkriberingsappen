@@ -25,25 +25,44 @@ private struct TranscriptionSettingsView: View {
 
     var body: some View {
         Form {
-            Picker("Språk", selection: $language) {
-                ForEach(Language.all) { language in
-                    Text(language.name).tag(language.id)
+            Section {
+                Picker("Språk", selection: $language) {
+                    ForEach(Language.all) { language in
+                        Text(language.name).tag(language.id)
+                    }
                 }
+                Picker("Resultat", selection: $task) {
+                    Text("Text på originalspråket").tag("transcribe")
+                    Text("Översätt till engelska").tag("translate")
+                }
+            } footer: {
+                Text("Välj språket som talas. Automatiskt fungerar oftast, men ett angivet språk ger säkrare resultat. Inställningarna gäller nya transkriberingar.")
+                    .foregroundStyle(.secondary)
             }
-            Picker("Uppgift", selection: $task) {
-                Text("Transkribera (samma språk)").tag("transcribe")
-                Text("Översätt till engelska").tag("translate")
+
+            Section {
+                Toggle("Skilj på vem som pratar", isOn: $identifySpeakers)
+            } footer: {
+                Text("Märker texten med Talare 1, Talare 2 … som du kan byta namn på. Laddar ner en extra modell (cirka 30 MB) första gången och tar lite längre tid.")
+                    .foregroundStyle(.secondary)
             }
-            Toggle("Identifiera talare (SpeakerKit)", isOn: $identifySpeakers)
-            Text("Laddar ner en extra modell (~30 MB) första gången och tar lite längre tid.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Toggle("Tidsstämplar per ord", isOn: $wordTimestamps)
-            Text("Behövs för att markera ordet som spelas upp och för att dela långa undertexter.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+
+            Section {
+                Toggle("Tidsstämplar per ord", isOn: $wordTimestamps)
+            } footer: {
+                Text("Gör att ordet som spelas upp markeras i texten och att långa undertexter delas upp bättre vid export.")
+                    .foregroundStyle(.secondary)
+            }
+
             if MeetingRecorder.supportsMicrophone {
-                Toggle("Spela in mikrofonen vid mötesinspelning", isOn: $recordMicrophone)
+                Section {
+                    Toggle("Spela även in min mikrofon", isOn: $recordMicrophone)
+                } header: {
+                    Text("Mötesinspelning")
+                } footer: {
+                    Text("Ta med din egen röst. Annars spelas bara datorns ljud in, alltså de andra deltagarna.")
+                        .foregroundStyle(.secondary)
+                }
             }
         }
         .formStyle(.grouped)
@@ -58,24 +77,24 @@ private struct PrivacySettingsView: View {
 
     var body: some View {
         Form {
-            Toggle("Anonymisera känsliga uppgifter", isOn: $anonymize)
-            Text("Uppgifterna ersätts med t.ex. [PERSON 1] när du läser, kopierar och exporterar. Originaltexten sparas och visas igen om du stänger av det här. Allt sker lokalt på datorn.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            Section {
+                Toggle("Anonymisera känsliga uppgifter", isOn: $anonymize)
+            } footer: {
+                Text("Uppgifterna ersätts med t.ex. [PERSON 1] när du läser, kopierar och exporterar. Originaltexten sparas och visas igen om du stänger av det här. Allt sker lokalt på datorn.")
+                    .foregroundStyle(.secondary)
+            }
 
-            Section("Vad som ska döljas") {
+            Section {
                 Toggle("Namn på personer, platser och organisationer", isOn: $names)
                 Toggle("Personnummer, telefon, e-post, adresser, kontonummer och regnummer", isOn: $identifiers)
                 Toggle("Hälsa, religion, politisk åsikt m.m.", isOn: $sensitive)
-                Text("Känsliga ämnen hittas bara delvis, via en ordlista.")
-                    .font(.caption)
+            } header: {
+                Text("Vad som döljs")
+            } footer: {
+                Text("Hälsa, religion och liknande hittas bara delvis, via en ordlista. Ingen automatisk anonymisering är helt säker, så läs igenom texten innan du delar den.")
                     .foregroundStyle(.secondary)
             }
             .disabled(!anonymize)
-
-            Text("Ingen automatisk anonymisering är helt säker. Läs igenom texten innan du delar den.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
         }
         .formStyle(.grouped)
     }
@@ -89,13 +108,18 @@ private struct ModelSettingsView: View {
     var body: some View {
         let transcriber = queue.transcriber
         Form {
-            Picker("Standardmodell", selection: $modelRaw) {
-                ForEach(WhisperModel.allCases) { model in
-                    Text(model.displayName).tag(model.rawValue)
+            Section {
+                Picker("Modell", selection: $modelRaw) {
+                    ForEach(WhisperModel.allCases) { model in
+                        Text(model.displayName).tag(model.rawValue)
+                    }
                 }
+            } footer: {
+                Text("Större modeller ger bättre text men tar längre tid och mer plats. Modellen laddas ner automatiskt första gången den används.")
+                    .foregroundStyle(.secondary)
             }
 
-            Section("Modeller på den här datorn") {
+            Section {
                 ForEach(WhisperModel.allCases) { model in
                     HStack {
                         VStack(alignment: .leading) {
@@ -106,11 +130,16 @@ private struct ModelSettingsView: View {
                         }
                         Spacer()
                         if transcriber.isDownloaded(model) {
-                            Button("Radera", role: .destructive) {
+                            Label("Nedladdad", systemImage: "checkmark.circle.fill")
+                                .labelStyle(.iconOnly)
+                                .foregroundStyle(.green)
+                                .help("Finns på datorn")
+                            Button("Ta bort", role: .destructive) {
                                 transcriber.deleteDownloadedModel(model)
                                 refresh += 1
                             }
                             .disabled(transcriber.isBusy)
+                            .help("Frigör utrymme. Modellen laddas ner igen om du använder den.")
                         } else {
                             Button("Ladda ner") {
                                 Task {
@@ -119,17 +148,23 @@ private struct ModelSettingsView: View {
                                 }
                             }
                             .disabled(transcriber.isBusy)
+                            .help("Hämta modellen nu så att den är redo direkt")
                         }
                     }
                 }
                 .id(refresh)
-            }
 
-            if transcriber.isBusy {
-                HStack {
-                    ProgressView().controlSize(.small)
-                    Text(transcriber.statusText).font(.caption)
+                if transcriber.isBusy {
+                    HStack {
+                        ProgressView().controlSize(.small)
+                        Text(transcriber.statusText).font(.caption)
+                    }
                 }
+            } header: {
+                Text("Modeller")
+            } footer: {
+                Text("Modellerna sparas på din Mac. Ta bort dem du inte använder för att frigöra utrymme.")
+                    .foregroundStyle(.secondary)
             }
 
             Section {
