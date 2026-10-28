@@ -125,6 +125,11 @@ jobs:
       - name: Skapa .dmg
         run: ./scripts/make-dmg.sh "${{ steps.version.outputs.name }}"
 
+      - name: Röktest – startar appen?
+        run: |
+          ./scripts/smoke-test.sh "dist/Transkribera-${{ steps.version.outputs.name }}.dmg" \
+            "${{ steps.version.outputs.short }}" "${{ steps.version.outputs.build }}"
+
       - name: Ladda upp byggartefakt
         uses: actions/upload-artifact@v4
         with:

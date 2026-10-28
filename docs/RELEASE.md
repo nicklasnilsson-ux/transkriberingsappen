@@ -19,7 +19,8 @@ hos betatestarna, och flera betor i rad går alltid uppåt. Betor syns som *pre-
 ## Processen
 
 1. **Gör ändringarna i en PR.** CI kör enhetstesterna (`TranskriberaCore`), testerna för
-   releaseskripten och bygger hela appen. Mergea bara när allt är grönt.
+   releaseskripten, bygger hela appen och röktestar `.dmg`:n (`scripts/smoke-test.sh`: rätt
+   version, giltig signatur och att appen startar). Mergea bara när allt är grönt.
 2. **Höj versionen i samma PR eller en egen**: `MARKETING_VERSION` (t.ex. `0.5.0`) och
    `CURRENT_PROJECT_VERSION` (heltal, alltid +1) i `project.yml`. Byggnumret är det Sparkle
    jämför; CI stoppar releasen om det inte är högre än det som redan finns i appcasten.
@@ -69,6 +70,8 @@ EdDSA-nyckel, så går uppdateringen från ad hoc till Developer ID igenom.
 
 ## Tekniska detaljer
 
+- `scripts/codesign-app.sh` signerar appen inifrån och ut (Sparkles delar först). Med härdad
+  runtime måste allt ha samma signatur som appen, annars startar den inte.
 - `scripts/make-dmg.sh` gör både `.dmg` (för nya användare) och `.zip` (för Sparkle).
 - `scripts/appcast.py` signerar zip-filen och skriver appcasten. Tester: `scripts/test_appcast.py`.
 - `scripts/publish-appcast.sh` committar appcasten till branchen `appcast`.
