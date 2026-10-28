@@ -289,6 +289,7 @@ struct TranscriptDetailView: View {
                 Spacer()
                 Button("Visa original") { anonymize = false }
                     .buttonStyle(.link)
+                    .help("Stäng av anonymiseringen. Slå på den igen med ögat i verktygsfältet.")
             }
             .font(.callout)
             .padding(.horizontal)
