@@ -4,6 +4,8 @@ Allt som ändras för användaren, version för version. Avsnittet för en versi
 releasens text på GitHub och i uppdateringsdialogen. CI stoppar en ny version som saknar
 avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren.
 
+## [Kommande]
+
 ## [0.5.0] – 2026-10-28
 
 ### Nytt

@@ -192,7 +192,7 @@ private struct Meter: View {
 /// Längre förklaring i klartext om hur modellerna skiljer sig åt. Visas från
 /// "Vilken modell ska jag välja?" i väljaren och i Inställningar.
 struct ModelGuideView: View {
-    private let rows: [WhisperModel] = WhisperModel.allCases.filter { $0.swedishWordErrorRate != nil }
+    private let rows: [WhisperModel] = WhisperModel.offered.filter { $0.swedishWordErrorRate != nil }
 
     var body: some View {
         ScrollView {
@@ -207,7 +207,7 @@ struct ModelGuideView: View {
                         "Skillnaden är så stor att KB Small, som bara är en sjättedel så stor, gör färre fel på svenska än OpenAI:s största modell Large v3. Mest märks det på vanligt vardagstal och namn.")
 
                 section("Ordagrann eller vanlig",
-                        "De vanliga KB-modellerna skriver som en undertext och stryker ibland upprepningar och småord. De ordagranna varianterna skriver mer exakt vad som sägs. Välj KB Large ordagrann för intervjuer där du vill kunna citera.")
+                        "De vanliga KB-modellerna skriver som en undertext och stryker ibland upprepningar och småord. De ordagranna varianterna skriver mer exakt vad som sägs. Välj KB Medium ordagrann för intervjuer där du vill kunna citera.")
 
                 section("Pianissimo: snabbast",
                         "Pianissimo från Klang bygger inte på Whisper utan på NVIDIA:s Parakeet och är vidaretränad på omkring 50 000 timmar svenskt tal. Den gör ungefär lika få fel som KB Medium men är många gånger snabbare, och sätter själv punkt och stor bokstav. Välj den för långa inspelningar när tiden är viktigare än det sista ordet.")

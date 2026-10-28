@@ -30,8 +30,12 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
             }
         }
 
-        var models: [WhisperModel] { WhisperModel.allCases.filter { $0.family == self } }
+        var models: [WhisperModel] { WhisperModel.offered.filter { $0.family == self } }
     }
+
+    /// Modellerna som visas i väljaren. KB Large ordagrann är dold tills den finns i
+    /// releasen kb-whisper-v1 (konverteringen har inte gått igenom än).
+    static let offered: [WhisperModel] = allCases.filter { $0 != .kbLargeStrict }
 
     /// Var modellen laddas ner ifrån.
     enum Source {
