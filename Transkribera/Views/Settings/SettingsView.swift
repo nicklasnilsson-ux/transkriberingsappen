@@ -1,5 +1,7 @@
 import AppKit
 import SwiftUI
+import TranskriberaCore
+import TranskriberaSpeakers
 
 struct SettingsView: View {
     var body: some View {
@@ -22,7 +24,8 @@ private struct TranscriptionSettingsView: View {
     @AppStorage(SettingsKey.language) private var language = "sv"
     @AppStorage(SettingsKey.task) private var task = "transcribe"
     @AppStorage(SettingsKey.identifySpeakers) private var identifySpeakers = false
-    @AppStorage(SettingsKey.speakerCount) private var speakerCount = 0
+    @AppStorage(SettingsKey.speakers) private var speakers = SpeakerCount.automatic.rawValue
+    @AppStorage(SettingsKey.communityDiarization) private var communityDiarization = false
     @AppStorage(SettingsKey.vocabulary) private var vocabulary = ""
     @AppStorage(SettingsKey.wordTimestamps) private var wordTimestamps = true
     @AppStorage(SettingsKey.recordMicrophone) private var recordMicrophone = true
@@ -48,7 +51,7 @@ private struct TranscriptionSettingsView: View {
 
             Section {
                 Toggle("Skilj på vem som pratar", isOn: $identifySpeakers)
-                SpeakerCountPicker(selection: $speakerCount)
+                SpeakerCountPicker(selection: $speakers)
                     .disabled(!identifySpeakers)
             } footer: {
                 Text("Märker texten med Talare 1, Talare 2 … som du kan byta namn på. Vet du hur många som pratar blir uppdelningen säkrare. Laddar ner en extra modell (cirka 30 MB) första gången och tar lite längre tid.")
@@ -70,10 +73,15 @@ private struct TranscriptionSettingsView: View {
                     .help("Pianissimo lyssnar på 15 sekunder i taget. Med det här provar den flera sätt att skarva bitarna och väljer det säkraste.")
                 Toggle("Jämna ut volymen", isOn: $levelVolume)
                     .help("Förstärker svaga röster innan ljudet transkriberas. Tystnad och starka röster lämnas som de är.")
+                Toggle("Ny talaridentifiering (pyannote community-1)", isOn: $communityDiarization)
+                    .disabled(!CommunityDiarizer.isSupported)
+                    .help("En nyare modell för att avgöra vem som pratar. Körs lokalt, som den nuvarande. Laddar ner en extra modell första gången.")
             } header: {
                 Text("Experiment")
             } footer: {
-                Text("För att jämföra kvaliteten. Noggrannare skarvar tar 10–50 % längre tid. Det som användes står efter modellens namn i transkriberingen.")
+                Text(CommunityDiarizer.isSupported
+                     ? "För att jämföra kvaliteten. Noggrannare skarvar tar 10–50 % längre tid. Det som användes står efter modellens namn i transkriberingen."
+                     : "För att jämföra kvaliteten. Noggrannare skarvar tar 10–50 % längre tid. Den nya talaridentifieringen kräver macOS 15 eller senare. Det som användes står efter modellens namn i transkriberingen.")
                     .foregroundStyle(.secondary)
             }
 
@@ -238,15 +246,15 @@ private struct ModelSettingsView: View {
 
 /// Antal talare: automatiskt (0) eller ett känt antal.
 struct SpeakerCountPicker: View {
-    @Binding var selection: Int
+    /// `SpeakerCount.rawValue`.
+    @Binding var selection: String
 
     var body: some View {
         Picker("Antal talare", selection: $selection) {
-            Text("Automatiskt antal").tag(0)
-            ForEach(2...8, id: \.self) { count in
-                Text("\(count) talare").tag(count)
+            ForEach(SpeakerCount.choices) { count in
+                Text(count.label).tag(count.rawValue)
             }
         }
-        .help("Vet du hur många som pratar blir uppdelningen säkrare.")
+        .help("Vet du hur många som pratar blir uppdelningen säkrare. Ett spann, t.ex. 2–4, passar när du inte vet hur många som är med från kundsidan.")
     }
 }

@@ -1,4 +1,5 @@
 import SwiftUI
+import TranskriberaCore
 
 /// Startvyn: släpp filer, välj fil eller starta en mötesinspelning.
 struct NewTranscriptionView: View {
@@ -74,7 +75,7 @@ struct QuickSettingsView: View {
     @AppStorage(SettingsKey.model) private var modelRaw = WhisperModel.default.rawValue
     @AppStorage(SettingsKey.language) private var language = "sv"
     @AppStorage(SettingsKey.identifySpeakers) private var identifySpeakers = false
-    @AppStorage(SettingsKey.speakerCount) private var speakerCount = 0
+    @AppStorage(SettingsKey.speakers) private var speakers = SpeakerCount.automatic.rawValue
     @AppStorage(SettingsKey.vocabulary) private var vocabulary = ""
     @Environment(TranscriptionQueue.self) private var queue
 
@@ -132,7 +133,7 @@ struct QuickSettingsView: View {
                         Toggle("Skilj på vem som pratar", isOn: $identifySpeakers)
                             .help("Märker texten med Talare 1, Talare 2 … som du sedan kan byta namn på. Tar lite längre tid.")
                         if identifySpeakers {
-                            SpeakerCountPicker(selection: $speakerCount)
+                            SpeakerCountPicker(selection: $speakers)
                                 .labelsHidden()
                                 .fixedSize()
                         }

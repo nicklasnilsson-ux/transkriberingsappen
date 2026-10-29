@@ -12,6 +12,11 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 - Två experiment under Inställningar → Transkribering för att jämföra kvaliteten:
   noggrannare skarvar för Pianissimo och utjämnad volym, som förstärker svaga röster.
   Det som användes står efter modellens namn i transkriberingen.
+- Experiment: ny talaridentifiering (pyannote community-1) under Inställningar →
+  Transkribering. Den körs lokalt, som den nuvarande, och kräver macOS 15. Slå på den
+  och transkribera samma fil två gånger för att jämföra vem som får vilka repliker.
+- Antal talare kan nu vara ett spann, t.ex. 2–4, när du inte vet hur många som är med.
+  Automatiskt betyder nu minst 2 talare med den nya talaridentifieringen.
 
 ### Rättat
 - En transkribering med Whisper-modellerna (t.ex. KB-Whisper) kunde stanna mitt i, till

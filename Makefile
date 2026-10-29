@@ -15,6 +15,7 @@ dmg: app  ## Bygg dist/Transkribera-dev.dmg
 test:  ## Kör enhetstester för kärnlogiken, Whisper-förloppet och releaseskripten
 	swift test --package-path Packages/TranskriberaCore
 	swift test --package-path Packages/TranskriberaWhisper
+	swift test --package-path Packages/TranskriberaSpeakers
 	python3 -m unittest discover -s scripts
 
 check-models:  ## Kontrollera att alla modeller i väljaren går att ladda ner

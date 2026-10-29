@@ -10,6 +10,7 @@ struct TranskriberaApp: App {
     @StateObject private var updater = AppUpdater()
 
     init() {
+        SpeakerCountSetting.migrate()
         // Kraschar aldrig: en databas som inte går att öppna sparas undan (se Database).
         let database = Database.open()
         container = database.container
