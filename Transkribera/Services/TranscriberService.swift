@@ -232,7 +232,7 @@ final class TranscriberService {
 
             phase = .transcribing(fraction: nil)
             // Talaridentifieringen får originalljudet; bara modellen får det utjämnade.
-            let input = options.levelVolume ? VolumeLeveler.level(samples, sampleRate: AudioLoader.sampleRate) : samples
+            let input = options.appliesLevelVolume ? VolumeLeveler.level(samples, sampleRate: AudioLoader.sampleRate) : samples
             var segments: [SegmentData]
             let language: String?
             if options.model.usesParakeet {

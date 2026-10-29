@@ -6,6 +6,12 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+### Nytt
+- Volymen jämnas nu ut som standard för KB-Whisper, så att svaga röster hörs lika bra
+  som starka. I två intervjuer gav det 2–3 procentenheter färre ordfel jämfört med
+  Klang. Pianissimo påverkas inte, eftersom den jämnar ut volymen själv. Du kan stänga
+  av det under Inställningar → Transkribering → Experiment.
+
 ## [0.5.4] – 2026-10-29
 
 ### Nytt
