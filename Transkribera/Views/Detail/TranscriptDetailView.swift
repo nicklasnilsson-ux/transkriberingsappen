@@ -331,6 +331,10 @@ struct TranscriptDetailView: View {
                             interviewerButton(speaker)
                         }
                     }
+                    Divider()
+                    Button("Visa talarturer i Finder (för felsökning)") {
+                        NSWorkspace.shared.open(AppPaths.speakerTurnsDirectory)
+                    }
                 } label: {
                     Label("Talare", systemImage: "person.2")
                 }

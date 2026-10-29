@@ -419,9 +419,30 @@ final class TranscriberService {
 
         // Talare sätts per ord, så att repliker utan paus emellan ändå delas upp rätt.
         let assigned = SpeakerAssignment.assign(segments, turns: turns)
+        saveSpeakerTurns(
+            SpeakerDiagnostics(
+                diarizer: options.communityDiarization ? "community-1" : "SpeakerKit",
+                speakers: options.speakerCount.label,
+                turns: turns,
+                segments: assigned
+            )
+        )
 
         // Om diariseringen inte gav något – behåll segmenten utan talare.
         return assigned.contains { $0.speaker != nil } ? assigned : segments
+    }
+
+    /// Sparar turerna så att fel i talartilldelningen går att söka efter utan att dela texten.
+    /// De 20 senaste filerna behålls. Misslyckas det är det ingen som märker det.
+    private func saveSpeakerTurns(_ diagnostics: SpeakerDiagnostics) {
+        let folder = AppPaths.speakerTurnsDirectory
+        let stamp = Int(Date().timeIntervalSince1970)
+        guard let data = try? diagnostics.encoded() else { return }
+        try? data.write(to: folder.appending(path: "talarturer-\(stamp).json"))
+        let files = (try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)) ?? []
+        for old in files.filter({ $0.pathExtension == "json" }).sorted(by: { $0.lastPathComponent < $1.lastPathComponent }).dropLast(20) {
+            try? FileManager.default.removeItem(at: old)
+        }
     }
 
     /// Dagens talaridentifiering. SpeakerKit tar bara emot ett exakt antal talare, så ett

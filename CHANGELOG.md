@@ -6,6 +6,12 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+### Nytt
+- Under Talare finns nu "Visa talarturer i Finder (för felsökning)". Där sparas, för de
+  20 senaste transkriberingarna, när talaridentifieringen tycker att varje talare hörs och
+  hur orden delades mellan dem. Filerna innehåller bara tider och talarnummer, ingen text,
+  så de går att skicka när talarna blir fel.
+
 ## [0.5.5] – 2026-10-29
 
 ### Nytt
