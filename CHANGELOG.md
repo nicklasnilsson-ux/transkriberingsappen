@@ -6,7 +6,7 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
-## [0.5.1] – 2026-10-29
+## [0.5.2] – 2026-10-29
 
 ### Nytt
 - Ordlistan gäller nu också Pianissimo: namn som modellen hört nästan rätt, t.ex.
