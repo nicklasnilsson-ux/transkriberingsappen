@@ -6,6 +6,25 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.5.3</title>
+      <pubDate>Thu, 29 Oct 2026 18:48:44 GMT</pubDate>
+      <sparkle:version>10</sparkle:version>
+      <sparkle:shortVersionString>0.5.3</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.5.3</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Nytt&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Två experiment under Inställningar → Transkribering för att jämföra kvaliteten: noggrannare skarvar för Pianissimo och utjämnad volym, som förstärker svaga röster. Det som användes står efter modellens namn i transkriberingen.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Rättat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;En transkribering med Whisper-modellerna (t.ex. KB-Whisper) kunde stanna mitt i, till exempel på 46 %, medan datorn fortsatte att arbeta för fullt: modellen kunde fastna och tolka samma bit av ljudet om och om igen, särskilt med ord i ordlistan. Nu går den alltid vidare, och tal som hoppats över fångas av kontrollen efteråt.&lt;/li&gt;
+&lt;li&gt;Korta svar som &amp;quot;Varje dag&amp;quot; kunde hamna hos den som ställde frågan när talaridentifieringen missat dem. Nu går de till den talare som hörs närmast i tid.&lt;/li&gt;
+&lt;li&gt;Döper du om en talare till &amp;quot;Intervjuare&amp;quot; eller &amp;quot;Kund 1&amp;quot; byts namnet inte längre ut mot &amp;quot;[PERSON 1]&amp;quot; när texten anonymiseras.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.5.3/Transkribera-v0.5.3.zip" length="13815456" type="application/octet-stream" sparkle:edSignature="8h64mR9PiT2Ej3UsJo1z4sJKCRwwY/viCZBRQAdnzBgDKhsRaFadQeT3zH8JYeH5Obkf9udWxCsrSeANbJH9Bg==" />
+    </item>
+    <item>
       <title>Version 0.5.2</title>
       <pubDate>Thu, 29 Oct 2026 14:00:35 GMT</pubDate>
       <sparkle:version>9</sparkle:version>
