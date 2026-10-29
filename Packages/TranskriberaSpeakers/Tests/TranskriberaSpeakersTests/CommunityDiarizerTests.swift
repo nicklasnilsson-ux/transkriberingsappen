@@ -16,12 +16,23 @@ final class CommunityDiarizerTests: XCTestCase {
 
         let labels = dialogue.assign(turns)
         print("community-1:", dialogue.report(labels))
-        let interviewer = labels[0]
-        let customer = labels[1]
+        let (interviewer, customer) = dialogue.roles(labels)
         XCTAssertNotEqual(interviewer, customer, "Intervjuaren och kunden fick samma talare")
         for (line, label) in zip(dialogue.lines, labels) {
             XCTAssertEqual(label, line.isInterviewer ? interviewer : customer, "Fel talare för \"\(line.text)\"")
         }
+    }
+
+    /// Utan omräkningen av korta turer hamnade "Varje dag." hos intervjuaren (CI 2026-10-29).
+    /// Skriver bara ut resultatet, för jämförelse i loggen.
+    func testCompareWithoutReembedding() async throws {
+        let dialogue = try Dialogue.make()
+        let diarizer = CommunityDiarizer(modelsDirectory: Self.modelsDirectory.appending(path: "community"))
+        let turns = try await diarizer.turns(
+            samples: dialogue.samples,
+            config: CommunityDiarizer.config(for: .automatic, reembedShortTurns: false)
+        )
+        print("community-1 utan omräkning:", dialogue.report(dialogue.assign(turns)))
     }
 
     func testExactCountIsRespected() async throws {
@@ -67,6 +78,7 @@ final class CommunityDiarizerTests: XCTestCase {
         XCTAssertEqual(range.maxSpeakers, 4)
 
         XCTAssertEqual(CommunityDiarizer.config(for: .exactly(3)).clustering.numSpeakers, 3)
+        XCTAssertTrue(CommunityDiarizer.config(for: .automatic).zeroVoteReembed.enabled)
     }
 
     static let modelsDirectory = FileManager.default.temporaryDirectory
@@ -147,14 +159,27 @@ struct Dialogue {
         }
     }
 
+    /// Intervjuarens och kundens talare: den som har flest av respektive rolls långa repliker.
+    /// Korta repliker räknas inte, eftersom det är dem testet kontrollerar.
+    func roles(_ labels: [String?]) -> (interviewer: String?, customer: String?) {
+        func majority(interviewer: Bool) -> String? {
+            var counts: [String: Int] = [:]
+            for (line, label) in zip(lines, labels)
+            where line.isInterviewer == interviewer && line.text.split(separator: " ").count >= 6 {
+                counts[label ?? "-", default: 0] += 1
+            }
+            return counts.max { $0.value < $1.value }?.key
+        }
+        return (majority(interviewer: true), majority(interviewer: false))
+    }
+
     func report(_ labels: [String?]) -> String {
-        let interviewer = labels.first ?? nil
-        let customer = labels.count > 1 ? labels[1] : nil
+        let (interviewer, customer) = roles(labels)
         let correct = zip(lines, labels).filter { line, label in
             label == (line.isInterviewer ? interviewer : customer) && interviewer != customer
         }.count
         let details = zip(lines, labels).map { "\($1 ?? "-"): \($0.text)" }.joined(separator: " | ")
-        return "\(correct) av \(lines.count) repliker rätt. \(details)"
+        return "\(correct) av \(lines.count) repliker rätt (intervjuare \(interviewer ?? "-"), kund \(customer ?? "-")). \(details)"
     }
 
     static func speak(_ text: String, voice: String, file: URL) throws -> [Float] {

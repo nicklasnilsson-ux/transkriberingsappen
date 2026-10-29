@@ -25,8 +25,12 @@ public actor CommunityDiarizer {
 
     /// Talarturer för ljud i 16 kHz mono.
     public func turns(samples: [Float], speakers: SpeakerCount) async throws -> [SpeakerTurn] {
+        try await turns(samples: samples, config: Self.config(for: speakers))
+    }
+
+    func turns(samples: [Float], config: OfflineDiarizerConfig) async throws -> [SpeakerTurn] {
         let models = try await loadedModels()
-        let manager = OfflineDiarizerManager(config: Self.config(for: speakers))
+        let manager = OfflineDiarizerManager(config: config)
         manager.initialize(models: models)
         let result = try await manager.process(audio: samples)
         return Self.turns(from: result.segments.map {
@@ -34,8 +38,15 @@ public actor CommunityDiarizer {
         })
     }
 
-    static func config(for speakers: SpeakerCount) -> OfflineDiarizerConfig {
+    /// - Parameter reembedShortTurns: Tal som inte fått något röstavtryck (oftast korta svar,
+    ///   under 1 s) jämförs med talarnas röster i efterhand. Annars räknar FluidAudio dem
+    ///   till talaren runt omkring, vilket gav precis felet att "Varje dag." hamnade hos
+    ///   den som frågade (se `CommunityDiarizerTests`).
+    static func config(for speakers: SpeakerCount, reembedShortTurns: Bool = true) -> OfflineDiarizerConfig {
         var config = OfflineDiarizerConfig(clustering: .community)
+        if reembedShortTurns {
+            config.zeroVoteReembed = OfflineDiarizerConfig.ZeroVoteReembed(enabled: true, minDurationSeconds: 0.3)
+        }
         if let exact = speakers.exact {
             config.clustering.numSpeakers = exact
         } else {
