@@ -83,7 +83,11 @@ killall -u "$USER" cfprefsd 2>/dev/null || true
 mkdir -p "$HOME/Applications" "$MOUNT"
 
 # --- 1. Förra versionen.
-hdiutil attach "$OLD_DMG" -nobrowse -readonly -mountpoint "$MOUNT" -quiet
+for attempt in 1 2 3 4 5; do
+  hdiutil attach "$OLD_DMG" -nobrowse -readonly -mountpoint "$MOUNT" -quiet && break
+  [[ $attempt == 5 ]] && die "Kunde inte montera $OLD_DMG."
+  sleep $((attempt * 3))
+done
 ditto "$MOUNT/Transkribera.app" "$APP"
 hdiutil detach "$MOUNT" -quiet
 OLD_VERSION="$(app_version CFBundleShortVersionString)" OLD_BUILD="$(app_version CFBundleVersion)"

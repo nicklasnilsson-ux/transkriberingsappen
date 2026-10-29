@@ -26,7 +26,16 @@ fail() { echo "::error::$*"; errors=$((errors + 1)); }
 
 # Som en nedladdning från webbläsaren.
 xattr -w com.apple.quarantine "0083;$(printf %x "$(date +%s)");Safari;" "$DMG"
-hdiutil attach "$DMG" -nobrowse -readonly -mountpoint "$MOUNT" -quiet
+# hdiutil kan misslyckas tyst direkt efter att .dmg:n skapats (0.5.2), så försök igen och visa felet.
+attached=0
+for attempt in 1 2 3 4 5; do
+  if hdiutil attach "$DMG" -nobrowse -readonly -mountpoint "$MOUNT" >"$WORK/attach.log" 2>&1; then
+    attached=1; break
+  fi
+  echo "hdiutil attach misslyckades (försök $attempt): $(tail -3 "$WORK/attach.log")"
+  sleep $((attempt * 3))
+done
+[[ $attached == 1 ]] || { echo "::error::Kunde inte montera $DMG."; exit 1; }
 [[ -L "$MOUNT/Program" ]] || fail ".dmg:n saknar genvägen till Program-mappen."
 ditto "$MOUNT/Transkribera.app" "$WORK/Transkribera.app"
 APP="$WORK/Transkribera.app"
