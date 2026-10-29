@@ -63,6 +63,7 @@ Transkribera/
   Services/                     WhisperKit/SpeakerKit, ljudinläsning, kö, mötesinspelning
   Views/                        SwiftUI-vyer (sidopanel, startsida, detaljvy, spelare, inställningar)
 Packages/TranskriberaCore/      Ren Swift-logik med tester: export, sök, tidsformat
+Packages/TranskriberaWhisper/   Förlopp och löpande text från WhisperKit, testat mot en riktig modell
 scripts/                        Bygg, signera/notarisera och skapa .dmg
 .github/workflows/build.yml     CI: testar, bygger och publicerar .dmg
 .github/workflows/kb-whisper-models.yml  CI: konverterar KB-Whisper till CoreML och publicerar dem

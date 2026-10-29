@@ -46,6 +46,9 @@ jobs:
       - name: Enhetstester (TranskriberaCore)
         run: swift test --package-path Packages/TranskriberaCore
 
+      - name: Förloppstest – Whisper på riktigt ljud
+        run: swift test --package-path Packages/TranskriberaWhisper
+
       - name: Alla modeller i väljaren går att ladda ner
         run: ./scripts/check-models.sh
 

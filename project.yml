@@ -27,6 +27,8 @@ packages:
     from: "2.9.0"
   TranskriberaCore:
     path: Packages/TranskriberaCore
+  TranskriberaWhisper:
+    path: Packages/TranskriberaWhisper
 
 targets:
   Transkribera:
@@ -41,6 +43,7 @@ targets:
         product: SpeakerKit
       - package: FluidAudio
       - package: TranskriberaCore
+      - package: TranskriberaWhisper
       - package: Sparkle
     info:
       path: Transkribera/Resources/Info.plist

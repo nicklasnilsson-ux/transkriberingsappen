@@ -2,6 +2,7 @@ import Foundation
 import Observation
 import SpeakerKit
 import TranskriberaCore
+import TranskriberaWhisper
 import WhisperKit
 
 /// Resultatet av en transkribering, oberoende av lagringen.
@@ -33,7 +34,10 @@ final class TranscriberService {
         case downloadingModel(fraction: Double)
         case loadingModel
         case preparingAudio
-        case transcribing(fraction: Double)
+        /// `nil` tills modellen har rapporterat något förlopp: då visas ett obestämt förlopp
+        /// i stället för en nolla som ser ut att ha fastnat.
+        case transcribing(fraction: Double?)
+        case recheckingGaps(fraction: Double)
         case identifyingSpeakers
         case failed(String)
     }
@@ -60,7 +64,9 @@ final class TranscriberService {
         case .downloadingModel(let fraction): return "Laddar ner modell… \(Int(fraction * 100)) %"
         case .loadingModel: return "Förbereder modellen (första gången kan ta några minuter)…"
         case .preparingAudio: return "Läser in ljudet…"
-        case .transcribing(let fraction): return "Transkriberar… \(Int(fraction * 100)) %"
+        case .transcribing(.none): return "Transkriberar…"
+        case .transcribing(let fraction?): return "Transkriberar… \(Int(fraction * 100)) %"
+        case .recheckingGaps(let fraction): return "Kontrollerar att inget tal saknas… \(Int(fraction * 100)) %"
         case .identifyingSpeakers: return "Identifierar talare…"
         case .failed(let message): return "Fel: \(message)"
         }
@@ -69,7 +75,8 @@ final class TranscriberService {
     /// Framsteg 0–1, eller `nil` om det inte går att uppskatta.
     var fraction: Double? {
         switch phase {
-        case .downloadingModel(let fraction), .transcribing(let fraction): return fraction
+        case .downloadingModel(let fraction), .recheckingGaps(let fraction): return fraction
+        case .transcribing(let fraction): return fraction
         default: return nil
         }
     }
@@ -192,9 +199,8 @@ final class TranscriberService {
             phase = .preparingAudio
             let samples = try await AudioLoader.loadSamples(from: fileURL)
             guard !samples.isEmpty else { throw TranscriberError.emptyAudio }
-            let totalSeconds = max(duration, Double(samples.count) / AudioLoader.sampleRate)
 
-            phase = .transcribing(fraction: 0)
+            phase = .transcribing(fraction: nil)
             var segments: [SegmentData]
             let language: String?
             if options.model.usesParakeet {
@@ -202,16 +208,14 @@ final class TranscriberService {
                     let text = TextCleaning.clean(text)
                     Task { @MainActor in
                         guard let self else { return }
-                        if case .transcribing(let current) = self.phase, fraction > current {
-                            self.phase = .transcribing(fraction: fraction)
-                        }
+                        self.advanceTranscribing(to: fraction)
                         if !text.isEmpty { self.liveText = text }
                     }
                 }
                 language = "sv"
             } else {
                 guard let kit = whisperKit else { throw TranscriberError.modelNotLoaded }
-                let results = try await whisperTranscribe(kit: kit, samples: samples, totalSeconds: totalSeconds, options: options)
+                let results = try await whisperTranscribe(kit: kit, samples: samples, options: options)
                 segments = Self.segments(from: results)
                 segments = try await repairGaps(kit: kit, samples: samples, segments: segments, options: options)
                 language = options.languageCode ?? results.first?.language
@@ -240,7 +244,6 @@ final class TranscriberService {
     private func whisperTranscribe(
         kit: WhisperKit,
         samples: [Float],
-        totalSeconds: Double,
         options: TranscriptionOptions
     ) async throws -> [TranscriptionResult] {
         let decodeOptions = DecodingOptions(
@@ -260,23 +263,27 @@ final class TranscriberService {
             chunkingStrategy: .vad
         )
 
-        return try await kit.transcribe(
+        // WhisperKit skickar inte vidare en egen segmentCallback när ljudet delas upp med
+        // VAD, så förlopp och text hämtas via TranskriberaWhisper (testat mot en riktig modell).
+        return try await WhisperProgress.transcribe(
+            kit: kit,
             audioArray: samples,
             decodeOptions: decodeOptions,
-            callback: nil,
-            segmentCallback: { [weak self] segments in
-                guard let last = segments.last else { return }
-                let fraction = min(1, Double(last.end) / totalSeconds)
-                let text = TextCleaning.clean(last.text)
-                Task { @MainActor in
-                    guard let self else { return }
-                    if case .transcribing(let current) = self.phase, fraction > current {
-                        self.phase = .transcribing(fraction: fraction)
-                    }
-                    if !text.isEmpty { self.liveText = text }
-                }
+            onProgress: { [weak self] fraction in
+                Task { @MainActor in self?.advanceTranscribing(to: fraction) }
+            },
+            onText: { [weak self] text in
+                let text = TextCleaning.clean(text)
+                guard !text.isEmpty else { return }
+                Task { @MainActor in self?.liveText = text }
             }
         )
+    }
+
+    /// Förloppet går bara framåt, även om rapporterna kommer i fel ordning.
+    private func advanceTranscribing(to fraction: Double) {
+        guard case .transcribing(let current) = phase, fraction > (current ?? 0) else { return }
+        phase = .transcribing(fraction: min(1, fraction))
     }
 
     /// Whisper avslutar ibland ett fönster i förtid och hoppar över resten, så att hela
@@ -308,8 +315,9 @@ final class TranscriberService {
         )
 
         var repaired = segments
-        for gap in gaps {
+        for (index, gap) in gaps.enumerated() {
             try Task.checkCancellation()
+            phase = .recheckingGaps(fraction: Double(index) / Double(gaps.count))
             let start = max(0, Int((gap.start - 0.5) * rate))
             let end = min(samples.count, Int((gap.end + 0.5) * rate))
             guard end > start else { continue }
