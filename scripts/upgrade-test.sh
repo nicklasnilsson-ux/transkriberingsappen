@@ -19,6 +19,22 @@ CONTAINER="$HOME/Library/Containers/$BUNDLE_ID"
 STORE="$CONTAINER/Data/Library/Application Support/Transkribera/Transkribera.store"
 BACKUPS="$CONTAINER/Data/Library/Application Support/Transkribera/Säkerhetskopior"
 PREFS="$CONTAINER/Data/Library/Preferences/$BUNDLE_ID"
+MODELS="$CONTAINER/Data/Library/Application Support/Transkribera/Models"
+# Nedladdade modeller, med de sökvägar och filer appen letar efter (TranscriberService.localFolder,
+# isDownloaded). Ändras de måste användarna ladda ner modellerna igen; då ska testet ändras medvetet.
+MODEL_FILES=(
+  "kb-whisper/kb-whisper-small/AudioEncoder.mlmodelc"
+  "kb-whisper/kb-whisper-small/TextDecoder.mlmodelc"
+  "kb-whisper/kb-whisper-small/MelSpectrogram.mlmodelc"
+  "models/argmaxinc/whisperkit-coreml/openai_whisper-large-v3-v20240930_turbo/AudioEncoder.mlmodelc"
+  "models/argmaxinc/whisperkit-coreml/openai_whisper-large-v3-v20240930_turbo/TextDecoder.mlmodelc"
+  "models/argmaxinc/whisperkit-coreml/openai_whisper-large-v3-v20240930_turbo/MelSpectrogram.mlmodelc"
+  "pianissimo/pianissimo-sv/Preprocessor.mlmodelc"
+  "pianissimo/pianissimo-sv/Encoder.mlmodelc"
+  "pianissimo/pianissimo-sv/Decoder.mlmodelc"
+  "pianissimo/pianissimo-sv/JointDecisionv3.mlmodelc"
+  "pianissimo/pianissimo-sv/parakeet_vocab.json"
+)
 APP="$HOME/Applications/Transkribera.app"
 WORK="$(mktemp -d)"
 PORT=8765
@@ -67,7 +83,11 @@ killall -u "$USER" cfprefsd 2>/dev/null || true
 mkdir -p "$HOME/Applications" "$MOUNT"
 
 # --- 1. Förra versionen.
-hdiutil attach "$OLD_DMG" -nobrowse -readonly -mountpoint "$MOUNT" -quiet
+for attempt in 1 2 3 4 5; do
+  hdiutil attach "$OLD_DMG" -nobrowse -readonly -mountpoint "$MOUNT" -quiet && break
+  [[ $attempt == 5 ]] && die "Kunde inte montera $OLD_DMG."
+  sleep $((attempt * 3))
+done
 ditto "$MOUNT/Transkribera.app" "$APP"
 hdiutil detach "$MOUNT" -quiet
 OLD_VERSION="$(app_version CFBundleShortVersionString)" OLD_BUILD="$(app_version CFBundleVersion)"
@@ -82,6 +102,11 @@ quit_app || die "Kunde inte avsluta den förra versionen."
 "$PYTHON" scripts/upgrade_store.py seed "$STORE"
 defaults write "$PREFS" anonymizeAlwaysHide -string "Testsson"
 defaults write "$PREFS" language -string "sv"
+# Låtsasmodeller i stället för riktiga (flera GB); appen öppnar dem inte förrän någon transkriberar.
+for file in "${MODEL_FILES[@]}"; do
+  mkdir -p "$(dirname "$MODELS/$file")"
+  echo "uppgraderingstest" >"$MODELS/$file"
+done
 
 # --- 2. Uppdateringen.
 if [[ -n "${SPARKLE_PRIVATE_KEY:-}" ]]; then
@@ -137,4 +162,8 @@ fi
 ls "$BACKUPS" 2>/dev/null | grep -q "fore-bygge-$NEW_BUILD" \
   || die "Ingen säkerhetskopia av databasen gjordes före uppgraderingen."
 [[ "$(defaults read "$PREFS" anonymizeAlwaysHide)" == "Testsson" ]] || die "Inställningarna från den förra versionen försvann."
-echo "Uppgraderingen från $OLD_VERSION ($OLD_BUILD) fungerar: appen startar och data och inställningar finns kvar."
+for file in "${MODEL_FILES[@]}"; do
+  [[ "$(cat "$MODELS/$file" 2>/dev/null)" == "uppgraderingstest" ]] \
+    || die "Den nedladdade modellfilen $file finns inte kvar efter uppdateringen, så användaren måste ladda ner modellen igen."
+done
+echo "Uppgraderingen från $OLD_VERSION ($OLD_BUILD) fungerar: appen startar och data, inställningar och nedladdade modeller finns kvar."
