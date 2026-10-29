@@ -131,6 +131,11 @@ final class AnonymizerTests: XCTestCase {
         )
     }
 
+    /// "Joy" läckte i en riktig intervju eftersom namnet saknades i namnlistan.
+    func testJoyIsHiddenAsPerson() {
+        XCTAssertEqual(anonymize("Det har Joy sagt innan."), "Det har [PERSON 1] sagt innan.")
+    }
+
     func testAlwaysHide() {
         var options = rules
         options.alwaysHide = TextCleaning.wordList("Joj, rasmus\nKlåd")

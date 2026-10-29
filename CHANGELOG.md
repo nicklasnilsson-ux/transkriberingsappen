@@ -10,6 +10,14 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 - KB-Whisper Large finns nu också i en mer ordagrann variant, för intervjuer där du vill
   kunna citera exakt.
 
+### Rättat
+- Partier med tal som KB-Whisper hoppat över transkriberas om automatiskt, så att
+  färre delar av samtalet saknas.
+- Trasiga interna markeringar som "|nospeech|>" syns inte längre i texten.
+- Sista eller första ordet i en replik hamnar inte längre hos fel talare, särskilt med
+  Pianissimo. Talarbyten läggs vid meningsslut eller pauser.
+- Namnet Joy döljs vid anonymisering.
+
 ## [0.5.0] – 2026-10-28
 
 ### Nytt

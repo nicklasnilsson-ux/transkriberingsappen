@@ -57,9 +57,10 @@ actor ParakeetTranscriber {
         var state = try TdtDecoderState(decoderLayers: layers)
         let result = try await manager.transcribe(samples, decoderState: &state)
 
-        let words = buildWordTimings(from: result.tokenTimings ?? []).map { timing in
-            WordTimingData(word: " " + timing.word, start: timing.startTime, end: timing.endTime, probability: 1)
+        let tokens = (result.tokenTimings ?? []).map {
+            TimedToken(text: $0.token, start: $0.startTime, end: $0.endTime)
         }
+        let words = TokenWords.words(from: tokens)
         if words.isEmpty {
             let text = TextCleaning.clean(result.text)
             let duration = Double(samples.count) / 16_000

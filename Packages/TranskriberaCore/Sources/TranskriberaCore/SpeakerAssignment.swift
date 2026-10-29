@@ -22,6 +22,12 @@ public struct SpeakerTurn: Hashable, Sendable {
 public enum SpeakerAssignment {
     /// Ord utan överlapp får närmaste tur inom så här många sekunder, annars föregående ords talare.
     static let nearestTurnTolerance = 0.5
+    /// En talarbit på högst så här många ord får bara stå för sig själv vid ett meningsslut
+    /// eller en paus. Annars hör den till grannen: ordtiderna och talarturerna är sällan
+    /// exakt i synk, så de sista orden i en replik hamnade ofta hos nästa talare.
+    static let shortRunWords = 2
+    /// Så lång tystnad mellan två ord räcker för ett talarbyte mitt i en mening.
+    static let boundaryPause = 0.3
 
     public static func assign(_ segments: [SegmentData], turns: [SpeakerTurn]) -> [SegmentData] {
         let turns = turns.filter { $0.end > $0.start }.sorted { $0.start < $1.start }
@@ -64,6 +70,8 @@ public enum SpeakerAssignment {
                 }
             }
 
+            speakers = snapToBoundaries(segment.words, speakers)
+
             // Dela segmentet där talaren byts.
             var startIndex = 0
             for index in 1...segment.words.count {
@@ -85,6 +93,55 @@ public enum SpeakerAssignment {
             }
         }
         return result
+    }
+
+    /// Flyttar korta talarbitar (högst `shortRunWords` ord) till grannen när bytet inte
+    /// sker vid ett meningsslut eller en paus, t.ex. "…siffror helt / enkelt." eller
+    /// "Överkurs / för mig.".
+    static func snapToBoundaries(_ words: [WordTimingData], _ speakers: [Int?]) -> [Int?] {
+        var speakers = speakers
+        while true {
+            let runs = runs(of: speakers)
+            guard runs.count > 1 else { return speakers }
+            var merged = false
+            for (index, run) in runs.enumerated() where run.count <= shortRunWords {
+                let previous = index > 0 && !isBoundary(words, before: run.lowerBound) ? runs[index - 1] : nil
+                let next = index < runs.count - 1 && !isBoundary(words, before: run.upperBound) ? runs[index + 1] : nil
+                let target: Range<Int>?
+                if let previous, let next {
+                    target = previous.count >= next.count ? previous : next
+                } else {
+                    target = previous ?? next
+                }
+                guard let target else { continue }
+                let speaker = speakers[target.lowerBound]
+                for position in run { speakers[position] = speaker }
+                merged = true
+                break
+            }
+            if !merged { return speakers }
+        }
+    }
+
+    /// Följder av ord med samma talare.
+    static func runs(of speakers: [Int?]) -> [Range<Int>] {
+        guard !speakers.isEmpty else { return [] }
+        var runs: [Range<Int>] = []
+        var start = 0
+        for index in 1...speakers.count where index == speakers.count || speakers[index] != speakers[start] {
+            runs.append(start..<index)
+            start = index
+        }
+        return runs
+    }
+
+    /// Sant om ett talarbyte före ordet på `index` är rimligt: föregående ord avslutar en
+    /// mening eller det är en paus emellan.
+    static func isBoundary(_ words: [WordTimingData], before index: Int) -> Bool {
+        guard index > 0, index < words.count else { return true }
+        let previous = words[index - 1].word.trimmingCharacters(in: .whitespaces)
+        if let last = previous.last, ".?!…".contains(last) { return true }
+        return words[index].start - words[index - 1].end >= boundaryPause
     }
 
     /// Talaren med störst överlapp, eller närmaste tur om inget överlappar.

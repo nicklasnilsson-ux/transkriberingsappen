@@ -42,6 +42,69 @@ final class SpeakerAssignmentTests: XCTestCase {
         XCTAssertEqual(result[0].speaker, "Talare 1")
     }
 
+    /// Fel från en riktig intervju (Pianissimo): ordtiderna låg lite efter talarturerna, så
+    /// sista ordet i repliken hamnade hos nästa talare: "…felaktiga siffror helt / enkelt."
+    func testLastWordOfATurnStaysWithItsSpeaker() {
+        let words = [
+            word(" felaktiga", 0.0, 0.5), word(" siffror", 0.5, 0.9), word(" helt", 0.9, 1.1),
+            word(" enkelt.", 1.1, 1.6)
+        ]
+        let segment = SegmentData(start: 0, end: 1.6, text: "felaktiga siffror helt enkelt.", words: words)
+        let turns = [SpeakerTurn(start: 0, end: 1.2, speaker: 0), SpeakerTurn(start: 1.2, end: 3, speaker: 1)]
+        let result = SpeakerAssignment.assign([segment], turns: turns)
+        XCTAssertEqual(result.map(\.text), ["felaktiga siffror helt enkelt."])
+        XCTAssertEqual(result.map(\.speaker), ["Talare 1"])
+    }
+
+    /// "Överkurs / för mig." – två ord hos fel talare i slutet av en mening.
+    func testTwoTrailingWordsWithoutPauseJoinTheSentence() {
+        let words = [
+            word(" Det", 0.0, 0.2), word(" är", 0.2, 0.4), word(" överkurs", 0.4, 1.0),
+            word(" för", 1.0, 1.2), word(" mig.", 1.2, 1.5)
+        ]
+        let segment = SegmentData(start: 0, end: 1.5, text: "Det är överkurs för mig.", words: words)
+        let turns = [SpeakerTurn(start: 0, end: 1.0, speaker: 0), SpeakerTurn(start: 1.0, end: 2, speaker: 1)]
+        let result = SpeakerAssignment.assign([segment], turns: turns)
+        XCTAssertEqual(result.map(\.speaker), ["Talare 1"])
+    }
+
+    /// Början av en mening hos fel talare: "Jag skulle / lita på assistenten, absolut."
+    func testTwoLeadingWordsWithoutPauseJoinTheSentence() {
+        let words = [
+            word(" Jag", 0.0, 0.2), word(" skulle", 0.2, 0.5), word(" lita", 0.5, 0.8),
+            word(" på", 0.8, 0.9), word(" assistenten,", 0.9, 1.6), word(" absolut.", 1.6, 2.1)
+        ]
+        let question = SegmentData(start: -1, end: -0.5, text: "Okej?", words: [word(" Okej?", -1, -0.5)])
+        let segment = SegmentData(start: 0, end: 2.1, text: "Jag skulle lita på assistenten, absolut.", words: words)
+        let turns = [SpeakerTurn(start: -1, end: 0.5, speaker: 0), SpeakerTurn(start: 0.5, end: 3, speaker: 1)]
+        let result = SpeakerAssignment.assign([question, segment], turns: turns)
+        XCTAssertEqual(result.map(\.text), ["Okej?", "Jag skulle lita på assistenten, absolut."])
+        XCTAssertEqual(result.map(\.speaker), ["Talare 1", "Talare 2"])
+    }
+
+    func testShortReplyAfterAPauseIsKept() {
+        let words = [
+            word(" Kommer", 0.0, 0.4), word(" du", 0.4, 0.6), word(" ihåg", 0.6, 1.0),
+            word(" ja", 1.5, 1.7)
+        ]
+        let segment = SegmentData(start: 0, end: 1.7, text: "Kommer du ihåg ja", words: words)
+        let turns = [SpeakerTurn(start: 0, end: 1.2, speaker: 0), SpeakerTurn(start: 1.2, end: 2, speaker: 1)]
+        let result = SpeakerAssignment.assign([segment], turns: turns)
+        XCTAssertEqual(result.map(\.text), ["Kommer du ihåg", "ja"])
+        XCTAssertEqual(result.map(\.speaker), ["Talare 1", "Talare 2"])
+    }
+
+    func testLongerRunInsideASentenceStillSplits() {
+        let words = [
+            word(" Vi", 0.0, 0.2), word(" har", 0.2, 0.4), word(" det", 0.4, 0.6),
+            word(" ja", 0.6, 0.8), word(" det", 0.8, 1.0), word(" stämmer", 1.0, 1.4)
+        ]
+        let segment = SegmentData(start: 0, end: 1.4, text: "Vi har det ja det stämmer", words: words)
+        let turns = [SpeakerTurn(start: 0, end: 0.6, speaker: 0), SpeakerTurn(start: 0.6, end: 2, speaker: 1)]
+        let result = SpeakerAssignment.assign([segment], turns: turns)
+        XCTAssertEqual(result.map(\.text), ["Vi har det", "ja det stämmer"])
+    }
+
     func testWordsWithoutOverlapGetPreviousSpeaker() {
         let first = SegmentData(start: 0, end: 1, text: "Hej.", words: [word(" Hej.", 0, 1)])
         let second = SegmentData(start: 5, end: 6, text: "Mm.", words: [word(" Mm.", 5, 6)])

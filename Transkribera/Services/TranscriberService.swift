@@ -213,6 +213,7 @@ final class TranscriberService {
                 guard let kit = whisperKit else { throw TranscriberError.modelNotLoaded }
                 let results = try await whisperTranscribe(kit: kit, samples: samples, totalSeconds: totalSeconds, options: options)
                 segments = Self.segments(from: results)
+                segments = try await repairGaps(kit: kit, samples: samples, segments: segments, options: options)
                 language = options.languageCode ?? results.first?.language
             }
 
@@ -278,6 +279,50 @@ final class TranscriberService {
         )
     }
 
+    /// Whisper avslutar ibland ett fönster i förtid och hoppar över resten, så att hela
+    /// partier av ett samtal saknas utan att det syns. Tal som saknar text transkriberas
+    /// därför om för sig, utan ordlista (en ledtråd kan själv få modellen att sluta).
+    private func repairGaps(
+        kit: WhisperKit,
+        samples: [Float],
+        segments: [SegmentData],
+        options: TranscriptionOptions
+    ) async throws -> [SegmentData] {
+        let rate = AudioLoader.sampleRate
+        let speech = SpeechCoverage.speechRegions(in: samples, sampleRate: rate)
+        let gaps = SpeechCoverage.uncovered(speech: speech, segments: segments)
+        guard !gaps.isEmpty else { return segments }
+
+        let decodeOptions = DecodingOptions(
+            task: options.translateToEnglish ? .translate : .transcribe,
+            language: options.languageCode,
+            temperatureFallbackCount: 3,
+            usePrefillPrompt: true,
+            detectLanguage: options.languageCode == nil,
+            skipSpecialTokens: true,
+            withoutTimestamps: false,
+            wordTimestamps: options.wordTimestamps || options.identifySpeakers,
+            firstTokenLogProbThreshold: nil,
+            noSpeechThreshold: nil,
+            chunkingStrategy: .vad
+        )
+
+        var repaired = segments
+        for gap in gaps {
+            try Task.checkCancellation()
+            let start = max(0, Int((gap.start - 0.5) * rate))
+            let end = min(samples.count, Int((gap.end + 0.5) * rate))
+            guard end > start else { continue }
+            let results = try await kit.transcribe(audioArray: Array(samples[start..<end]), decodeOptions: decodeOptions)
+            let offset = Double(start) / rate
+            let found = Self.segments(from: results)
+                .map { $0.shifted(by: offset) }
+                .filter { (gap.start...gap.end).contains(($0.start + $0.end) / 2) }
+            repaired += found
+        }
+        return repaired.sorted { $0.start < $1.start }
+    }
+
     // MARK: - Ordlista
 
     /// Whisper kan få en text "före" ljudet som ledtråd. Står namn och fackord där
@@ -304,6 +349,7 @@ final class TranscriberService {
                     end: Double(segment.end),
                     text: text,
                     words: (segment.words ?? []).map(Self.word(from:))
+                        .filter { !TextCleaning.clean($0.word).isEmpty }
                 )
             }
     }
