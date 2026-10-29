@@ -2,6 +2,7 @@ import Foundation
 import Observation
 import SpeakerKit
 import TranskriberaCore
+import TranskriberaSpeakers
 import TranskriberaWhisper
 import WhisperKit
 
@@ -51,6 +52,9 @@ final class TranscriberService {
 
     @ObservationIgnored private var whisperKit: WhisperKit?
     @ObservationIgnored private var speakerKit: SpeakerKit?
+    @ObservationIgnored private let communityDiarizer = CommunityDiarizer(
+        modelsDirectory: AppPaths.modelsDirectory.appending(path: "speaker-diarization", directoryHint: .isDirectory)
+    )
     @ObservationIgnored private let parakeet = ParakeetTranscriber()
 
     var isBusy: Bool {
@@ -254,7 +258,7 @@ final class TranscriberService {
 
             if options.identifySpeakers {
                 phase = .identifyingSpeakers
-                segments = try await diarizedSegments(samples: samples, segments: segments, numberOfSpeakers: options.numberOfSpeakers)
+                segments = try await diarizedSegments(samples: samples, segments: segments, options: options)
             }
             segments = segments.filter { !TextCleaning.isNonSpeechMarker($0.text) }
 
@@ -403,9 +407,26 @@ final class TranscriberService {
         )
     }
 
-    // MARK: - Talaridentifiering (SpeakerKit)
+    // MARK: - Talaridentifiering (SpeakerKit eller community-1)
 
-    private func diarizedSegments(samples: [Float], segments: [SegmentData], numberOfSpeakers: Int?) async throws -> [SegmentData] {
+    private func diarizedSegments(samples: [Float], segments: [SegmentData], options: TranscriptionOptions) async throws -> [SegmentData] {
+        let turns: [SpeakerTurn]
+        if options.communityDiarization {
+            turns = try await communityDiarizer.turns(samples: samples, speakers: options.speakerCount)
+        } else {
+            turns = try await speakerKitTurns(samples: samples, speakers: options.speakerCount)
+        }
+
+        // Talare sätts per ord, så att repliker utan paus emellan ändå delas upp rätt.
+        let assigned = SpeakerAssignment.assign(segments, turns: turns)
+
+        // Om diariseringen inte gav något – behåll segmenten utan talare.
+        return assigned.contains { $0.speaker != nil } ? assigned : segments
+    }
+
+    /// Dagens talaridentifiering. SpeakerKit tar bara emot ett exakt antal talare, så ett
+    /// spann eller "minst 2" räknas ut automatiskt.
+    private func speakerKitTurns(samples: [Float], speakers: SpeakerCount) async throws -> [SpeakerTurn] {
         let kit: SpeakerKit
         if let speakerKit {
             kit = speakerKit
@@ -419,17 +440,11 @@ final class TranscriberService {
             speakerKit = kit
         }
 
-        let diarizationOptions = PyannoteDiarizationOptions(numberOfSpeakers: numberOfSpeakers)
+        let diarizationOptions = PyannoteDiarizationOptions(numberOfSpeakers: speakers.exact)
         let diarization = try await kit.diarize(audioArray: samples, options: diarizationOptions)
-        let turns = diarization.segments.compactMap { segment -> SpeakerTurn? in
+        return diarization.segments.compactMap { segment -> SpeakerTurn? in
             guard let id = segment.speaker.speakerId else { return nil }
             return SpeakerTurn(start: Double(segment.startTime), end: Double(segment.endTime), speaker: id)
         }
-
-        // Talare sätts per ord, så att repliker utan paus emellan ändå delas upp rätt.
-        let assigned = SpeakerAssignment.assign(segments, turns: turns)
-
-        // Om diariseringen inte gav något – behåll segmenten utan talare.
-        return assigned.contains { $0.speaker != nil } ? assigned : segments
     }
 }

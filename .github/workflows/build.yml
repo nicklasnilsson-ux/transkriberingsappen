@@ -49,6 +49,9 @@ jobs:
       - name: Förloppstest – Whisper på riktigt ljud
         run: swift test --package-path Packages/TranskriberaWhisper
 
+      - name: Talaridentifiering på ett påhittat samtal
+        run: swift test --package-path Packages/TranskriberaSpeakers
+
       - name: Alla modeller i väljaren går att ladda ner
         run: ./scripts/check-models.sh
 
