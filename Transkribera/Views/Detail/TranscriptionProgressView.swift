@@ -16,8 +16,16 @@ struct TranscriptionProgressView: View {
 
             if isCurrent {
                 let transcriber = queue.transcriber
-                Text(transcriber.statusText)
-                    .font(.headline)
+                VStack(spacing: 4) {
+                    if let step = transcriber.stepText {
+                        Text(step)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
+                    Text(transcriber.statusText)
+                        .font(.headline)
+                }
                 // Samma stapel i alla steg; utan procent rör den sig obestämt i stället
                 // för att stå still på noll.
                 Group {

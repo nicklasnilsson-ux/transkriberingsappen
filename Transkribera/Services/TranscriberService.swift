@@ -46,6 +46,8 @@ final class TranscriberService {
     private(set) var loadedModel: WhisperModel?
     /// Senast upptäckta text, visas live medan transkriberingen pågår.
     private(set) var liveText: String = ""
+    /// Stegen i den pågående transkriberingen, för "Steg 2 av 4". Tom utanför en transkribering.
+    private(set) var steps: [TranscriptionStep] = []
 
     @ObservationIgnored private var whisperKit: WhisperKit?
     @ObservationIgnored private var speakerKit: SpeakerKit?
@@ -70,6 +72,20 @@ final class TranscriberService {
         case .identifyingSpeakers: return "Identifierar talare…"
         case .failed(let message): return "Fel: \(message)"
         }
+    }
+
+    /// "Steg 2 av 4" under en transkribering, annars `nil`.
+    var stepText: String? {
+        let step: TranscriptionStep
+        switch phase {
+        case .downloadingModel, .loadingModel: step = .model
+        case .preparingAudio: step = .audio
+        case .transcribing: step = .transcribe
+        case .recheckingGaps: step = .gapCheck
+        case .identifyingSpeakers: step = .speakers
+        case .idle, .failed: return nil
+        }
+        return TranscriptionStep.label(for: step, in: steps)
     }
 
     /// Framsteg 0–1, eller `nil` om det inte går att uppskatta.
@@ -193,6 +209,13 @@ final class TranscriberService {
         options: TranscriptionOptions
     ) async throws -> TranscriptionOutput {
         liveText = ""
+        let modelReady = loadedModel == options.model && (options.model.usesParakeet || whisperKit != nil)
+        steps = TranscriptionStep.plan(
+            needsModel: !modelReady,
+            checksGaps: !options.model.usesParakeet,
+            identifiesSpeakers: options.identifySpeakers
+        )
+        defer { steps = [] }
         do {
             try await prepare(model: options.model)
 
@@ -295,6 +318,7 @@ final class TranscriberService {
         segments: [SegmentData],
         options: TranscriptionOptions
     ) async throws -> [SegmentData] {
+        phase = .recheckingGaps(fraction: 0)
         let rate = AudioLoader.sampleRate
         let speech = SpeechCoverage.speechRegions(in: samples, sampleRate: rate)
         let gaps = SpeechCoverage.uncovered(speech: speech, segments: segments)

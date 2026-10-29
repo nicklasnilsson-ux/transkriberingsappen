@@ -11,6 +11,8 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
   Whisper-modellerna. Nu rör det sig, och texten som hittats syns medan du väntar.
 - När appen inte kan räkna ut hur långt den har kommit rör sig stapeln i stället för att
   stå still på noll.
+- Förloppet visar vilket steg som pågår, till exempel "Steg 3 av 4", så att det syns
+  varför stapeln börjar om.
 
 ## [0.5.1] – 2026-10-29
 
