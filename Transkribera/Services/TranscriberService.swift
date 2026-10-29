@@ -227,10 +227,12 @@ final class TranscriberService {
             guard !samples.isEmpty else { throw TranscriberError.emptyAudio }
 
             phase = .transcribing(fraction: nil)
+            // Talaridentifieringen får originalljudet; bara modellen får det utjämnade.
+            let input = options.levelVolume ? VolumeLeveler.level(samples, sampleRate: AudioLoader.sampleRate) : samples
             var segments: [SegmentData]
             let language: String?
             if options.model.usesParakeet {
-                segments = try await parakeet.transcribe(samples: samples) { [weak self] fraction, text in
+                segments = try await parakeet.transcribe(samples: input, carefulSeams: options.carefulSeams) { [weak self] fraction, text in
                     let text = TextCleaning.clean(text)
                     Task { @MainActor in
                         guard let self else { return }
@@ -241,9 +243,9 @@ final class TranscriberService {
                 language = "sv"
             } else {
                 guard let kit = whisperKit else { throw TranscriberError.modelNotLoaded }
-                let results = try await whisperTranscribe(kit: kit, samples: samples, options: options)
+                let results = try await whisperTranscribe(kit: kit, samples: input, options: options)
                 segments = Self.segments(from: results)
-                segments = try await repairGaps(kit: kit, samples: samples, segments: segments, options: options)
+                segments = try await repairGaps(kit: kit, samples: input, segments: segments, options: options)
                 language = options.languageCode ?? results.first?.language
             }
             // Namn ur ordlistan som hörts nästan rätt. Pianissimo kan inte få ordlistan som
