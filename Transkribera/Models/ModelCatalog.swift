@@ -172,7 +172,7 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
         case .kbLargeStrict:
             return "Som Large, men skriver mer ordagrant och stryker mindre. Bäst för intervjuer där du vill citera exakt vad som sades."
         case .pianissimo:
-            return "Svensk modell från Klang som inte bygger på Whisper. Ungefär lika träffsäker som KB Medium men många gånger snabbare, även på långa inspelningar. Ordlistan används inte."
+            return "Svensk modell från Klang som inte bygger på Whisper. Ungefär lika träffsäker som KB Medium men många gånger snabbare, även på långa inspelningar. Namn i ordlistan rättas i efterhand."
         case .tiny:
             return "Minsta modellen, bra för att snabbt testa appen. Gör många fel på svenska."
         case .base:

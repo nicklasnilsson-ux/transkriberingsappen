@@ -59,7 +59,7 @@ private struct TranscriptionSettingsView: View {
             } header: {
                 Text("Ordlista")
             } footer: {
-                Text("Namn och fackord som brukar förekomma, med komma emellan. Modellen får dem som ledtråd och stavar dem oftare rätt. Håll listan kort.")
+                Text("Namn och fackord som brukar förekomma, med komma emellan. Modellen får dem som ledtråd och stavar dem oftare rätt. Namn (med stor bokstav) som ändå hörs nästan rätt, t.ex. "Fotnox", rättas i efterhand. Håll listan kort.")
                     .foregroundStyle(.secondary)
             }
 
