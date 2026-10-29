@@ -66,7 +66,7 @@ enum Lexicon {
         "charlie", "frank", "julius", "malte", "melker", "loke", "valter", "walter", "wilhelm", "vilhelm",
         "ivar", "einar", "folke", "tage", "sune", "evert", "allan", "ove", "ronny", "benny", "tony", "mikko",
         "niclas", "nikolas", "nicholas", "mikkel", "jens", "lukas", "jonatan", "felix", "oliver", "isac",
-        "joel", "kevin", "andré", "andre", "carl", "claes", "klas", "christian", "kristian", "anders-petter",
+        "joel", "joy", "kevin", "andré", "andre", "carl", "claes", "klas", "christian", "kristian", "anders-petter",
         "mohamed", "yusuf", "mustafa", "abdi", "karim", "amir", "reza",
         // Fler kvinnonamn
         "lovisa", "ellen", "tilda", "tindra", "molly", "nellie", "ronja", "signe", "edith", "ester",
