@@ -9,6 +9,22 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 ## [0.5.1] – 2026-10-29
 
 ### Nytt
+- Ordlistan gäller nu också Pianissimo: namn som modellen hört nästan rätt, t.ex.
+  "Fotnox" i stället för "Fortnox", rättas i efterhand. Det gäller alla modeller.
+
+### Rättat
+- Förloppet stod på 0 % under hela transkriberingen med KB-Whisper och de andra
+  Whisper-modellerna. Nu rör det sig, och texten som hittats syns medan du väntar.
+- När appen inte kan räkna ut hur långt den har kommit rör sig stapeln i stället för att
+  stå still på noll.
+- Förloppet visar vilket steg som pågår, till exempel "Steg 3 av 4", så att det syns
+  varför stapeln börjar om.
+- Pianissimo tappade ibland mellanslag mellan ord, t.ex. "typ100" och "villändra".
+- En mening som fortsätter i nästa stycke delas inte längre mellan två talare.
+
+## [0.5.1] – 2026-10-29
+
+### Nytt
 - KB-Whisper Large finns nu också i en mer ordagrann variant, för intervjuer där du vill
   kunna citera exakt.
 
