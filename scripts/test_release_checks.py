@@ -35,6 +35,16 @@ class ChangelogTests(unittest.TestCase):
     def test_last_section(self):
         self.assertEqual(changelog.section(SAMPLE, "0.4.1"), "- Äldre.")
 
+    def test_released_section_must_not_change(self):
+        merged = SAMPLE.replace("- Startar igen.", "- Startar igen.\n- Hamnade fel vid sammanslagning.")
+        released = {"0.4.2": SAMPLE, "0.4.1": SAMPLE}
+        self.assertEqual(changelog.changed_released(SAMPLE, released.get), [])
+        self.assertEqual(changelog.changed_released(merged, released.get), ["0.4.2"])
+
+    def test_unreleased_version_may_change(self):
+        merged = SAMPLE.replace("- Startar igen.", "- Mer.")
+        self.assertEqual(changelog.changed_released(merged, {"0.4.1": SAMPLE}.get), [])
+
     def test_missing_version(self):
         self.assertIsNone(changelog.section(SAMPLE, "0.5.0"))
         self.assertIsNone(changelog.section(SAMPLE, "0.4"))

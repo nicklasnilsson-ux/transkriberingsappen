@@ -38,6 +38,34 @@ final class AnalysisExporterTests: XCTestCase {
         """)
     }
 
+    /// ⚠ efter talaren där det är osäkert vem som sa repliken, och en förklaring i huvudet.
+    func testUncertainSpeakerIsMarked() {
+        let segments = [
+            SegmentData(start: 0, end: 2, text: "Hur ofta loggar ni in?", speaker: "Intervjuare"),
+            SegmentData(start: 2, end: 3, text: "Varje dag.", speaker: "Kund 1", uncertainSpeaker: true),
+            SegmentData(start: 3, end: 5, text: "Okej.", speaker: "Intervjuare")
+        ]
+        let output = AnalysisExporter.markdown(segments, metadata: metadata, timeZone: utc)
+        XCTAssertEqual(output, """
+        # Test 3 – P05
+
+        - Datum: 2026-10-26 07:33
+        - Längd: 2 min 05 s
+        - Talare: Intervjuare, Kund 1
+        - Språk: Svenska
+        - ⚠ = osäkert vem som sa repliken
+
+        ---
+
+        [00:00] **Intervjuare:** Hur ofta loggar ni in?
+
+        [00:02] **Kund 1:** ⚠ Varje dag.
+
+        [00:03] **Intervjuare:** Okej.
+
+        """)
+    }
+
     func testWithoutSpeakersBreaksOnPauses() {
         let segments = [
             SegmentData(start: 0, end: 2, text: "Första."),

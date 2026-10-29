@@ -26,6 +26,18 @@ public enum SpeakerAssignment {
     static let shortRunWords = 2
     /// Så lång tystnad mellan två ord räcker för ett talarbyte mitt i en mening.
     static let boundaryPause = 0.3
+    /// En replik där mindre än så här stor del av ordens tid ligger i talarens egna turer
+    /// markeras som osäker.
+    static let minimumCoverage = 0.5
+    /// Så länge (sekunder) måste två talares turer gå omlott under ett ord för att det ska
+    /// räknas som att de pratar samtidigt.
+    static let overlappingSpeech = 0.15
+
+    /// Talare per ord och replik, med ⚠ (`uncertainSpeaker`) där tilldelningen är osäker:
+    /// - talaren byts mitt i ett segment från taligenkänningen,
+    /// - ett ord har flyttats till en annan talare än den vars tur det låg i (utjämningen),
+    /// - mindre än hälften av replikens ord ligger i talarens egna turer (t.ex. i en lucka),
+    /// - två talare hörs samtidigt.
 
     public static func assign(_ segments: [SegmentData], turns: [SpeakerTurn]) -> [SegmentData] {
         let turns = turns.filter { $0.end > $0.start }.sorted { $0.start < $1.start }
@@ -43,15 +55,20 @@ public enum SpeakerAssignment {
         // Talare per ord, segment för segment.
         let segments = segments.sorted(by: { $0.start < $1.start })
         var wordSpeakers: [[Int?]] = []
+        /// Talaren enligt turerna, innan utjämningen.
+        var rawSpeakers: [[Int?]] = []
         var segmentSpeakers: [Int?] = []
         for segment in segments {
             guard !segment.words.isEmpty else {
                 segmentSpeakers.append(bestSpeaker(start: segment.start, end: segment.end, turns: turns))
                 wordSpeakers.append([])
+                rawSpeakers.append([])
                 continue
             }
 
-            var speakers = segment.words.map { bestSpeaker(start: $0.start, end: $0.end, turns: turns) }
+            let measured = segment.words.map { bestSpeaker(start: $0.start, end: $0.end, turns: turns) }
+            rawSpeakers.append(measured)
+            var speakers = measured
             // Ett ensamt ord mitt i en annan talares mening beror nästan alltid på
             // ungefärliga ordtider, inte på ett talarbyte.
             if speakers.count >= 3 {
@@ -80,26 +97,40 @@ public enum SpeakerAssignment {
             guard !segment.words.isEmpty else {
                 var output = segment
                 output.speaker = name(for: segmentSpeakers[position])
+                if let speaker = segmentSpeakers[position] {
+                    output.uncertainSpeaker = coverage(start: segment.start, end: segment.end, speaker: speaker, turns: turns)
+                        < minimumCoverage
+                }
                 result.append(output)
                 continue
             }
             let speakers = wordSpeakers[position]
+            let measured = rawSpeakers[position]
 
             // Dela segmentet där talaren byts.
             var startIndex = 0
             for index in 1...segment.words.count {
                 let isEnd = index == segment.words.count
                 guard isEnd || speakers[index] != speakers[startIndex] else { continue }
-                let words = Array(segment.words[startIndex..<index])
+                var words = Array(segment.words[startIndex..<index])
                 let text = TextCleaning.clean(words.map(\.word).joined())
                 if !text.isEmpty {
                     let isWhole = startIndex == 0 && isEnd
+                    let speaker = speakers[startIndex]
+                    let uncertain = !isWhole
+                        || (startIndex..<index).contains { measured[$0] != speakers[$0] }
+                        || isPoorlyCovered(words, speaker: speaker, turns: turns)
+                        || words.contains { hasOverlappingSpeech(start: $0.start, end: $0.end, turns: turns) }
+                    if uncertain {
+                        for word in words.indices { words[word].uncertainSpeaker = true }
+                    }
                     result.append(SegmentData(
                         start: isWhole ? segment.start : words[0].start,
                         end: isWhole ? segment.end : words[words.count - 1].end,
                         text: isWhole ? segment.text : text,
-                        speaker: name(for: speakers[startIndex]),
-                        words: words
+                        speaker: name(for: speaker),
+                        words: words,
+                        uncertainSpeaker: uncertain
                     ))
                 }
                 startIndex = index
@@ -157,6 +188,38 @@ public enum SpeakerAssignment {
         let previous = words[index - 1].word.trimmingCharacters(in: .whitespaces)
         if let last = previous.last, ".?!…".contains(last) { return true }
         return words[index].start - words[index - 1].end >= boundaryPause
+    }
+
+    /// Andel av tiden mellan `start` och `end` som ligger i talarens egna turer.
+    static func coverage(start: Double, end: Double, speaker: Int, turns: [SpeakerTurn]) -> Double {
+        guard end > start else { return 1 }
+        let covered = turns.lazy.filter { $0.speaker == speaker }
+            .map { max(0, min(end, $0.end) - max(start, $0.start)) }
+            .reduce(0, +)
+        return min(1, covered / (end - start))
+    }
+
+    static func isPoorlyCovered(_ words: [WordTimingData], speaker: Int?, turns: [SpeakerTurn]) -> Bool {
+        guard let speaker else { return true }
+        let total = words.reduce(0) { $0 + max(0, $1.end - $1.start) }
+        guard total > 0 else { return false }
+        let covered = words.reduce(0) { sum, word in
+            sum + coverage(start: word.start, end: word.end, speaker: speaker, turns: turns) * max(0, word.end - word.start)
+        }
+        return covered / total < minimumCoverage
+    }
+
+    /// Sant om två talares turer går omlott under ordet. Händer bara när
+    /// talaridentifieringen tillåter samtidigt tal.
+    static func hasOverlappingSpeech(start: Double, end: Double, turns: [SpeakerTurn]) -> Bool {
+        let active = turns.filter { $0.start < end && $0.end > start }
+        for (index, first) in active.enumerated() {
+            for second in active[(index + 1)...] where second.speaker != first.speaker {
+                let shared = min(end, first.end, second.end) - max(start, first.start, second.start)
+                if shared >= min(overlappingSpeech, (end - start) * 0.5) && shared > 0 { return true }
+            }
+        }
+        return false
     }
 
     /// Talaren med störst överlapp, eller närmaste tur om inget överlappar.

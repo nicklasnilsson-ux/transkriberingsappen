@@ -87,6 +87,7 @@ final class CommunityDiarizerTests: XCTestCase {
         let shortTurns = CommunityDiarizer.config(for: .automatic)
         XCTAssertTrue(shortTurns.zeroVoteReembed.enabled)
         XCTAssertEqual(shortTurns.embedding.minSegmentDurationSeconds, CommunityDiarizer.shortestEmbeddedSpeech)
+        XCTAssertFalse(CommunityDiarizer.config(for: .automatic).postProcessing.exclusiveSegments)
     }
 
     static let modelsDirectory = FileManager.default.temporaryDirectory
