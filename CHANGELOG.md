@@ -11,8 +11,8 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
   kunna citera exakt.
 
 ### Rättat
-- KB-Whisper tappar inte längre hela partier av samtal. Tal som saknar text
-  transkriberas om automatiskt.
+- Partier med tal som KB-Whisper hoppat över transkriberas om automatiskt, så att
+  färre delar av samtalet saknas.
 - Trasiga interna markeringar som "|nospeech|>" syns inte längre i texten.
 - Sista eller första ordet i en replik hamnar inte längre hos fel talare, särskilt med
   Pianissimo. Talarbyten läggs vid meningsslut eller pauser.
