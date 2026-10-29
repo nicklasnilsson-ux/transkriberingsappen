@@ -6,6 +6,10 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+### Rättat
+- Pianissimo tappade ibland mellanslag mellan ord, t.ex. "typ100" och "villändra".
+- En mening som fortsätter i nästa stycke delas inte längre mellan två talare.
+
 ## [0.5.1] – 2026-10-29
 
 ### Nytt

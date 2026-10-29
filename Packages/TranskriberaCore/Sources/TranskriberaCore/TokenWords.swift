@@ -25,10 +25,18 @@ public enum TokenWords {
 
     public static func words(from tokens: [TimedToken]) -> [WordTimingData] {
         var words: [WordTimingData] = []
+        // En ensam ordgräns ("▁") är en egen token; nästa bit börjar då ett nytt ord.
+        var pendingBoundary = false
         for token in tokens {
-            let startsWord = token.text.hasPrefix(" ") || token.text.hasPrefix("▁")
+            var startsWord = token.text.hasPrefix(" ") || token.text.hasPrefix("▁")
             let piece = startsWord ? String(token.text.dropFirst()) : token.text
-            guard !piece.isEmpty, piece != "<blank>", piece != "<pad>" else { continue }
+            guard piece != "<blank>", piece != "<pad>" else { continue }
+            guard !piece.isEmpty else {
+                if startsWord { pendingBoundary = true }
+                continue
+            }
+            startsWord = startsWord || pendingBoundary
+            pendingBoundary = false
             let end = min(token.end, token.start + maxTokenDuration)
 
             if words.isEmpty || (startsWord && !isPunctuation(piece)) {

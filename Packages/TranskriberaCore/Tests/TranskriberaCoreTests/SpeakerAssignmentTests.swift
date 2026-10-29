@@ -105,6 +105,41 @@ final class SpeakerAssignmentTests: XCTestCase {
         XCTAssertEqual(result.map(\.text), ["Vi har det", "ja det stämmer"])
     }
 
+    /// Fel i 0.5.1: meningen fortsatte i nästa segment och de två sista orden hamnade hos
+    /// nästa talare: "Det står Claude / hos dig."
+    func testShortRunInNextSegmentJoinsTheSentence() {
+        let first = SegmentData(start: 0, end: 1.0, text: "Det står Claude", words: [
+            word(" Det", 0.0, 0.2), word(" står", 0.2, 0.5), word(" Claude", 0.5, 1.0)
+        ])
+        let second = SegmentData(start: 1.05, end: 1.6, text: "hos dig.", words: [
+            word(" hos", 1.05, 1.3), word(" dig.", 1.3, 1.6)
+        ])
+        let turns = [SpeakerTurn(start: 0, end: 1.02, speaker: 0), SpeakerTurn(start: 1.02, end: 3, speaker: 1)]
+        let result = SpeakerAssignment.assign([first, second], turns: turns)
+        XCTAssertEqual(result.map(\.text), ["Det står Claude", "hos dig."])
+        XCTAssertEqual(result.map(\.speaker), ["Talare 1", "Talare 1"])
+    }
+
+    /// Ett kort svar i ett eget segment efter en fråga ska behålla sin talare.
+    func testShortReplyInOwnSegmentAfterQuestionIsKept() {
+        let first = SegmentData(start: 0, end: 1.0, text: "Hur ofta?", words: [
+            word(" Hur", 0.0, 0.4), word(" ofta?", 0.4, 1.0)
+        ])
+        let second = SegmentData(start: 1.05, end: 1.6, text: "Varje dag.", words: [
+            word(" Varje", 1.05, 1.3), word(" dag.", 1.3, 1.6)
+        ])
+        let third = SegmentData(start: 1.65, end: 2.5, text: "Okej, och sedan", words: [
+            word(" Okej,", 1.65, 1.9), word(" och", 1.9, 2.1), word(" sedan", 2.1, 2.5)
+        ])
+        let turns = [
+            SpeakerTurn(start: 0, end: 1.02, speaker: 0),
+            SpeakerTurn(start: 1.02, end: 1.62, speaker: 1),
+            SpeakerTurn(start: 1.62, end: 3, speaker: 0)
+        ]
+        let result = SpeakerAssignment.assign([first, second, third], turns: turns)
+        XCTAssertEqual(result.map(\.speaker), ["Talare 1", "Talare 2", "Talare 1"])
+    }
+
     func testWordsWithoutOverlapGetPreviousSpeaker() {
         let first = SegmentData(start: 0, end: 1, text: "Hej.", words: [word(" Hej.", 0, 1)])
         let second = SegmentData(start: 5, end: 6, text: "Mm.", words: [word(" Mm.", 5, 6)])
