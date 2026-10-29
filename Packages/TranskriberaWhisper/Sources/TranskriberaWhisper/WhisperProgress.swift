@@ -16,6 +16,7 @@ public enum WhisperProgress {
         onProgress: @escaping @Sendable (Double) -> Void,
         onText: @escaping @Sendable (String) -> Void
     ) async throws -> [TranscriptionResult] {
+        WhisperLoopGuard.install(on: kit)
         let tracker = ProgressTracker()
         let previousSegmentCallback = kit.segmentDiscoveryCallback
         kit.segmentDiscoveryCallback = { segments in

@@ -11,6 +11,12 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
   noggrannare skarvar för Pianissimo och utjämnad volym, som förstärker svaga röster.
   Det som användes står efter modellens namn i transkriberingen.
 
+### Rättat
+- En transkribering med Whisper-modellerna (t.ex. KB-Whisper) kunde stanna mitt i, till
+  exempel på 46 %, medan datorn fortsatte att arbeta för fullt: modellen kunde fastna
+  och tolka samma bit av ljudet om och om igen, särskilt med ord i ordlistan. Nu går den
+  alltid vidare, och tal som hoppats över fångas av kontrollen efteråt.
+
 ## [0.5.2] – 2026-10-29
 
 ### Nytt
