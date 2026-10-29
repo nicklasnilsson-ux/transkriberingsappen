@@ -6,6 +6,8 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.5.3] – 2026-10-29
+
 ### Nytt
 - Två experiment under Inställningar → Transkribering för att jämföra kvaliteten:
   noggrannare skarvar för Pianissimo och utjämnad volym, som förstärker svaga röster.
