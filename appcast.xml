@@ -6,6 +6,26 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.5.1</title>
+      <pubDate>Thu, 29 Oct 2026 07:58:26 GMT</pubDate>
+      <sparkle:version>8</sparkle:version>
+      <sparkle:shortVersionString>0.5.1</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.5.1</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Nytt&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;KB-Whisper Large finns nu också i en mer ordagrann variant, för intervjuer där du vill kunna citera exakt.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Rättat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Partier med tal som KB-Whisper hoppat över transkriberas om automatiskt, så att färre delar av samtalet saknas.&lt;/li&gt;
+&lt;li&gt;Trasiga interna markeringar som &amp;quot;|nospeech|&amp;gt;&amp;quot; syns inte längre i texten.&lt;/li&gt;
+&lt;li&gt;Sista eller första ordet i en replik hamnar inte längre hos fel talare, särskilt med Pianissimo. Talarbyten läggs vid meningsslut eller pauser.&lt;/li&gt;
+&lt;li&gt;Namnet Joy döljs vid anonymisering.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.5.1/Transkribera-v0.5.1.zip" length="13792791" type="application/octet-stream" sparkle:edSignature="45XZtpdS+3cfuIv53hlsUtjwv4Y/YDZUGSGDatnb3rPinXEr/Q7a/oL7wTiPf708QtJOAtYXTc7Chaax1vpHAA==" />
+    </item>
+    <item>
       <title>Version 0.5.0</title>
       <pubDate>Wed, 28 Oct 2026 23:38:35 GMT</pubDate>
       <sparkle:version>7</sparkle:version>
