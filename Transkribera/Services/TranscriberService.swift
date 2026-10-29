@@ -160,7 +160,10 @@ final class TranscriberService {
                     load: true,
                     download: false
                 )
-                whisperKit = try await WhisperKit(config)
+                let kit = try await WhisperKit(config)
+                // Annars kan en ordlista få WhisperKit att avkoda samma fönster i all evighet.
+                WhisperLoopGuard.install(on: kit)
+                whisperKit = kit
             }
             loadedModel = model
             phase = .idle

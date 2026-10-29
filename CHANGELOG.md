@@ -6,6 +6,12 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+### Rättat
+- En transkribering med Whisper-modellerna (t.ex. KB-Whisper) kunde stanna mitt i, till
+  exempel på 46 %, medan datorn fortsatte att arbeta för fullt. Det kunde hända med
+  ord i ordlistan: modellen kunde fastna och tolka samma bit av ljudet om och om igen.
+  Nu går den alltid vidare, och tal som hoppats över fångas av kontrollen efteråt.
+
 ## [0.5.2] – 2026-10-29
 
 ### Nytt
