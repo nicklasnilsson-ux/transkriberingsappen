@@ -216,6 +216,9 @@ final class TranscriberService {
                 segments = try await repairGaps(kit: kit, samples: samples, segments: segments, options: options)
                 language = options.languageCode ?? results.first?.language
             }
+            // Namn ur ordlistan som hörts nästan rätt. Pianissimo kan inte få ordlistan som
+            // ledtråd, och Whisper stavar ibland fel trots den.
+            segments = VocabularyCorrection.apply(segments, vocabulary: TextCleaning.wordList(options.vocabulary))
 
             if options.identifySpeakers {
                 phase = .identifyingSpeakers

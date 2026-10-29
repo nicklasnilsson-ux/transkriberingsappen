@@ -6,6 +6,10 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+### Nytt
+- Ordlistan gäller nu också Pianissimo: namn som modellen hört nästan rätt, t.ex.
+  "Fotnox" i stället för "Fortnox", rättas i efterhand. Det gäller alla modeller.
+
 ### Rättat
 - Pianissimo tappade ibland mellanslag mellan ord, t.ex. "typ100" och "villändra".
 - En mening som fortsätter i nästa stycke delas inte längre mellan två talare.
