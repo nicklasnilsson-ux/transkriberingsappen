@@ -20,8 +20,6 @@ public struct SpeakerTurn: Hashable, Sendable {
 /// talaren byts. Det gör att ett kort svar direkt efter en fråga ("Varje dag.") hamnar
 /// hos rätt talare även när det inte finns någon paus mellan replikerna.
 public enum SpeakerAssignment {
-    /// Ord utan överlapp får närmaste tur inom så här många sekunder, annars föregående ords talare.
-    static let nearestTurnTolerance = 0.5
     /// En talarbit på högst så här många ord får bara stå för sig själv vid ett meningsslut
     /// eller en paus. Annars hör den till grannen: ordtiderna och talarturerna är sällan
     /// exakt i synk, så de sista orden i en replik hamnade ofta hos nästa talare.
@@ -44,24 +42,16 @@ public enum SpeakerAssignment {
 
         // Talare per ord, segment för segment.
         let segments = segments.sorted(by: { $0.start < $1.start })
-        var previous: Int?
         var wordSpeakers: [[Int?]] = []
         var segmentSpeakers: [Int?] = []
         for segment in segments {
             guard !segment.words.isEmpty else {
-                let speaker = bestSpeaker(start: segment.start, end: segment.end, turns: turns) ?? previous
-                previous = speaker
-                segmentSpeakers.append(speaker)
+                segmentSpeakers.append(bestSpeaker(start: segment.start, end: segment.end, turns: turns))
                 wordSpeakers.append([])
                 continue
             }
 
-            var speakers: [Int?] = []
-            for word in segment.words {
-                let speaker = bestSpeaker(start: word.start, end: word.end, turns: turns) ?? previous
-                speakers.append(speaker)
-                previous = speaker
-            }
+            var speakers = segment.words.map { bestSpeaker(start: $0.start, end: $0.end, turns: turns) }
             // Ett ensamt ord mitt i en annan talares mening beror nästan alltid på
             // ungefärliga ordtider, inte på ett talarbyte.
             if speakers.count >= 3 {
@@ -170,6 +160,10 @@ public enum SpeakerAssignment {
     }
 
     /// Talaren med störst överlapp, eller närmaste tur om inget överlappar.
+    ///
+    /// Ett ord i en lucka mellan två turer får alltid närmaste tur. Tidigare fick ord långt
+    /// från alla turer föregående ords talare, och efter en fråga är det intervjuaren: ett
+    /// kort svar som diariseringen missat hamnade då hos den som frågade.
     static func bestSpeaker(start: Double, end: Double, turns: [SpeakerTurn]) -> Int? {
         var overlap: [Int: Double] = [:]
         for turn in turns {
@@ -182,9 +176,7 @@ public enum SpeakerAssignment {
         }
 
         let middle = (start + end) / 2
-        let nearest = turns.min { distance(middle, $0) < distance(middle, $1) }
-        guard let nearest, distance(middle, nearest) <= nearestTurnTolerance else { return nil }
-        return nearest.speaker
+        return turns.min { distance(middle, $0) < distance(middle, $1) }?.speaker
     }
 
     private static func distance(_ time: Double, _ turn: SpeakerTurn) -> Double {

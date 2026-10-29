@@ -16,6 +16,10 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
   exempel på 46 %, medan datorn fortsatte att arbeta för fullt: modellen kunde fastna
   och tolka samma bit av ljudet om och om igen, särskilt med ord i ordlistan. Nu går den
   alltid vidare, och tal som hoppats över fångas av kontrollen efteråt.
+- Korta svar som "Varje dag" kunde hamna hos den som ställde frågan när
+  talaridentifieringen missat dem. Nu går de till den talare som hörs närmast i tid.
+- Döper du om en talare till "Intervjuare" eller "Kund 1" byts namnet inte längre ut
+  mot "[PERSON 1]" när texten anonymiseras.
 
 ## [0.5.2] – 2026-10-29
 

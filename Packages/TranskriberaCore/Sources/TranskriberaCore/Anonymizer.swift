@@ -469,9 +469,14 @@ struct NameDetector {
         )
     }
 
-    /// "Talare 1", "Speaker 2" m.fl. är inga personuppgifter.
+    /// "Talare 1", "Speaker 2" m.fl. är inga personuppgifter, och inte heller roller som
+    /// "Intervjuare" och "Kund 1". Rollerna får aldrig bytas mot en platshållare.
     static func isGenericSpeaker(_ speaker: String) -> Bool {
         speaker.range(of: #"^\s*(?:talare|speaker|spk|person)[ _-]?\d+\s*$"#, options: [.regularExpression, .caseInsensitive]) != nil
+            || speaker.range(
+                of: #"^\s*(?:intervjuare|kund|deltagare|interviewer|customer|participant)(?:[ _-]?\d+)?\s*$"#,
+                options: [.regularExpression, .caseInsensitive]
+            ) != nil
     }
 
     /// Namn som användaren angett. De döljs som personer även med liten bokstav eller
