@@ -6,6 +6,27 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.5.2</title>
+      <pubDate>Thu, 29 Oct 2026 14:00:35 GMT</pubDate>
+      <sparkle:version>9</sparkle:version>
+      <sparkle:shortVersionString>0.5.2</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.5.2</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Nytt&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Ordlistan gäller nu också Pianissimo: namn som modellen hört nästan rätt, t.ex. &amp;quot;Fotnox&amp;quot; i stället för &amp;quot;Fortnox&amp;quot;, rättas i efterhand. Det gäller alla modeller.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Rättat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Förloppet stod på 0 % under hela transkriberingen med KB-Whisper och de andra Whisper-modellerna. Nu rör det sig, och texten som hittats syns medan du väntar.&lt;/li&gt;
+&lt;li&gt;När appen inte kan räkna ut hur långt den har kommit rör sig stapeln i stället för att stå still på noll.&lt;/li&gt;
+&lt;li&gt;Förloppet visar vilket steg som pågår, till exempel &amp;quot;Steg 3 av 4&amp;quot;, så att det syns varför stapeln börjar om.&lt;/li&gt;
+&lt;li&gt;Pianissimo tappade ibland mellanslag mellan ord, t.ex. &amp;quot;typ100&amp;quot; och &amp;quot;villändra&amp;quot;.&lt;/li&gt;
+&lt;li&gt;En mening som fortsätter i nästa stycke delas inte längre mellan två talare.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.5.2/Transkribera-v0.5.2.zip" length="13806252" type="application/octet-stream" sparkle:edSignature="mT4rHp9gc0qMdu6zA0Q0n/2/XkWjjzaRYeiHoOQ3rfVGoOul0c2RpPsUdYdmxEd8ezrTpaXxRQJuPd14RVkIDQ==" />
+    </item>
+    <item>
       <title>Version 0.5.1</title>
       <pubDate>Thu, 29 Oct 2026 07:58:26 GMT</pubDate>
       <sparkle:version>8</sparkle:version>
