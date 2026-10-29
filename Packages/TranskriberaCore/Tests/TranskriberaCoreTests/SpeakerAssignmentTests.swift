@@ -140,7 +140,21 @@ final class SpeakerAssignmentTests: XCTestCase {
         XCTAssertEqual(result.map(\.speaker), ["Talare 1", "Talare 2", "Talare 1"])
     }
 
-    func testWordsWithoutOverlapGetPreviousSpeaker() {
+    /// Fel i 0.5.2: ett kort svar som diariseringen inte gett någon tur, mer än 0,5 s från
+    /// närmaste tur, fick föregående talare, alltså den som frågade. Det ska få närmaste tur.
+    func testReplyInGapGetsNearestTurnNotPreviousSpeaker() {
+        let question = SegmentData(start: 0, end: 1.0, text: "Hur ofta?", words: [
+            word(" Hur", 0.0, 0.4), word(" ofta?", 0.4, 1.0)
+        ])
+        let reply = SegmentData(start: 2.3, end: 2.8, text: "Varje dag.", words: [
+            word(" Varje", 2.3, 2.5), word(" dag.", 2.5, 2.8)
+        ])
+        let turns = [SpeakerTurn(start: 0, end: 1.0, speaker: 0), SpeakerTurn(start: 3.4, end: 6, speaker: 1)]
+        let result = SpeakerAssignment.assign([question, reply], turns: turns)
+        XCTAssertEqual(result.map(\.speaker), ["Talare 1", "Talare 2"])
+    }
+
+    func testWordsWithoutOverlapGetNearestTurn() {
         let first = SegmentData(start: 0, end: 1, text: "Hej.", words: [word(" Hej.", 0, 1)])
         let second = SegmentData(start: 5, end: 6, text: "Mm.", words: [word(" Mm.", 5, 6)])
         let result = SpeakerAssignment.assign([first, second], turns: [SpeakerTurn(start: 0, end: 1, speaker: 2)])

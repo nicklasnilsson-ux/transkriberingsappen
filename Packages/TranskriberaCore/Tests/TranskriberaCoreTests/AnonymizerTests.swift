@@ -168,6 +168,24 @@ final class AnonymizerTests: XCTestCase {
         XCTAssertEqual(result.segments[1].speaker, "Talare 2")
     }
 
+    /// Fel i 0.5.2: talare som döpts om till roller blev "[PERSON 1]" och rollordet doldes i texten.
+    func testRoleLabelsAreNotAnonymized() {
+        let segments = [
+            SegmentData(start: 0, end: 2, text: "Du som intervjuare, hur ofta?", speaker: "Intervjuare"),
+            SegmentData(start: 2, end: 4, text: "Varje dag.", speaker: "Kund 1"),
+            SegmentData(start: 4, end: 6, text: "Ja.", speaker: "Kund 2")
+        ]
+        let result = Anonymizer.anonymize(segments, options: rules)
+        XCTAssertEqual(result.segments.map(\.speaker), ["Intervjuare", "Kund 1", "Kund 2"])
+        XCTAssertEqual(result.segments[0].text, "Du som intervjuare, hur ofta?")
+        for role in ["Intervjuare", "intervjuare 2", "Kund", "Kund 3", "Deltagare 1", "Interviewer", "Customer 2"] {
+            XCTAssertTrue(NameDetector.isGenericSpeaker(role), role)
+        }
+        for name in ["Kundansvarig", "Anna Kund", "Kalle"] {
+            XCTAssertFalse(NameDetector.isGenericSpeaker(name), name)
+        }
+    }
+
     func testSystemNameRecognition() {
         let output = anonymize("Igår träffade jag Anna Svensson i Stockholm.", AnonymizationOptions())
         XCTAssertFalse(output.contains("Anna"))
