@@ -474,7 +474,7 @@ struct NameDetector {
     static func isGenericSpeaker(_ speaker: String) -> Bool {
         speaker.range(of: #"^\s*(?:talare|speaker|spk|person)[ _-]?\d+\s*$"#, options: [.regularExpression, .caseInsensitive]) != nil
             || speaker.range(
-                of: #"^\s*(?:intervjuare|kund|deltagare|interviewer|customer|participant)(?:[ _-]?\d+)?\s*$"#,
+                of: #"^\s*(?:intervjuare|kund|deltagare|moderator|interviewer|customer|participant)(?:[ _-]?\d+)?\s*$"#,
                 options: [.regularExpression, .caseInsensitive]
             ) != nil
     }

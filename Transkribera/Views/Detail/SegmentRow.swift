@@ -26,9 +26,14 @@ struct SegmentRow: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 if let speaker = displaySpeaker {
-                    Text(speaker)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(SpeakerPalette.color(for: speaker))
+                    HStack(spacing: 4) {
+                        Text(speaker)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(SpeakerPalette.color(for: speaker))
+                        if segment.isSpeakerUncertain {
+                            UncertainSpeakerMark()
+                        }
+                    }
                 }
 
                 if isEditing {
@@ -100,5 +105,16 @@ enum SpeakerPalette {
     static func color(for speaker: String) -> Color {
         let hash = speaker.unicodeScalars.reduce(0) { ($0 &* 31 &+ Int($1.value)) & 0x7fffffff }
         return colors[hash % colors.count]
+    }
+}
+
+/// ⚠ bredvid talaren när det är osäkert vem som sa repliken.
+struct UncertainSpeakerMark: View {
+    var body: some View {
+        Image(systemName: "exclamationmark.triangle.fill")
+            .font(.caption)
+            .foregroundStyle(.orange)
+            .help("Osäkert vem som sa det här, t.ex. vid ett talarbyte utan paus. Lyssna för att kontrollera.")
+            .accessibilityLabel("Osäker talare")
     }
 }

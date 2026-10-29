@@ -13,7 +13,12 @@ public enum AnalysisExporter {
         var start: Double
         var speaker: String?
         var text: String
+        /// Osäkert vem som sa något i stycket (⚠).
+        var uncertain = false
     }
+
+    /// Står efter talarens namn när det är osäkert vem som sa repliken.
+    public static let uncertainMark = "⚠"
 
     public static func markdown(
         _ segments: [SegmentData],
@@ -35,12 +40,16 @@ public enum AnalysisExporter {
         if let language = metadata.language {
             header.append("- Språk: \(language)")
         }
+        if paragraphs.contains(where: { $0.uncertain && $0.speaker != nil }) {
+            header.append("- \(uncertainMark) = osäkert vem som sa repliken")
+        }
         out += header.joined(separator: "\n") + "\n\n---\n\n"
 
         out += paragraphs.map { paragraph in
             var line = "[\(TimeFormatting.short(paragraph.start))] "
             if let speaker = paragraph.speaker {
                 line += "**\(speaker):** "
+                if paragraph.uncertain { line += "\(uncertainMark) " }
             }
             return line + paragraph.text
         }.joined(separator: "\n\n")
@@ -79,7 +88,8 @@ public enum AnalysisExporter {
             Paragraph(
                 start: segments[range.lowerBound].start,
                 speaker: segments[range.lowerBound].speaker,
-                text: segments[range].map(\.text.trimmed).filter { !$0.isEmpty }.joined(separator: " ")
+                text: segments[range].map(\.text.trimmed).filter { !$0.isEmpty }.joined(separator: " "),
+                uncertain: segments[range].contains(where: \.uncertainSpeaker)
             )
         }
     }

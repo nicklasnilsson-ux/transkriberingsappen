@@ -17,6 +17,12 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
   och transkribera samma fil två gånger för att jämföra vem som får vilka repliker.
 - Antal talare kan nu vara ett spann, t.ex. 2–4, när du inte vet hur många som är med.
   Automatiskt betyder nu minst 2 talare med den nya talaridentifieringen.
+- Ange vem som är intervjuaren: efter en transkribering med talare frågar appen vem
+  av talarna du är. Då heter talarna Intervjuare, Kund 1, Kund 2 och så vidare. Det
+  går också att välja under Talare i verktygsfältet eller genom att högerklicka.
+- ⚠ bredvid talaren där det är osäkert vem som sa repliken, till exempel vid ett
+  talarbyte utan paus eller när två pratar samtidigt. Markeringen följer med i
+  Exportera för analys, så att ett korrekturpass vet var det ska titta.
 
 ### Rättat
 - En transkribering med Whisper-modellerna (t.ex. KB-Whisper) kunde stanna mitt i, till

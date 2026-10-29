@@ -28,9 +28,14 @@ struct ParagraphRow: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 if let speaker = rows.first?.speaker {
-                    Text(speaker)
-                        .font(.callout.weight(.semibold))
-                        .foregroundStyle(SpeakerPalette.color(for: speaker))
+                    HStack(spacing: 4) {
+                        Text(speaker)
+                            .font(.callout.weight(.semibold))
+                            .foregroundStyle(SpeakerPalette.color(for: speaker))
+                        if rows.contains(where: { $0.segment.isSpeakerUncertain }) {
+                            UncertainSpeakerMark()
+                        }
+                    }
                 }
 
                 if isEditing {

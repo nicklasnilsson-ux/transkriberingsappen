@@ -17,6 +17,8 @@ struct TranscriptDetailView: View {
     @State private var speakerToRename: String?
     @State private var newSpeakerName = ""
     @State private var copied = false
+    /// "Inte nu" på frågan om vem som är intervjuaren, för den här visningen.
+    @State private var rolesDismissed = false
     @AppStorage(SettingsKey.exportTimestamps) private var exportTimestamps = true
     @AppStorage(SettingsKey.transcriptLayout) private var layout: TranscriptLayout = .paragraphs
     @AppStorage(SettingsKey.anonymize) private var anonymize = true
@@ -32,6 +34,7 @@ struct TranscriptDetailView: View {
     var body: some View {
         VStack(spacing: 0) {
             header
+            rolesBanner
             anonymizationBanner
             Group {
                 if let player {
@@ -274,6 +277,7 @@ struct TranscriptDetailView: View {
             if let speaker = first.segment.speaker {
                 Divider()
                 Button("Byt namn på \(speaker)…") { beginRename(speaker) }
+                interviewerButton(speaker)
             }
         }
     }
@@ -289,6 +293,7 @@ struct TranscriptDetailView: View {
         if let speaker = segment.speaker {
             Divider()
             Button("Byt namn på \(speaker)…") { beginRename(speaker) }
+            interviewerButton(speaker)
         }
     }
 
@@ -319,6 +324,12 @@ struct TranscriptDetailView: View {
                 Menu {
                     ForEach(transcript.speakers, id: \.self) { speaker in
                         Button("Byt namn på \(speaker)…") { beginRename(speaker) }
+                    }
+                    Divider()
+                    Section("Vem är intervjuaren?") {
+                        ForEach(transcript.speakers, id: \.self) { speaker in
+                            interviewerButton(speaker)
+                        }
                     }
                 } label: {
                     Label("Talare", systemImage: "person.2")
@@ -353,6 +364,49 @@ struct TranscriptDetailView: View {
             }
             .help("Spara som text, Markdown, undertexter eller JSON")
             .disabled(transcript.segments.isEmpty)
+        }
+    }
+
+    // MARK: - Roller
+
+    /// Frågar vem som är intervjuaren när talarna bara heter "Talare 1", "Talare 2" …
+    @ViewBuilder
+    private var rolesBanner: some View {
+        let speakers = transcript.speakers
+        if !rolesDismissed, !isEditing, SpeakerRoles.needsRoles(speakers) {
+            HStack(spacing: 8) {
+                Image(systemName: "person.crop.circle.badge.questionmark")
+                Text("Vem av talarna är du?")
+                ForEach(speakers, id: \.self) { speaker in
+                    HStack(spacing: 2) {
+                        Button(speaker) { transcript.setInterviewer(speaker) }
+                            .help("\(speaker) blir Intervjuare och övriga Kund 1, Kund 2 … Det går att ändra under Talare i verktygsfältet.")
+                        Button {
+                            if let first = transcript.sortedSegments.first(where: { $0.speaker == speaker }) {
+                                player?.seek(to: first.start)
+                            }
+                        } label: {
+                            Image(systemName: "play.circle")
+                        }
+                        .buttonStyle(.borderless)
+                        .help("Lyssna på \(speaker)")
+                    }
+                    .foregroundStyle(SpeakerPalette.color(for: speaker))
+                }
+                Spacer()
+                Button("Inte nu") { rolesDismissed = true }
+                    .buttonStyle(.link)
+            }
+            .font(.callout)
+            .padding(.horizontal)
+            .padding(.bottom, 8)
+        }
+    }
+
+    @ViewBuilder
+    private func interviewerButton(_ speaker: String) -> some View {
+        if speaker != SpeakerRoles.interviewer {
+            Button("\(speaker) är intervjuaren") { transcript.setInterviewer(speaker) }
         }
     }
 

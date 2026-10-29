@@ -171,6 +171,88 @@ final class SpeakerAssignmentTests: XCTestCase {
         XCTAssertEqual(result.map(\.speaker), ["Talare 1", "Talare 2"])
     }
 
+    // MARK: - Osäker talare (⚠)
+
+    func testSpeakerChangeInsideASegmentIsUncertain() {
+        let words = [
+            word(" Hur", 0.0, 0.3), word(" ofta", 0.3, 0.6), word(" är", 0.6, 0.8), word(" ni", 0.8, 1.0),
+            word(" inne?", 1.0, 1.5), word(" Varje", 1.5, 1.9), word(" dag.", 1.9, 2.3)
+        ]
+        let segment = SegmentData(start: 0, end: 2.3, text: "Hur ofta är ni inne? Varje dag.", words: words)
+        let turns = [SpeakerTurn(start: 0, end: 1.5, speaker: 0), SpeakerTurn(start: 1.5, end: 2.4, speaker: 1)]
+        let result = SpeakerAssignment.assign([segment], turns: turns)
+        XCTAssertEqual(result.map(\.uncertainSpeaker), [true, true])
+        // Markeringen sparas med orden, så att den finns kvar i databasen.
+        XCTAssertTrue(result.flatMap(\.words).allSatisfy { $0.uncertainSpeaker == true })
+    }
+
+    func testCleanTurnsAreCertain() {
+        let first = SegmentData(start: 0, end: 1.0, text: "Hur ofta?", words: [
+            word(" Hur", 0.0, 0.4), word(" ofta?", 0.4, 1.0)
+        ])
+        let second = SegmentData(start: 1.2, end: 2.0, text: "Varje dag.", words: [
+            word(" Varje", 1.2, 1.6), word(" dag.", 1.6, 2.0)
+        ])
+        let turns = [SpeakerTurn(start: 0, end: 1.1, speaker: 0), SpeakerTurn(start: 1.1, end: 2.1, speaker: 1)]
+        let result = SpeakerAssignment.assign([first, second], turns: turns)
+        XCTAssertEqual(result.map(\.uncertainSpeaker), [false, false])
+        XCTAssertTrue(result.flatMap(\.words).allSatisfy { $0.uncertainSpeaker == nil })
+    }
+
+    /// "Det är överkurs / för mig.": orden flyttades till grannen av utjämningen. Det kan
+    /// vara rätt, men också ett riktigt kort svar, så repliken får ⚠.
+    func testWordsMovedBySmoothingAreUncertain() {
+        let words = [
+            word(" Det", 0.0, 0.2), word(" är", 0.2, 0.4), word(" överkurs", 0.4, 1.0),
+            word(" för", 1.0, 1.2), word(" mig.", 1.2, 1.5)
+        ]
+        let segment = SegmentData(start: 0, end: 1.5, text: "Det är överkurs för mig.", words: words)
+        let turns = [SpeakerTurn(start: 0, end: 1.0, speaker: 0), SpeakerTurn(start: 1.0, end: 2, speaker: 1)]
+        let result = SpeakerAssignment.assign([segment], turns: turns)
+        XCTAssertEqual(result.map(\.speaker), ["Talare 1"])
+        XCTAssertEqual(result.map(\.uncertainSpeaker), [true])
+    }
+
+    func testReplyInGapIsUncertain() {
+        let question = SegmentData(start: 0, end: 1.0, text: "Hur ofta?", words: [
+            word(" Hur", 0.0, 0.4), word(" ofta?", 0.4, 1.0)
+        ])
+        let reply = SegmentData(start: 2.3, end: 2.8, text: "Varje dag.", words: [
+            word(" Varje", 2.3, 2.5), word(" dag.", 2.5, 2.8)
+        ])
+        let turns = [SpeakerTurn(start: 0, end: 1.0, speaker: 0), SpeakerTurn(start: 3.4, end: 6, speaker: 1)]
+        let result = SpeakerAssignment.assign([question, reply], turns: turns)
+        XCTAssertEqual(result.map(\.uncertainSpeaker), [false, true])
+    }
+
+    func testOverlappingSpeechIsUncertain() {
+        let segment = SegmentData(start: 0, end: 2.0, text: "Ja, precis så.", words: [
+            word(" Ja,", 0.0, 0.4), word(" precis", 0.4, 1.2), word(" så.", 1.2, 2.0)
+        ])
+        let turns = [SpeakerTurn(start: 0, end: 2.0, speaker: 0), SpeakerTurn(start: 0.5, end: 1.0, speaker: 1)]
+        let result = SpeakerAssignment.assign([segment], turns: turns)
+        XCTAssertEqual(result.map(\.speaker), ["Talare 1"])
+        XCTAssertEqual(result.map(\.uncertainSpeaker), [true])
+    }
+
+    func testSegmentWithoutWordsOutsideTurnsIsUncertain() {
+        let segments = [SegmentData(start: 0, end: 2, text: "Första."), SegmentData(start: 5, end: 6, text: "Andra.")]
+        let result = SpeakerAssignment.assign(segments, turns: [SpeakerTurn(start: 0, end: 2, speaker: 0)])
+        XCTAssertEqual(result.map(\.uncertainSpeaker), [false, true])
+    }
+
+    /// Appen visar ⚠ genom att leta i de sparade (JSON-kodade) orden.
+    func testUncertaintyIsFoundInSavedWords() throws {
+        let certain = [word(" Ja.", 0, 1)]
+        var uncertain = certain
+        uncertain[0].uncertainSpeaker = true
+        XCTAssertFalse(WordTimingData.hasUncertainSpeaker(inEncoded: try JSONEncoder().encode(certain)))
+        XCTAssertTrue(WordTimingData.hasUncertainSpeaker(inEncoded: try JSONEncoder().encode(uncertain)))
+        // Äldre sparade ord saknar fältet och ska gå att läsa.
+        let old = Data(#"[{"word":" Ja.","start":0,"end":1,"probability":1}]"#.utf8)
+        XCTAssertEqual(try JSONDecoder().decode([WordTimingData].self, from: old), certain)
+    }
+
     func testNoTurnsLeavesSegmentsUnchanged() {
         let segments = [SegmentData(start: 0, end: 1, text: "Hej.")]
         XCTAssertEqual(SpeakerAssignment.assign(segments, turns: []), segments)

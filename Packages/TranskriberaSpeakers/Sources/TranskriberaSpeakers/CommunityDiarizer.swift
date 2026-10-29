@@ -54,6 +54,8 @@ public actor CommunityDiarizer {
                 enabled: true, minDurationSeconds: shortestEmbeddedSpeech
             )
         }
+        // Turer får gå omlott när två pratar samtidigt, så att repliken kan få ⚠.
+        config.postProcessing.exclusiveSegments = false
         if let exact = speakers.exact {
             config.clustering.numSpeakers = exact
         } else {

@@ -106,6 +106,20 @@ final class Transcript {
         }
     }
 
+    /// Byter flera talares namn på en gång, t.ex. till roller ("Intervjuare", "Kund 1").
+    func applySpeakerNames(_ names: [String: String]) {
+        for segment in segments {
+            if let speaker = segment.speaker, let name = names[speaker] {
+                segment.speaker = name
+            }
+        }
+    }
+
+    /// Gör `speaker` till intervjuare och övriga talare till kunder.
+    func setInterviewer(_ speaker: String) {
+        applySpeakerNames(SpeakerRoles.names(for: speakers, interviewer: speaker))
+    }
+
     func renameSpeaker(_ oldName: String, to newName: String) {
         let trimmed = newName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
@@ -142,7 +156,16 @@ final class TranscriptSegment {
     }
 
     var data: SegmentData {
-        SegmentData(start: start, end: end, text: text, speaker: speaker, words: words)
+        let words = words
+        return SegmentData(
+            start: start, end: end, text: text, speaker: speaker, words: words,
+            uncertainSpeaker: words.contains { $0.uncertainSpeaker == true }
+        )
+    }
+
+    /// Osäkert vem som sa det här (⚠). Följer med ordtiderna och försvinner när texten rättas.
+    var isSpeakerUncertain: Bool {
+        wordsData.map(WordTimingData.hasUncertainSpeaker(inEncoded:)) ?? false
     }
 
     /// Uppdaterar texten. Ordtidsstämplarna slängs eftersom de inte längre stämmer.
