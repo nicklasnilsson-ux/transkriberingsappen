@@ -6,6 +6,8 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.5.5] – 2026-10-29
+
 ### Nytt
 - Volymen jämnas nu ut som standard för KB-Whisper, så att svaga röster hörs lika bra
   som starka. I två intervjuer gav det 2–3 procentenheter färre ordfel jämfört med
