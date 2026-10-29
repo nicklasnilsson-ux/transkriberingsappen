@@ -16,15 +16,27 @@ struct TranscriptionProgressView: View {
 
             if isCurrent {
                 let transcriber = queue.transcriber
-                Text(transcriber.statusText)
-                    .font(.headline)
-                if let fraction = transcriber.fraction {
-                    ProgressView(value: fraction)
-                        .frame(maxWidth: 360)
-                } else {
-                    ProgressView()
-                        .controlSize(.small)
+                VStack(spacing: 4) {
+                    if let step = transcriber.stepText {
+                        Text(step)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
+                    Text(transcriber.statusText)
+                        .font(.headline)
                 }
+                // Samma stapel i alla steg; utan procent rör den sig obestämt i stället
+                // för att stå still på noll.
+                Group {
+                    if let fraction = transcriber.fraction {
+                        ProgressView(value: fraction)
+                    } else {
+                        ProgressView()
+                    }
+                }
+                .progressViewStyle(.linear)
+                .frame(maxWidth: 360)
                 if !transcriber.liveText.isEmpty {
                     Text("”\(transcriber.liveText)”")
                         .font(.callout)
