@@ -42,19 +42,20 @@ public enum SpeakerAssignment {
             return new
         }
 
+        // Talare per ord, segment för segment.
+        let segments = segments.sorted(by: { $0.start < $1.start })
         var previous: Int?
-        var result: [SegmentData] = []
-        for segment in segments.sorted(by: { $0.start < $1.start }) {
+        var wordSpeakers: [[Int?]] = []
+        var segmentSpeakers: [Int?] = []
+        for segment in segments {
             guard !segment.words.isEmpty else {
                 let speaker = bestSpeaker(start: segment.start, end: segment.end, turns: turns) ?? previous
                 previous = speaker
-                var output = segment
-                output.speaker = name(for: speaker)
-                result.append(output)
+                segmentSpeakers.append(speaker)
+                wordSpeakers.append([])
                 continue
             }
 
-            // Talare per ord.
             var speakers: [Int?] = []
             for word in segment.words {
                 let speaker = bestSpeaker(start: word.start, end: word.end, turns: turns) ?? previous
@@ -69,8 +70,30 @@ public enum SpeakerAssignment {
                     speakers[index] = speakers[index - 1]
                 }
             }
+            segmentSpeakers.append(nil)
+            wordSpeakers.append(speakers)
+        }
 
-            speakers = snapToBoundaries(segment.words, speakers)
+        // Korta talarbitar följer grannen över hela ordflödet, inte bara inom ett segment:
+        // en mening som fortsätter i nästa segment ("Det står Claude / hos dig.") ska inte
+        // delas mellan två talare.
+        let snapped = snapToBoundaries(segments.flatMap(\.words), wordSpeakers.flatMap { $0 })
+        var offset = 0
+        for index in wordSpeakers.indices {
+            let count = wordSpeakers[index].count
+            wordSpeakers[index] = Array(snapped[offset..<(offset + count)])
+            offset += count
+        }
+
+        var result: [SegmentData] = []
+        for (position, segment) in segments.enumerated() {
+            guard !segment.words.isEmpty else {
+                var output = segment
+                output.speaker = name(for: segmentSpeakers[position])
+                result.append(output)
+                continue
+            }
+            let speakers = wordSpeakers[position]
 
             // Dela segmentet där talaren byts.
             var startIndex = 0
