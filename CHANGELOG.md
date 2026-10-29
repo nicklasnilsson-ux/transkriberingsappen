@@ -6,6 +6,8 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.5.1] – 2026-10-29
+
 ### Nytt
 - KB-Whisper Large finns nu också i en mer ordagrann variant, för intervjuer där du vill
   kunna citera exakt.
