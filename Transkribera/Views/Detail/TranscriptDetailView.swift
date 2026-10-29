@@ -326,9 +326,12 @@ struct TranscriptDetailView: View {
                         Button("Byt namn på \(speaker)…") { beginRename(speaker) }
                     }
                     Divider()
-                    Section("Vem är intervjuaren?") {
+                    Section("Intervjuare") {
                         ForEach(transcript.speakers, id: \.self) { speaker in
-                            interviewerButton(speaker)
+                            Toggle(speaker, isOn: Binding(
+                                get: { SpeakerRoles.isInterviewer(speaker) },
+                                set: { transcript.setInterviewer(speaker, to: $0) }
+                            ))
                         }
                     }
                     Divider()
@@ -409,8 +412,10 @@ struct TranscriptDetailView: View {
 
     @ViewBuilder
     private func interviewerButton(_ speaker: String) -> some View {
-        if speaker != SpeakerRoles.interviewer {
-            Button("\(speaker) är intervjuaren") { transcript.setInterviewer(speaker) }
+        if SpeakerRoles.isInterviewer(speaker) {
+            Button("\(speaker) är inte intervjuare") { transcript.setInterviewer(speaker, to: false) }
+        } else {
+            Button("\(speaker) är intervjuare") { transcript.setInterviewer(speaker, to: true) }
         }
     }
 

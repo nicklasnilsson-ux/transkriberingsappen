@@ -120,6 +120,14 @@ final class Transcript {
         applySpeakerNames(SpeakerRoles.names(for: speakers, interviewer: speaker))
     }
 
+    /// Lägger till eller tar bort `speaker` som intervjuare utan att ändra de andra rollerna.
+    /// Flera intervjuare numreras ("Intervjuare 1", "Intervjuare 2"), övriga blir kunder.
+    func setInterviewer(_ speaker: String, to isInterviewer: Bool) {
+        var interviewers = Set(speakers.filter(SpeakerRoles.isInterviewer))
+        if isInterviewer { interviewers.insert(speaker) } else { interviewers.remove(speaker) }
+        applySpeakerNames(SpeakerRoles.names(for: speakers, interviewers: interviewers))
+    }
+
     func renameSpeaker(_ oldName: String, to newName: String) {
         let trimmed = newName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
