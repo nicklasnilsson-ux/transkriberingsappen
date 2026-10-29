@@ -17,6 +17,11 @@ enum AppPaths {
         ensure(supportDirectory.appending(path: "Media", directoryHint: .isDirectory))
     }
 
+    /// Talaridentifierarens turer per transkribering, utan text (se `SpeakerDiagnostics`).
+    static var speakerTurnsDirectory: URL {
+        ensure(supportDirectory.appending(path: "Talarturer", directoryHint: .isDirectory))
+    }
+
     static var recordingsDirectory: URL {
         ensure(FileManager.default.temporaryDirectory.appending(path: "Recordings", directoryHint: .isDirectory))
     }
