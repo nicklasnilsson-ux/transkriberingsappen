@@ -6,6 +6,19 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.5.5</title>
+      <pubDate>Thu, 29 Oct 2026 23:14:36 GMT</pubDate>
+      <sparkle:version>12</sparkle:version>
+      <sparkle:shortVersionString>0.5.5</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.5.5</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Nytt&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Volymen jämnas nu ut som standard för KB-Whisper, så att svaga röster hörs lika bra som starka. I två intervjuer gav det 2–3 procentenheter färre ordfel jämfört med Klang. Pianissimo påverkas inte, eftersom den jämnar ut volymen själv. Du kan stänga av det under Inställningar → Transkribering → Experiment.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.5.5/Transkribera-v0.5.5.zip" length="13849526" type="application/octet-stream" sparkle:edSignature="SZIkubjky3us0/+VRKExgREFuwPCBe2w9/X99DveVwCqdWxl+7zbHWzsyAD32yrz8YCT3XbHTbTC1dtpH3wiDw==" />
+    </item>
+    <item>
       <title>Version 0.5.4</title>
       <pubDate>Thu, 29 Oct 2026 19:33:31 GMT</pubDate>
       <sparkle:version>11</sparkle:version>
