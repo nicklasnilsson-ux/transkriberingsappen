@@ -6,6 +6,10 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+### Nytt
+- KB-Whisper Large finns nu också i en mer ordagrann variant, för intervjuer där du vill
+  kunna citera exakt.
+
 ## [0.5.0] – 2026-10-28
 
 ### Nytt
