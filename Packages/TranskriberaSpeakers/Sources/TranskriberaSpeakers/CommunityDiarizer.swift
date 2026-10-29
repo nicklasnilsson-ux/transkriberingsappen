@@ -38,14 +38,21 @@ public actor CommunityDiarizer {
         })
     }
 
-    /// - Parameter reembedShortTurns: Tal som inte fått något röstavtryck (oftast korta svar,
-    ///   under 1 s) jämförs med talarnas röster i efterhand. Annars räknar FluidAudio dem
-    ///   till talaren runt omkring, vilket gav precis felet att "Varje dag." hamnade hos
-    ///   den som frågade (se `CommunityDiarizerTests`).
-    static func config(for speakers: SpeakerCount, reembedShortTurns: Bool = true) -> OfflineDiarizerConfig {
+    /// Kortaste tal (sekunder) som får ett eget röstavtryck. Standard i community-1 är 1 s.
+    /// Då fick ett kort svar som "Varje dag." (0,8 s) ingen tur alls och hamnade hos den som
+    /// frågade; med 0,3 s blev alla repliker rätt i `CommunityDiarizerTests` (CI 2026-10-29).
+    static let shortestEmbeddedSpeech = 0.3
+
+    /// - Parameter shortTurns: Ge korta repliker egna röstavtryck, och jämför tal som ändå
+    ///   saknar avtryck med talarnas röster i efterhand. `false` ger community-1:s standard,
+    ///   bara för jämförelser i testerna.
+    static func config(for speakers: SpeakerCount, shortTurns: Bool = true) -> OfflineDiarizerConfig {
         var config = OfflineDiarizerConfig(clustering: .community)
-        if reembedShortTurns {
-            config.zeroVoteReembed = OfflineDiarizerConfig.ZeroVoteReembed(enabled: true, minDurationSeconds: 0.3)
+        if shortTurns {
+            config.embedding.minSegmentDurationSeconds = shortestEmbeddedSpeech
+            config.zeroVoteReembed = OfflineDiarizerConfig.ZeroVoteReembed(
+                enabled: true, minDurationSeconds: shortestEmbeddedSpeech
+            )
         }
         if let exact = speakers.exact {
             config.clustering.numSpeakers = exact

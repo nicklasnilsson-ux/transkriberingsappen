@@ -30,7 +30,6 @@ let package = Package(
             name: "TranskriberaSpeakersTests",
             dependencies: [
                 "TranskriberaSpeakers",
-                .product(name: "FluidAudio", package: "FluidAudio"),
                 .product(name: "TranskriberaCore", package: "TranskriberaCore"),
                 .product(name: "SpeakerKit", package: "argmax-oss-swift")
             ]

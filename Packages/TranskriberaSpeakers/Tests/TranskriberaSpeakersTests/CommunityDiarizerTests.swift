@@ -1,4 +1,3 @@
-import FluidAudio
 import Foundation
 import SpeakerKit
 import TranskriberaCore
@@ -24,27 +23,17 @@ final class CommunityDiarizerTests: XCTestCase {
         }
     }
 
-    /// Varianter av inställningarna på samma samtal. Skriver bara ut resultatet och turerna
-    /// runt de korta svaren, för att kunna välja inställningar utifrån mätning.
-    func testCompareSettings() async throws {
+    /// Med community-1:s standardinställningar fick "Varje dag." ingen egen tur och hamnade
+    /// hos intervjuaren (CI 2026-10-29: 10 av 11 rätt, mot 11 av 11 med våra). Skriver bara
+    /// ut resultatet och turerna i början, för jämförelse i loggen.
+    func testCompareWithStandardSettings() async throws {
         let dialogue = try Dialogue.make()
         let diarizer = CommunityDiarizer(modelsDirectory: Self.modelsDirectory.appending(path: "community"))
-        var variants: [(String, OfflineDiarizerConfig)] = []
-        variants.append(("standard", CommunityDiarizer.config(for: .automatic, reembedShortTurns: false)))
-        variants.append(("omräkning", CommunityDiarizer.config(for: .automatic)))
-        var shortEmbeddings = CommunityDiarizer.config(for: .automatic)
-        shortEmbeddings.embedding.minSegmentDurationSeconds = 0.3
-        variants.append(("omräkning + avtryck från 0,3 s", shortEmbeddings))
-        var exactTwo = CommunityDiarizer.config(for: .exactly(2))
-        exactTwo.embedding.minSegmentDurationSeconds = 0.3
-        variants.append(("exakt 2 + avtryck från 0,3 s", exactTwo))
-        var fineSteps = CommunityDiarizer.config(for: .automatic)
-        fineSteps.segmentation.stepRatio = 0.1
-        variants.append(("omräkning + tätare fönster", fineSteps))
-
         let first = dialogue.lines[0]
-        print("Repliker:", dialogue.lines.prefix(4).map { String(format: "%.2f–%.2f %@", $0.start, $0.end, $0.text) })
-        for (name, config) in variants {
+        for (name, config) in [
+            ("standard", CommunityDiarizer.config(for: .automatic, shortTurns: false)),
+            ("appens inställningar", CommunityDiarizer.config(for: .automatic))
+        ] {
             let turns = try await diarizer.turns(samples: dialogue.samples, config: config)
             let early = turns.filter { $0.start < first.end + 6 }
                 .map { String(format: "%.2f–%.2f S%d", $0.start, $0.end, $0.speaker) }
@@ -95,7 +84,9 @@ final class CommunityDiarizerTests: XCTestCase {
         XCTAssertEqual(range.maxSpeakers, 4)
 
         XCTAssertEqual(CommunityDiarizer.config(for: .exactly(3)).clustering.numSpeakers, 3)
-        XCTAssertTrue(CommunityDiarizer.config(for: .automatic).zeroVoteReembed.enabled)
+        let shortTurns = CommunityDiarizer.config(for: .automatic)
+        XCTAssertTrue(shortTurns.zeroVoteReembed.enabled)
+        XCTAssertEqual(shortTurns.embedding.minSegmentDurationSeconds, CommunityDiarizer.shortestEmbeddedSpeech)
     }
 
     static let modelsDirectory = FileManager.default.temporaryDirectory
