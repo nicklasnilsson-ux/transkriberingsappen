@@ -6,6 +6,11 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+### Nytt
+- Två experiment under Inställningar → Transkribering för att jämföra kvaliteten:
+  noggrannare skarvar för Pianissimo och utjämnad volym, som förstärker svaga röster.
+  Det som användes står efter modellens namn i transkriberingen.
+
 ## [0.5.2] – 2026-10-29
 
 ### Nytt
