@@ -6,6 +6,8 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.5.4] – 2026-10-29
+
 ### Nytt
 - Experiment: ny talaridentifiering (pyannote community-1) under Inställningar →
   Transkribering. Den körs lokalt, som den nuvarande, och kräver macOS 15. Slå på den
