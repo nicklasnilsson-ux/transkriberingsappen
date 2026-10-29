@@ -124,7 +124,7 @@ public enum SpeakerAssignment {
     static func snapToBoundaries(_ words: [WordTimingData], _ speakers: [Int?]) -> [Int?] {
         var speakers = speakers
         while true {
-            let runs = runs(of: speakers)
+            let runs = runs(of: speakers, words: words)
             guard runs.count > 1 else { return speakers }
             var merged = false
             for (index, run) in runs.enumerated() where run.count <= shortRunWords {
@@ -146,12 +146,14 @@ public enum SpeakerAssignment {
         }
     }
 
-    /// Följder av ord med samma talare.
-    static func runs(of speakers: [Int?]) -> [Range<Int>] {
+    /// Följder av ord med samma talare. En följd bryts också vid meningsslut och pauser, så
+    /// att "Okej? / Jag skulle" inte räknas som en lång bit bara för att talaren är densamma.
+    static func runs(of speakers: [Int?], words: [WordTimingData]) -> [Range<Int>] {
         guard !speakers.isEmpty else { return [] }
         var runs: [Range<Int>] = []
         var start = 0
-        for index in 1...speakers.count where index == speakers.count || speakers[index] != speakers[start] {
+        for index in 1...speakers.count
+        where index == speakers.count || speakers[index] != speakers[start] || isBoundary(words, before: index) {
             runs.append(start..<index)
             start = index
         }
