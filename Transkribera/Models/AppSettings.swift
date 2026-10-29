@@ -120,17 +120,21 @@ struct TranscriptionOptions {
     var translateToEnglish: Bool
     /// Experiment: Pianissimo provar flera sätt att skarva 15-sekundersfönstren.
     var carefulSeams = false
-    /// Experiment: svaga röster förstärks innan ljudet transkriberas.
-    var levelVolume = false
+    /// Svaga röster förstärks innan ljudet transkriberas. Hjälpte KB-Whisper (cirka
+    /// 2–3 procentenheter färre ordfel mot Klang i två intervjuer) men inte Pianissimo,
+    /// som jämnar ut volymen själv, så den gäller bara Whisper-modellerna.
+    var levelVolume = true
     /// Experiment: talaridentifiering med pyannote community-1 (FluidAudio) i stället för SpeakerKit.
     var communityDiarization = false
+
+    var appliesLevelVolume: Bool { levelVolume && !model.usesParakeet }
 
     /// Modellens namn som sparas med transkriberingen, med experimenten som användes,
     /// så att olika körningar går att skilja åt vid en jämförelse.
     var modelLabel: String {
         var extras: [String] = []
         if carefulSeams, model.usesParakeet { extras.append("noggranna skarvar") }
-        if levelVolume { extras.append("jämnad volym") }
+        if appliesLevelVolume { extras.append("jämnad volym") }
         if communityDiarization, identifySpeakers { extras.append("ny talaridentifiering") }
         return extras.isEmpty ? model.displayName : "\(model.displayName) (\(extras.joined(separator: ", ")))"
     }
@@ -147,7 +151,7 @@ struct TranscriptionOptions {
             wordTimestamps: defaults.object(forKey: SettingsKey.wordTimestamps) as? Bool ?? true,
             translateToEnglish: defaults.string(forKey: SettingsKey.task) == "translate",
             carefulSeams: defaults.bool(forKey: SettingsKey.pianissimoCarefulSeams),
-            levelVolume: defaults.bool(forKey: SettingsKey.levelVolume),
+            levelVolume: defaults.object(forKey: SettingsKey.levelVolume) as? Bool ?? true,
             communityDiarization: defaults.bool(forKey: SettingsKey.communityDiarization) && CommunityDiarizer.isSupported
         )
     }

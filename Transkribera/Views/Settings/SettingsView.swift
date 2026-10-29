@@ -30,7 +30,7 @@ private struct TranscriptionSettingsView: View {
     @AppStorage(SettingsKey.wordTimestamps) private var wordTimestamps = true
     @AppStorage(SettingsKey.recordMicrophone) private var recordMicrophone = true
     @AppStorage(SettingsKey.pianissimoCarefulSeams) private var carefulSeams = false
-    @AppStorage(SettingsKey.levelVolume) private var levelVolume = false
+    @AppStorage(SettingsKey.levelVolume) private var levelVolume = true
 
     var body: some View {
         Form {
@@ -71,8 +71,8 @@ private struct TranscriptionSettingsView: View {
             Section {
                 Toggle("Noggrannare skarvar (Pianissimo)", isOn: $carefulSeams)
                     .help("Pianissimo lyssnar på 15 sekunder i taget. Med det här provar den flera sätt att skarva bitarna och väljer det säkraste.")
-                Toggle("Jämna ut volymen", isOn: $levelVolume)
-                    .help("Förstärker svaga röster innan ljudet transkriberas. Tystnad och starka röster lämnas som de är.")
+                Toggle("Jämna ut volymen (KB-Whisper)", isOn: $levelVolume)
+                    .help("Förstärker svaga röster innan ljudet transkriberas. Tystnad och starka röster lämnas som de är. Gav färre ordfel med KB-Whisper i två intervjuer. Pianissimo jämnar ut volymen själv, så där gör valet ingenting.")
                 Toggle("Ny talaridentifiering (pyannote community-1)", isOn: $communityDiarization)
                     .disabled(!CommunityDiarizer.isSupported)
                     .help("En nyare modell för att avgöra vem som pratar. Körs lokalt, som den nuvarande. Laddar ner en extra modell första gången.")
