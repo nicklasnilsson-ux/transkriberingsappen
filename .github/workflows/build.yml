@@ -121,6 +121,11 @@ jobs:
       - name: Tester för releaseskripten
         run: $PYTHON -m unittest discover -s scripts
 
+      - name: Släppta versioner i CHANGELOG är orörda
+        run: |
+          git fetch --quiet --depth=1 origin '+refs/tags/v*:refs/tags/v*'
+          python3 scripts/changelog.py released
+
       - name: Kontrollera byggnumret mot appcasten
         if: steps.version.outputs.release == 'true'
         run: |

@@ -6,12 +6,7 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
-## [0.5.3] – 2026-10-29
-
 ### Nytt
-- Två experiment under Inställningar → Transkribering för att jämföra kvaliteten:
-  noggrannare skarvar för Pianissimo och utjämnad volym, som förstärker svaga röster.
-  Det som användes står efter modellens namn i transkriberingen.
 - Experiment: ny talaridentifiering (pyannote community-1) under Inställningar →
   Transkribering. Den körs lokalt, som den nuvarande, och kräver macOS 15. Slå på den
   och transkribera samma fil två gånger för att jämföra vem som får vilka repliker.
@@ -23,6 +18,13 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 - ⚠ bredvid talaren där det är osäkert vem som sa repliken, till exempel vid ett
   talarbyte utan paus eller när två pratar samtidigt. Markeringen följer med i
   Exportera för analys, så att ett korrekturpass vet var det ska titta.
+
+## [0.5.3] – 2026-10-29
+
+### Nytt
+- Två experiment under Inställningar → Transkribering för att jämföra kvaliteten:
+  noggrannare skarvar för Pianissimo och utjämnad volym, som förstärker svaga röster.
+  Det som användes står efter modellens namn i transkriberingen.
 
 ### Rättat
 - En transkribering med Whisper-modellerna (t.ex. KB-Whisper) kunde stanna mitt i, till
