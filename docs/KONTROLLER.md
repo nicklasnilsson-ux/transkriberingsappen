@@ -33,6 +33,7 @@ först när alla kontroller är gröna på exakt de filer som laddades upp.
 | Risk | Kontroll | Var |
 | --- | --- | --- |
 | En ny version kan inte öppna databasen från förra versionen (ändrad modell utan migrering) och kraschar eller tappar transkriberingar | Uppgraderingstest: förra släppta versionen installeras och får en transkribering och inställningar, uppdaterar sig själv med Sparkle till det nya bygget, och det nya bygget ska ha kvar allt | `upgrade-test.sh`, `upgrade_store.py` |
+| En ny version flyttar eller tar bort nedladdade modeller, så att användaren måste ladda ner flera GB igen | Uppgraderingstestet lägger modellfiler för KB-Whisper, OpenAI och Pianissimo där appen letar efter dem, och de ska finnas kvar efter uppdateringen | `upgrade-test.sh` |
 | Databasen går inte att öppna hos en användare | Appen kraschar inte: databasen flyttas till `Säkerhetskopior` och användaren får veta var | `Database.swift` |
 | En migrering förstör data | Databasen kopieras till `Säkerhetskopior` första gången en ny version startar (de fem senaste sparas) | `Database.swift` |
 | Uppdateringsflödet går sönder (signatur, appcast, installation i sandlådan) | Uppgraderingstestet går genom Sparkle på riktigt, med appcasten signerad med den riktiga nyckeln | `upgrade-test.sh` |
