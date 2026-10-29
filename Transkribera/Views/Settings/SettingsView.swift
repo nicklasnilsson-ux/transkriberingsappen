@@ -26,6 +26,8 @@ private struct TranscriptionSettingsView: View {
     @AppStorage(SettingsKey.vocabulary) private var vocabulary = ""
     @AppStorage(SettingsKey.wordTimestamps) private var wordTimestamps = true
     @AppStorage(SettingsKey.recordMicrophone) private var recordMicrophone = true
+    @AppStorage(SettingsKey.pianissimoCarefulSeams) private var carefulSeams = false
+    @AppStorage(SettingsKey.levelVolume) private var levelVolume = false
 
     var body: some View {
         Form {
@@ -60,6 +62,18 @@ private struct TranscriptionSettingsView: View {
                 Text("Ordlista")
             } footer: {
                 Text("Namn och fackord som brukar förekomma, med komma emellan. Modellen får dem som ledtråd och stavar dem oftare rätt. Namn (med stor bokstav) som ändå hörs nästan rätt, t.ex. ”Fotnox”, rättas i efterhand. Håll listan kort.")
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
+                Toggle("Noggrannare skarvar (Pianissimo)", isOn: $carefulSeams)
+                    .help("Pianissimo lyssnar på 15 sekunder i taget. Med det här provar den flera sätt att skarva bitarna och väljer det säkraste.")
+                Toggle("Jämna ut volymen", isOn: $levelVolume)
+                    .help("Förstärker svaga röster innan ljudet transkriberas. Tystnad och starka röster lämnas som de är.")
+            } header: {
+                Text("Experiment")
+            } footer: {
+                Text("För att jämföra kvaliteten. Noggrannare skarvar tar 10–50 % längre tid. Det som användes står efter modellens namn i transkriberingen.")
                     .foregroundStyle(.secondary)
             }
 

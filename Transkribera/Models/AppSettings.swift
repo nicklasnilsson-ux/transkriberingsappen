@@ -22,6 +22,8 @@ enum SettingsKey {
     static let vocabulary = "vocabulary"
     static let betaUpdates = "betaUpdates"
     static let transcriptLayout = "transcriptLayout"
+    static let pianissimoCarefulSeams = "pianissimoCarefulSeams"
+    static let levelVolume = "levelVolume"
 }
 
 /// Hur transkriberingen visas: löpande stycken per talare (standard) eller
@@ -93,6 +95,19 @@ struct TranscriptionOptions {
     var wordTimestamps: Bool
     /// Översätt till engelska istället för att transkribera.
     var translateToEnglish: Bool
+    /// Experiment: Pianissimo provar flera sätt att skarva 15-sekundersfönstren.
+    var carefulSeams = false
+    /// Experiment: svaga röster förstärks innan ljudet transkriberas.
+    var levelVolume = false
+
+    /// Modellens namn som sparas med transkriberingen, med experimenten som användes,
+    /// så att olika körningar går att skilja åt vid en jämförelse.
+    var modelLabel: String {
+        var extras: [String] = []
+        if carefulSeams, model.usesParakeet { extras.append("noggranna skarvar") }
+        if levelVolume { extras.append("jämnad volym") }
+        return extras.isEmpty ? model.displayName : "\(model.displayName) (\(extras.joined(separator: ", ")))"
+    }
 
     static func fromDefaults(_ defaults: UserDefaults = .standard) -> TranscriptionOptions {
         let model = defaults.string(forKey: SettingsKey.model).flatMap(WhisperModel.init(rawValue:)) ?? .default
@@ -104,7 +119,9 @@ struct TranscriptionOptions {
             numberOfSpeakers: defaults.integer(forKey: SettingsKey.speakerCount) > 0 ? defaults.integer(forKey: SettingsKey.speakerCount) : nil,
             vocabulary: defaults.string(forKey: SettingsKey.vocabulary) ?? "",
             wordTimestamps: defaults.object(forKey: SettingsKey.wordTimestamps) as? Bool ?? true,
-            translateToEnglish: defaults.string(forKey: SettingsKey.task) == "translate"
+            translateToEnglish: defaults.string(forKey: SettingsKey.task) == "translate",
+            carefulSeams: defaults.bool(forKey: SettingsKey.pianissimoCarefulSeams),
+            levelVolume: defaults.bool(forKey: SettingsKey.levelVolume)
         )
     }
 }

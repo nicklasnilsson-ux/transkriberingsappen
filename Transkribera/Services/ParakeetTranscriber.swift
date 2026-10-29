@@ -21,28 +21,43 @@ actor ParakeetTranscriber {
         "parakeet_vocab.json"
     ]
 
+    private var models: AsrModels?
     private var manager: AsrManager?
+    private var carefulSeams = false
     private var loadedFolder: URL?
 
     func load(folder: URL) async throws {
-        if manager != nil, loadedFolder == folder { return }
+        if models != nil, loadedFolder == folder { return }
         unload()
-        let models = try AsrModels.loadLocal(from: folder, version: .v3)
-        manager = AsrManager(config: .default, models: models)
+        models = try AsrModels.loadLocal(from: folder, version: .v3)
         loadedFolder = folder
     }
 
     func unload() {
+        models = nil
         manager = nil
         loadedFolder = nil
+    }
+
+    /// Långa inspelningar delas i fönster på 15 sekunder. Med `carefulSeams` provar
+    /// FluidAudio flera sätt att skarva fönstren i början av filen och väljer det
+    /// säkraste (tar 10–50 % längre tid).
+    private func manager(carefulSeams: Bool) throws -> AsrManager {
+        guard let models else { throw TranscriberError.notLoaded }
+        if let manager, self.carefulSeams == carefulSeams { return manager }
+        let manager = AsrManager(config: ASRConfig(dualDecodeArbitration: carefulSeams), models: models)
+        self.manager = manager
+        self.carefulSeams = carefulSeams
+        return manager
     }
 
     /// Transkriberar 16 kHz mono-ljud. `progress` får andelen klar (0–1) och, om den finns, senaste texten.
     func transcribe(
         samples: [Float],
+        carefulSeams: Bool = false,
         progress: @escaping @Sendable (Double, String) -> Void
     ) async throws -> [SegmentData] {
-        guard let manager else { throw TranscriberError.notLoaded }
+        let manager = try manager(carefulSeams: carefulSeams)
 
         // FluidAudio rapporterar bara andel klar (för ljud över ca 15 s), ingen löpande text.
         let stream = await manager.transcriptionProgressStream

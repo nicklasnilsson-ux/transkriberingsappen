@@ -94,7 +94,7 @@ final class TranscriptionQueue {
             originalFileName: originalFileName,
             isVideo: info.isVideo,
             duration: info.duration,
-            modelName: TranscriptionOptions.fromDefaults().model.displayName,
+            modelName: TranscriptionOptions.fromDefaults().modelLabel,
             isRecording: isRecording
         )
         context.insert(transcript)
@@ -152,7 +152,7 @@ final class TranscriptionQueue {
         let options = TranscriptionOptions.fromDefaults()
         currentTranscriptID = transcript.id
         transcript.status = .transcribing
-        transcript.modelName = options.model.displayName
+        transcript.modelName = options.modelLabel
         save()
 
         let transcriber = self.transcriber
