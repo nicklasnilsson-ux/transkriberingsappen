@@ -11,6 +11,9 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
   kunna citera exakt.
 
 ### Rättat
+- KB-Whisper tappar inte längre hela partier av samtal. Tal som saknar text
+  transkriberas om automatiskt.
+- Trasiga interna markeringar som "|nospeech|>" syns inte längre i texten.
 - Sista eller första ordet i en replik hamnar inte längre hos fel talare, särskilt med
   Pianissimo. Talarbyten läggs vid meningsslut eller pauser.
 - Namnet Joy döljs vid anonymisering.

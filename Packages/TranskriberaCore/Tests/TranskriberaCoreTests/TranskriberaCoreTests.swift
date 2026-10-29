@@ -20,6 +20,13 @@ final class TextCleaningTests: XCTestCase {
         XCTAssertEqual(TextCleaning.clean("<|startoftranscript|><|sv|> Hej  på dig <|0.00|>"), "Hej på dig")
     }
 
+    /// Läckte i en riktig transkribering med KB Medium ordagrann.
+    func testRemovesBrokenSpecialTokens() {
+        XCTAssertEqual(TextCleaning.clean("Vi säljer |mospeech|> ungefär det."), "Vi säljer ungefär det.")
+        XCTAssertEqual(TextCleaning.clean("Ja &lt;|nospeech|&gt; precis."), "Ja precis.")
+        XCTAssertEqual(TextCleaning.clean("A | B"), "A | B")
+    }
+
     func testNonSpeechMarker() {
         XCTAssertTrue(TextCleaning.isNonSpeechMarker("[Musik]"))
         XCTAssertTrue(TextCleaning.isNonSpeechMarker("  "))
