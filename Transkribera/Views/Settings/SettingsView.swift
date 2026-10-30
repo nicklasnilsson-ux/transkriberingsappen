@@ -27,6 +27,7 @@ private struct TranscriptionSettingsView: View {
     @AppStorage(SettingsKey.speakers) private var speakers = SpeakerCount.automatic.rawValue
     @AppStorage(SettingsKey.communityDiarization) private var communityDiarization = false
     @AppStorage(SettingsKey.sortformerDiarization) private var sortformerDiarization = true
+    @AppStorage(SettingsKey.pianissimoGaps) private var pianissimoGaps = false
     @AppStorage(SettingsKey.vocabulary) private var vocabulary = ""
     @AppStorage(SettingsKey.wordTimestamps) private var wordTimestamps = true
     @AppStorage(SettingsKey.recordMicrophone) private var recordMicrophone = true
@@ -74,6 +75,8 @@ private struct TranscriptionSettingsView: View {
                     .help("Pianissimo lyssnar på 15 sekunder i taget. Med det här provar den flera sätt att skarva bitarna och väljer det säkraste.")
                 Toggle("Jämna ut volymen (KB-Whisper)", isOn: $levelVolume)
                     .help("Förstärker svaga röster innan ljudet transkriberas. Tystnad och starka röster lämnas som de är. Gav färre ordfel med KB-Whisper i två intervjuer. Pianissimo jämnar ut volymen själv, så där gör valet ingenting.")
+                Toggle("Hitta luckor med Pianissimo (KB-Whisper)", isOn: $pianissimoGaps)
+                    .help("Pianissimo lyssnar igenom ljudet först och pekar ut var det finns tal som KB-Whisper missat. De ställena körs om, och saknas text ändå fylls den i från Pianissimo. Kräver att Pianissimo är nedladdad och tar lite längre tid.")
                 Toggle("Ny talaridentifiering (pyannote community-1)", isOn: $communityDiarization)
                     .disabled(!CommunityDiarizer.isSupported)
                     .help("En nyare modell för att avgöra vem som pratar. Körs lokalt, som den nuvarande. Laddar ner en extra modell första gången.")

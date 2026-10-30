@@ -86,6 +86,24 @@ public enum SpeechCoverage {
         return merge(gaps.sorted { $0.start < $1.start }, within: mergeGap).filter { $0.duration >= minimumGap }
     }
 
+    /// Tal som `reference` (en annan taligenkännare) har text för men `segments` saknar,
+    /// minst `minimumGap` långa. Ger säkrare luckor än ljudnivån, som också ger utslag på
+    /// skratt och bakgrundsljud.
+    public static func missing(from reference: [SegmentData], in segments: [SegmentData], minimumGap: Double = minimumGap) -> [TimeRange] {
+        let speech = reference.map { TimeRange(start: $0.start, end: $0.end) }.filter { $0.duration > 0 }
+        return uncovered(speech: speech, segments: segments, minimumGap: minimumGap)
+    }
+
+    /// Lägger till de segment ur `reference` som ligger mitt i en lucka, för luckor som
+    /// ännu saknar text efter omkörningen.
+    public static func fill(_ segments: [SegmentData], with reference: [SegmentData], gaps: [TimeRange]) -> [SegmentData] {
+        let found = reference.filter { segment in
+            let middle = (segment.start + segment.end) / 2
+            return gaps.contains { (($0.start)...($0.end)).contains(middle) }
+        }
+        return (segments + found).sorted { $0.start < $1.start }
+    }
+
     static func merge(_ ranges: [TimeRange], within gap: Double) -> [TimeRange] {
         var merged: [TimeRange] = []
         for range in ranges {
