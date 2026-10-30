@@ -65,4 +65,32 @@ final class SpeechCoverageTests: XCTestCase {
         XCTAssertEqual(moved.start, 31)
         XCTAssertEqual(moved.words[0].end, 32)
     }
+
+    /// Påhittade tider: den andra taligenkännaren hör ett parti som den första saknar. Ett
+    /// ensamt kort "mm" (här vid 5 sekunder, redan täckt) räknas inte som lucka.
+    func testGapsFromAReferenceRecognizerAreFilled() {
+        let segments = [
+            SegmentData(start: 0, end: 10, text: "Början."),
+            SegmentData(start: 30, end: 40, text: "Slutet.")
+        ]
+        let reference = [
+            SegmentData(start: 0, end: 10, text: "Början."),
+            SegmentData(start: 11, end: 11.8, text: "Mm."),
+            SegmentData(start: 12, end: 18, text: "Ett parti"),
+            SegmentData(start: 18.2, end: 25, text: "som saknades."),
+            SegmentData(start: 30, end: 40, text: "Slutet.")
+        ]
+        let gaps = SpeechCoverage.missing(from: reference, in: segments)
+        XCTAssertEqual(gaps.count, 1)
+        XCTAssertEqual(gaps[0].start, 11, accuracy: 0.2)
+        XCTAssertEqual(gaps[0].end, 25, accuracy: 0.2)
+
+        let filled = SpeechCoverage.fill(segments, with: reference, gaps: gaps)
+        XCTAssertEqual(filled.map(\.text), ["Början.", "Mm.", "Ett parti", "som saknades.", "Slutet."])
+    }
+
+    func testNoGapWhenTheReferenceHasNothingExtra() {
+        let segments = [SegmentData(start: 0, end: 10, text: "Hej.")]
+        XCTAssertEqual(SpeechCoverage.missing(from: segments, in: segments), [])
+    }
 }
