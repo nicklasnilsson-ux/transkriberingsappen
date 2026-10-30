@@ -234,7 +234,7 @@ struct Dialogue {
     }
 }
 
-/// Sortformer på samma påhittade samtal. Skriver ut resultatet för jämförelse med
+/// Nemotron 3 på samma påhittade samtal. Skriver ut resultatet för jämförelse med
 /// community-1; kräver bara att turerna går att göra om till talarturer.
 final class ShortReplyDiarizerTests: XCTestCase {
     func testTurnsAreSortedAndNonEmpty() {
@@ -251,6 +251,6 @@ final class ShortReplyDiarizerTests: XCTestCase {
         let dialogue = try Dialogue.make()
         let turns = try await ShortReplyDiarizer().turns(samples: dialogue.samples)
         XCTAssertGreaterThanOrEqual(Set(turns.map(\.speaker)).count, 2, "Hittade bara en talare: \(turns)")
-        print("Sortformer:", dialogue.report(dialogue.assign(turns)))
+        print("Nemotron 3:", dialogue.report(dialogue.assign(turns)))
     }
 }

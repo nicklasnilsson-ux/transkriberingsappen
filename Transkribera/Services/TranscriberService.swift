@@ -415,7 +415,7 @@ final class TranscriberService {
         let diarizerName: String
         if options.sortformerDiarization {
             turns = try await shortReplyDiarizer.turns(samples: samples)
-            diarizerName = "Sortformer"
+            diarizerName = "Nemotron 3"
         } else if options.communityDiarization {
             turns = try await communityDiarizer.turns(samples: samples, speakers: options.speakerCount)
             diarizerName = "community-1"

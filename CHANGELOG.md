@@ -7,7 +7,7 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 ## [Kommande]
 
 ### Nytt
-- Experiment under Inställningar: "Talaridentifiering för korta svar (Sortformer)", en modell byggd för korta repliker och snabba byten. Högst fyra talare, körs lokalt och ersätter den vanliga talaridentifieringen när den är på. Det som användes står efter modellens namn.
+- Experiment under Inställningar: "Talaridentifiering för korta svar (Nemotron 3)", NVIDIAs nyaste modell för korta repliker och snabba byten. Upp till åtta talare, körs lokalt och ersätter den vanliga talaridentifieringen när den är på. Det som användes står efter modellens namn.
 
 ## [0.5.6] – 2026-10-30
 

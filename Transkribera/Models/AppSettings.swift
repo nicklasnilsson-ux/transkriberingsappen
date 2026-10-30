@@ -127,7 +127,7 @@ struct TranscriptionOptions {
     var levelVolume = true
     /// Experiment: talaridentifiering med pyannote community-1 (FluidAudio) i stället för SpeakerKit.
     var communityDiarization = false
-    /// Experiment: talaridentifiering med Sortformer (FluidAudio), byggd för korta repliker. Går före community-1.
+    /// Experiment: talaridentifiering med Nemotron 3 Diarization (FluidAudio), byggd för korta repliker. Går före community-1.
     var sortformerDiarization = false
 
     var appliesLevelVolume: Bool { levelVolume && !model.usesParakeet }
@@ -140,7 +140,7 @@ struct TranscriptionOptions {
         if appliesLevelVolume { extras.append("jämnad volym") }
         if identifySpeakers {
             if sortformerDiarization {
-                extras.append("Sortformer")
+                extras.append("Nemotron 3")
             } else if communityDiarization {
                 extras.append("ny talaridentifiering")
             }
