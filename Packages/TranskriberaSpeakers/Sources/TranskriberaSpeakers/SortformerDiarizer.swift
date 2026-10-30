@@ -13,7 +13,7 @@ public actor ShortReplyDiarizer {
     /// macOS 14 har samma fel i Apples BNNS som community-1 (FluidAudio #878).
     public static var isSupported: Bool { CommunityDiarizer.isSupported }
 
-    private var diarizer: FluidAudio.SortformerDiarizer?
+    private var diarizer: SortformerDiarizer?
 
     public init() {}
 
@@ -37,11 +37,11 @@ public actor ShortReplyDiarizer {
             .map { SpeakerTurn(start: $0.start, end: $0.end, speaker: $0.speaker) }
     }
 
-    private func loadedDiarizer() async throws -> FluidAudio.SortformerDiarizer {
+    private func loadedDiarizer() async throws -> SortformerDiarizer {
         if let diarizer { return diarizer }
         let config = SortformerConfig.default
         let models = try await SortformerModels.loadFromHuggingFace(config: config)
-        let created = FluidAudio.SortformerDiarizer(config: config)
+        let created = SortformerDiarizer(config: config)
         created.initialize(models: models)
         diarizer = created
         return created
