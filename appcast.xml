@@ -6,6 +6,20 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.5.9</title>
+      <pubDate>Fri, 30 Oct 2026 13:48:12 GMT</pubDate>
+      <sparkle:version>16</sparkle:version>
+      <sparkle:shortVersionString>0.5.9</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.5.9</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Ändrat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Inställningarna är städade. &amp;quot;Ny talaridentifiering (pyannote community-1)&amp;quot; är borta: Nemotron 3 är standard, och går det inte att använda den eller du valt ett fast antal talare används den vanliga talaridentifieringen. Nemotron 3 ligger nu bland talarinställningarna, volymutjämningen under &amp;quot;Ordträff&amp;quot;, och val som inte gäller vald modell är gråade.&lt;/li&gt;
+&lt;li&gt;&amp;quot;Hitta luckor med Pianissimo&amp;quot; heter nu &amp;quot;Hitta fler luckor med Pianissimo&amp;quot;. Det lägger till Pianissimos luckor utöver kontrollen med ljudnivå i stället för att ersätta den, och fyller i saknade ord ett och ett i stället för hela meningar.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.5.9/Transkribera-v0.5.9.zip" length="13885449" type="application/octet-stream" sparkle:edSignature="14zo90kI8QNxtz9IvTcw2W3SQxsxvOf8rUo2UannilnY68dw5HDuwEPXvAPkTv9HLLrB4NscQ4cwAA8w8YYWCA==" />
+    </item>
+    <item>
       <title>Version 0.5.8</title>
       <pubDate>Fri, 30 Oct 2026 12:09:34 GMT</pubDate>
       <sparkle:version>15</sparkle:version>
