@@ -52,9 +52,6 @@ final class TranscriberService {
 
     @ObservationIgnored private var whisperKit: WhisperKit?
     @ObservationIgnored private var speakerKit: SpeakerKit?
-    @ObservationIgnored private let communityDiarizer = CommunityDiarizer(
-        modelsDirectory: AppPaths.modelsDirectory.appending(path: "speaker-diarization", directoryHint: .isDirectory)
-    )
     @ObservationIgnored private let shortReplyDiarizer = ShortReplyDiarizer()
     @ObservationIgnored private let parakeet = ParakeetTranscriber()
 
@@ -254,13 +251,13 @@ final class TranscriberService {
                 if options.pianissimoGaps {
                     reference = await pianissimoReference(samples: samples)
                 }
-                let referenceSpeech = reference?.map { TimeRange(start: $0.start, end: $0.end) }
+                let referenceSpeech = reference?.map { TimeRange(start: $0.start, end: $0.end) } ?? []
                 segments = try await repairGaps(
                     kit: kit,
                     samples: input,
                     segments: segments,
                     options: options,
-                    speech: referenceSpeech
+                    extraSpeech: referenceSpeech
                 )
                 if let reference {
                     // Luckor som KB-Whisper inte fick text i ens vid omkörningen fylls ur Pianissimo.
@@ -346,11 +343,12 @@ final class TranscriberService {
         samples: [Float],
         segments: [SegmentData],
         options: TranscriptionOptions,
-        speech knownSpeech: [TimeRange]? = nil
+        extraSpeech: [TimeRange] = []
     ) async throws -> [SegmentData] {
         phase = .recheckingGaps(fraction: 0)
         let rate = AudioLoader.sampleRate
-        let speech = knownSpeech ?? SpeechCoverage.speechRegions(in: samples, sampleRate: rate)
+        // Ljudnivån är grunden. Tal som en andra taligenkännare hört läggs till, inte i stället.
+        let speech = SpeechCoverage.combine(SpeechCoverage.speechRegions(in: samples, sampleRate: rate), extraSpeech)
         let gaps = SpeechCoverage.uncovered(speech: speech, segments: segments)
         guard !gaps.isEmpty else { return segments }
 
@@ -440,7 +438,7 @@ final class TranscriberService {
         )
     }
 
-    // MARK: - Talaridentifiering (SpeakerKit eller community-1)
+    // MARK: - Talaridentifiering (Nemotron 3 eller SpeakerKit)
 
     private func diarizedSegments(samples: [Float], segments: [SegmentData], options: TranscriptionOptions) async throws -> [SegmentData] {
         let turns: [SpeakerTurn]
@@ -453,9 +451,6 @@ final class TranscriberService {
         if let nemotronTurns, !nemotronTurns.isEmpty {
             turns = nemotronTurns
             diarizerName = "Nemotron 3"
-        } else if options.communityDiarization {
-            turns = try await communityDiarizer.turns(samples: samples, speakers: options.speakerCount)
-            diarizerName = "community-1"
         } else {
             turns = try await speakerKitTurns(samples: samples, speakers: options.speakerCount)
             diarizerName = "SpeakerKit"

@@ -28,7 +28,6 @@ enum SettingsKey {
     static let transcriptLayout = "transcriptLayout"
     static let pianissimoCarefulSeams = "pianissimoCarefulSeams"
     static let levelVolume = "levelVolume"
-    static let communityDiarization = "communityDiarization"
     static let sortformerDiarization = "sortformerDiarization"
     static let pianissimoGaps = "pianissimoGaps"
 }
@@ -126,9 +125,7 @@ struct TranscriptionOptions {
     /// 2–3 procentenheter färre ordfel mot Klang i två intervjuer) men inte Pianissimo,
     /// som jämnar ut volymen själv, så den gäller bara Whisper-modellerna.
     var levelVolume = true
-    /// Experiment: talaridentifiering med pyannote community-1 (FluidAudio) i stället för SpeakerKit.
-    var communityDiarization = false
-    /// Talaridentifiering med Nemotron 3 Diarization (FluidAudio), byggd för korta repliker. Går före community-1 när antal talare är automatiskt.
+    /// Talaridentifiering med Nemotron 3 Diarization (FluidAudio), byggd för korta repliker. Används när antal talare är automatiskt, annars SpeakerKit.
     var sortformerDiarization = true
     /// Experiment: Pianissimo pekar ut var tal saknar text i KB-Whisper-körningen. Kräver att Pianissimo är nedladdad.
     var pianissimoGaps = false
@@ -143,11 +140,7 @@ struct TranscriptionOptions {
         if appliesLevelVolume { extras.append("jämnad volym") }
         if pianissimoGaps, !model.usesParakeet { extras.append("luckor via Pianissimo") }
         if identifySpeakers {
-            if sortformerDiarization, speakerCount.exact == nil {
-                extras.append("Nemotron 3")
-            } else if communityDiarization {
-                extras.append("ny talaridentifiering")
-            }
+            if sortformerDiarization, speakerCount.exact == nil { extras.append("Nemotron 3") }
         }
         return extras.isEmpty ? model.displayName : "\(model.displayName) (\(extras.joined(separator: ", ")))"
     }
@@ -165,7 +158,6 @@ struct TranscriptionOptions {
             translateToEnglish: defaults.string(forKey: SettingsKey.task) == "translate",
             carefulSeams: defaults.bool(forKey: SettingsKey.pianissimoCarefulSeams),
             levelVolume: defaults.object(forKey: SettingsKey.levelVolume) as? Bool ?? true,
-            communityDiarization: defaults.bool(forKey: SettingsKey.communityDiarization) && CommunityDiarizer.isSupported,
             sortformerDiarization: (defaults.object(forKey: SettingsKey.sortformerDiarization) as? Bool ?? true) && ShortReplyDiarizer.isSupported,
             pianissimoGaps: defaults.bool(forKey: SettingsKey.pianissimoGaps)
         )
