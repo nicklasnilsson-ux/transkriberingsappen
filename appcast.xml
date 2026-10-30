@@ -6,6 +6,23 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.5.7</title>
+      <pubDate>Fri, 30 Oct 2026 08:23:07 GMT</pubDate>
+      <sparkle:version>14</sparkle:version>
+      <sparkle:shortVersionString>0.5.7</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.5.7</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Nytt&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Experiment under Inställningar: &amp;quot;Talaridentifiering för korta svar (Nemotron 3)&amp;quot;, NVIDIAs nyaste modell för korta repliker och snabba byten. Upp till åtta talare, körs lokalt och ersätter den vanliga talaridentifieringen när den är på. Det som användes står efter modellens namn.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Ändrat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;I analysexporten märks bara den osäkra delen av ett stycke med ⚠, inte hela stycket. En kort kundreplik inuti en lång intervjuarreplik syns därmed för sig, och mycket färre ord flaggas.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.5.7/Transkribera-v0.5.7.zip" length="13881036" type="application/octet-stream" sparkle:edSignature="qQrtjegPgDjBIvaHCzEY+rIjiv5o98dre5gFbtcUE/W03iJ92KHNaIWewskCN9545RslrxwbIJ6GnpsHuuO2CQ==" />
+    </item>
+    <item>
       <title>Version 0.5.6</title>
       <pubDate>Fri, 30 Oct 2026 06:06:58 GMT</pubDate>
       <sparkle:version>13</sparkle:version>
