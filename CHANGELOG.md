@@ -6,6 +6,9 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+### Ändrat
+- I analysexporten märks bara den osäkra delen av ett stycke med ⚠, inte hela stycket. En kort kundreplik inuti en lång intervjuarreplik syns därmed för sig, och mycket färre ord flaggas.
+
 ## [0.5.6] – 2026-10-30
 
 ### Nytt

@@ -13,8 +13,10 @@ public enum AnalysisExporter {
         var start: Double
         var speaker: String?
         var text: String
-        /// Osäkert vem som sa något i stycket (⚠).
+        /// Osäkert vem som sa hela stycket (⚠ efter talaren).
         var uncertain = false
+        /// Osäkert vem som sa någon del av stycket (⚠ framför just den delen).
+        var hasUncertainPart = false
     }
 
     /// Står efter talarens namn när det är osäkert vem som sa repliken.
@@ -40,7 +42,7 @@ public enum AnalysisExporter {
         if let language = metadata.language {
             header.append("- Språk: \(language)")
         }
-        if paragraphs.contains(where: { $0.uncertain && $0.speaker != nil }) {
+        if paragraphs.contains(where: { ($0.uncertain || $0.hasUncertainPart) && $0.speaker != nil }) {
             header.append("- \(uncertainMark) = osäkert vem som sa repliken")
         }
         out += header.joined(separator: "\n") + "\n\n---\n\n"
@@ -85,13 +87,30 @@ public enum AnalysisExporter {
 
     static func paragraphs(_ segments: [SegmentData]) -> [Paragraph] {
         paragraphRanges(segments).map { range in
-            Paragraph(
+            let parts = segments[range].filter { !$0.text.trimmed.isEmpty }
+            let allUncertain = !parts.isEmpty && parts.allSatisfy(\.uncertainSpeaker)
+            let anyUncertain = parts.contains(where: \.uncertainSpeaker)
+            return Paragraph(
                 start: segments[range.lowerBound].start,
                 speaker: segments[range.lowerBound].speaker,
-                text: segments[range].map(\.text.trimmed).filter { !$0.isEmpty }.joined(separator: " "),
-                uncertain: segments[range].contains(where: \.uncertainSpeaker)
+                text: allUncertain || !anyUncertain ? parts.map(\.text.trimmed).joined(separator: " ") : markedText(parts),
+                uncertain: allUncertain,
+                hasUncertainPart: anyUncertain
             )
         }
+    }
+
+    /// Texten med ⚠ framför varje osäker del, så att en kort replik i ett långt stycke
+    /// märks ut för sig i stället för att hela stycket blir osäkert.
+    static func markedText(_ parts: [SegmentData]) -> String {
+        var out: [String] = []
+        var previousUncertain = false
+        for part in parts {
+            if part.uncertainSpeaker && !previousUncertain { out.append(uncertainMark) }
+            out.append(part.text.trimmed)
+            previousUncertain = part.uncertainSpeaker
+        }
+        return out.joined(separator: " ")
     }
 
     /// Delar upp segmenten i stycken: ett nytt stycke vid varje talarbyte, eller

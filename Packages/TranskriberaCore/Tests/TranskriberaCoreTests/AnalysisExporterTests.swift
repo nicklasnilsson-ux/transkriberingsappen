@@ -66,6 +66,18 @@ final class AnalysisExporterTests: XCTestCase {
         """)
     }
 
+    /// En osäker kort replik inuti ett längre stycke märks ut för sig, inte hela stycket.
+    func testUncertainPartOfParagraphIsMarkedInline() {
+        let segments = [
+            SegmentData(start: 0, end: 4, text: "Hur ofta loggar ni in?", speaker: "Intervjuare"),
+            SegmentData(start: 4, end: 5, text: "Varje dag.", speaker: "Intervjuare", uncertainSpeaker: true),
+            SegmentData(start: 5, end: 8, text: "Och på vilket sätt?", speaker: "Intervjuare")
+        ]
+        let output = AnalysisExporter.markdown(segments, metadata: metadata, timeZone: utc)
+        XCTAssertTrue(output.contains("[00:00] **Intervjuare:** Hur ofta loggar ni in? ⚠ Varje dag. Och på vilket sätt?"), output)
+        XCTAssertTrue(output.contains("- ⚠ = osäkert vem som sa repliken"), output)
+    }
+
     func testWithoutSpeakersBreaksOnPauses() {
         let segments = [
             SegmentData(start: 0, end: 2, text: "Första."),
