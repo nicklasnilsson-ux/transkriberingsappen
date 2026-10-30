@@ -6,6 +6,8 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.5.8] – 2026-10-30
+
 ### Nytt
 - Experiment under Inställningar: "Hitta luckor med Pianissimo (KB-Whisper)". Pianissimo lyssnar igenom ljudet först och pekar ut var det finns tal som KB-Whisper missat. De ställena körs om, och saknas text ändå fylls den i från Pianissimo. Kräver att Pianissimo är nedladdad och tar lite längre tid. Det som användes står efter modellens namn.
 
