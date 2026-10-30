@@ -6,6 +6,23 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.5.8</title>
+      <pubDate>Fri, 30 Oct 2026 12:09:34 GMT</pubDate>
+      <sparkle:version>15</sparkle:version>
+      <sparkle:shortVersionString>0.5.8</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.5.8</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Nytt&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Experiment under Inställningar: &amp;quot;Hitta luckor med Pianissimo (KB-Whisper)&amp;quot;. Pianissimo lyssnar igenom ljudet först och pekar ut var det finns tal som KB-Whisper missat. De ställena körs om, och saknas text ändå fylls den i från Pianissimo. Kräver att Pianissimo är nedladdad och tar lite längre tid. Det som användes står efter modellens namn.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Ändrat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Talaridentifieringen använder nu Nemotron 3 som standard när antal talare är automatiskt. Den hittade nästan alla korta kundsvar i en testintervju (99 % av orden hos rätt roll mot 95 % tidigare) och delar inte längre en ensam kund i två. Första gången laddas en modell på några hundra MB ner. Går det inte används den gamla vägen, och ett fast antal talare går också dit. Kan slås av under Inställningar → Experiment.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.5.8/Transkribera-v0.5.8.zip" length="13884566" type="application/octet-stream" sparkle:edSignature="LjtksJcx88BZ6Ff+O1/SlFesPPlvBmbEvl//bDQHAbSrJS4R3X3SOphFmRoCnmpDVmofglQtxrEgj03rvODSBQ==" />
+    </item>
+    <item>
       <title>Version 0.5.7</title>
       <pubDate>Fri, 30 Oct 2026 08:23:07 GMT</pubDate>
       <sparkle:version>14</sparkle:version>
