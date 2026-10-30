@@ -233,3 +233,24 @@ struct Dialogue {
         throw NSError(domain: "Dialogue", code: 2, userInfo: [NSLocalizedDescriptionKey: "Ingen ljuddata i WAV-filen"])
     }
 }
+
+/// Nemotron 3 på samma påhittade samtal. Skriver ut resultatet för jämförelse med
+/// community-1; kräver bara att turerna går att göra om till talarturer.
+final class ShortReplyDiarizerTests: XCTestCase {
+    func testTurnsAreSortedAndNonEmpty() {
+        let turns = ShortReplyDiarizer.turns(from: [
+            (speaker: 1, start: 5, end: 6),
+            (speaker: 0, start: 1, end: 1),
+            (speaker: 0, start: 1, end: 4)
+        ])
+        XCTAssertEqual(turns.map(\.start), [1, 5])
+        XCTAssertEqual(turns.map(\.speaker), [0, 1])
+    }
+
+    func testReportsShortRepliesOnSyntheticDialogue() async throws {
+        let dialogue = try Dialogue.make()
+        let turns = try await ShortReplyDiarizer().turns(samples: dialogue.samples)
+        XCTAssertGreaterThanOrEqual(Set(turns.map(\.speaker)).count, 2, "Hittade bara en talare: \(turns)")
+        print("Nemotron 3:", dialogue.report(dialogue.assign(turns)))
+    }
+}

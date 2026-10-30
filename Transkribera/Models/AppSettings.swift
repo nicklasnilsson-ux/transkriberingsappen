@@ -29,6 +29,7 @@ enum SettingsKey {
     static let pianissimoCarefulSeams = "pianissimoCarefulSeams"
     static let levelVolume = "levelVolume"
     static let communityDiarization = "communityDiarization"
+    static let sortformerDiarization = "sortformerDiarization"
 }
 
 enum SpeakerCountSetting {
@@ -126,6 +127,8 @@ struct TranscriptionOptions {
     var levelVolume = true
     /// Experiment: talaridentifiering med pyannote community-1 (FluidAudio) i stället för SpeakerKit.
     var communityDiarization = false
+    /// Experiment: talaridentifiering med Nemotron 3 Diarization (FluidAudio), byggd för korta repliker. Går före community-1.
+    var sortformerDiarization = false
 
     var appliesLevelVolume: Bool { levelVolume && !model.usesParakeet }
 
@@ -135,7 +138,13 @@ struct TranscriptionOptions {
         var extras: [String] = []
         if carefulSeams, model.usesParakeet { extras.append("noggranna skarvar") }
         if appliesLevelVolume { extras.append("jämnad volym") }
-        if communityDiarization, identifySpeakers { extras.append("ny talaridentifiering") }
+        if identifySpeakers {
+            if sortformerDiarization {
+                extras.append("Nemotron 3")
+            } else if communityDiarization {
+                extras.append("ny talaridentifiering")
+            }
+        }
         return extras.isEmpty ? model.displayName : "\(model.displayName) (\(extras.joined(separator: ", ")))"
     }
 
@@ -152,7 +161,8 @@ struct TranscriptionOptions {
             translateToEnglish: defaults.string(forKey: SettingsKey.task) == "translate",
             carefulSeams: defaults.bool(forKey: SettingsKey.pianissimoCarefulSeams),
             levelVolume: defaults.object(forKey: SettingsKey.levelVolume) as? Bool ?? true,
-            communityDiarization: defaults.bool(forKey: SettingsKey.communityDiarization) && CommunityDiarizer.isSupported
+            communityDiarization: defaults.bool(forKey: SettingsKey.communityDiarization) && CommunityDiarizer.isSupported,
+            sortformerDiarization: defaults.bool(forKey: SettingsKey.sortformerDiarization) && ShortReplyDiarizer.isSupported
         )
     }
 }
