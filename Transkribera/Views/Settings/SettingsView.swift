@@ -26,6 +26,7 @@ private struct TranscriptionSettingsView: View {
     @AppStorage(SettingsKey.identifySpeakers) private var identifySpeakers = false
     @AppStorage(SettingsKey.speakers) private var speakers = SpeakerCount.automatic.rawValue
     @AppStorage(SettingsKey.communityDiarization) private var communityDiarization = false
+    @AppStorage(SettingsKey.sortformerDiarization) private var sortformerDiarization = false
     @AppStorage(SettingsKey.vocabulary) private var vocabulary = ""
     @AppStorage(SettingsKey.wordTimestamps) private var wordTimestamps = true
     @AppStorage(SettingsKey.recordMicrophone) private var recordMicrophone = true
@@ -76,6 +77,9 @@ private struct TranscriptionSettingsView: View {
                 Toggle("Ny talaridentifiering (pyannote community-1)", isOn: $communityDiarization)
                     .disabled(!CommunityDiarizer.isSupported)
                     .help("En nyare modell för att avgöra vem som pratar. Körs lokalt, som den nuvarande. Laddar ner en extra modell första gången.")
+                Toggle("Talaridentifiering för korta svar (Sortformer)", isOn: $sortformerDiarization)
+                    .disabled(!ShortReplyDiarizer.isSupported)
+                    .help("En modell byggd för korta repliker och snabba byten, med högst fyra talare. Går före den nya talaridentifieringen och ignorerar valet av antal talare. Körs lokalt och laddar ner en extra modell första gången.")
             } header: {
                 Text("Experiment")
             } footer: {

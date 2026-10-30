@@ -55,6 +55,7 @@ final class TranscriberService {
     @ObservationIgnored private let communityDiarizer = CommunityDiarizer(
         modelsDirectory: AppPaths.modelsDirectory.appending(path: "speaker-diarization", directoryHint: .isDirectory)
     )
+    @ObservationIgnored private let shortReplyDiarizer = ShortReplyDiarizer()
     @ObservationIgnored private let parakeet = ParakeetTranscriber()
 
     var isBusy: Bool {
@@ -411,17 +412,23 @@ final class TranscriberService {
 
     private func diarizedSegments(samples: [Float], segments: [SegmentData], options: TranscriptionOptions) async throws -> [SegmentData] {
         let turns: [SpeakerTurn]
-        if options.communityDiarization {
+        let diarizerName: String
+        if options.sortformerDiarization {
+            turns = try await shortReplyDiarizer.turns(samples: samples)
+            diarizerName = "Sortformer"
+        } else if options.communityDiarization {
             turns = try await communityDiarizer.turns(samples: samples, speakers: options.speakerCount)
+            diarizerName = "community-1"
         } else {
             turns = try await speakerKitTurns(samples: samples, speakers: options.speakerCount)
+            diarizerName = "SpeakerKit"
         }
 
         // Talare sätts per ord, så att repliker utan paus emellan ändå delas upp rätt.
         let assigned = SpeakerAssignment.assign(segments, turns: turns)
         saveSpeakerTurns(
             SpeakerDiagnostics(
-                diarizer: options.communityDiarization ? "community-1" : "SpeakerKit",
+                diarizer: diarizerName,
                 speakers: options.speakerCount.label,
                 turns: turns,
                 segments: assigned
