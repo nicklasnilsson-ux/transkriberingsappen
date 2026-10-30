@@ -6,6 +6,9 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+### Ändrat
+- Valet "Hitta fler luckor med Pianissimo" är borta. I en testintervju gav det 14,5 % ordfel mot 14,7 % utan, och två körningar med samma inställningar skiljer sig lika mycket, så det syns ingen vinst. Det krävde också en extra modell och längre tid.
+
 ## [0.5.9] – 2026-10-30
 
 ### Ändrat
