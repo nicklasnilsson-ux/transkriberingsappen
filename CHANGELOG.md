@@ -6,6 +6,9 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+### Ändrat
+- Talaridentifieringen använder nu Nemotron 3 som standard när antal talare är automatiskt. Den hittade nästan alla korta kundsvar i en testintervju (99 % av orden hos rätt roll mot 95 % tidigare) och delar inte längre en ensam kund i två. Första gången laddas en modell på några hundra MB ner. Går det inte används den gamla vägen, och ett fast antal talare går också dit. Kan slås av under Inställningar → Experiment.
+
 ## [0.5.7] – 2026-10-30
 
 ### Nytt
