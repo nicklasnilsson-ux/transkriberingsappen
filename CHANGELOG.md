@@ -6,6 +6,8 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.5.6] – 2026-10-30
+
 ### Nytt
 - Det går att ange flera intervjuare, till exempel när två från ert håll är med. De heter då
   Intervjuare 1 och Intervjuare 2, och kunderna Kund 1, Kund 2 och så vidare. Välj under
