@@ -127,8 +127,8 @@ struct TranscriptionOptions {
     var levelVolume = true
     /// Experiment: talaridentifiering med pyannote community-1 (FluidAudio) i stället för SpeakerKit.
     var communityDiarization = false
-    /// Experiment: talaridentifiering med Nemotron 3 Diarization (FluidAudio), byggd för korta repliker. Går före community-1.
-    var sortformerDiarization = false
+    /// Talaridentifiering med Nemotron 3 Diarization (FluidAudio), byggd för korta repliker. Går före community-1 när antal talare är automatiskt.
+    var sortformerDiarization = true
 
     var appliesLevelVolume: Bool { levelVolume && !model.usesParakeet }
 
@@ -139,7 +139,7 @@ struct TranscriptionOptions {
         if carefulSeams, model.usesParakeet { extras.append("noggranna skarvar") }
         if appliesLevelVolume { extras.append("jämnad volym") }
         if identifySpeakers {
-            if sortformerDiarization {
+            if sortformerDiarization, speakerCount.exact == nil {
                 extras.append("Nemotron 3")
             } else if communityDiarization {
                 extras.append("ny talaridentifiering")
@@ -162,7 +162,7 @@ struct TranscriptionOptions {
             carefulSeams: defaults.bool(forKey: SettingsKey.pianissimoCarefulSeams),
             levelVolume: defaults.object(forKey: SettingsKey.levelVolume) as? Bool ?? true,
             communityDiarization: defaults.bool(forKey: SettingsKey.communityDiarization) && CommunityDiarizer.isSupported,
-            sortformerDiarization: defaults.bool(forKey: SettingsKey.sortformerDiarization) && ShortReplyDiarizer.isSupported
+            sortformerDiarization: (defaults.object(forKey: SettingsKey.sortformerDiarization) as? Bool ?? true) && ShortReplyDiarizer.isSupported
         )
     }
 }

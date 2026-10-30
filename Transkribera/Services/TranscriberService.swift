@@ -413,8 +413,13 @@ final class TranscriberService {
     private func diarizedSegments(samples: [Float], segments: [SegmentData], options: TranscriptionOptions) async throws -> [SegmentData] {
         let turns: [SpeakerTurn]
         let diarizerName: String
-        if options.sortformerDiarization {
-            turns = try await shortReplyDiarizer.turns(samples: samples)
+        // Nemotron tar inget antal talare, så ett fast antal går till de andra. Går
+        // modellen inte att ladda ner eller ger den inga turer används den vanliga vägen.
+        let nemotronTurns: [SpeakerTurn]? = options.sortformerDiarization && options.speakerCount.exact == nil
+            ? try? await shortReplyDiarizer.turns(samples: samples)
+            : nil
+        if let nemotronTurns, !nemotronTurns.isEmpty {
+            turns = nemotronTurns
             diarizerName = "Nemotron 3"
         } else if options.communityDiarization {
             turns = try await communityDiarizer.turns(samples: samples, speakers: options.speakerCount)

@@ -26,7 +26,7 @@ private struct TranscriptionSettingsView: View {
     @AppStorage(SettingsKey.identifySpeakers) private var identifySpeakers = false
     @AppStorage(SettingsKey.speakers) private var speakers = SpeakerCount.automatic.rawValue
     @AppStorage(SettingsKey.communityDiarization) private var communityDiarization = false
-    @AppStorage(SettingsKey.sortformerDiarization) private var sortformerDiarization = false
+    @AppStorage(SettingsKey.sortformerDiarization) private var sortformerDiarization = true
     @AppStorage(SettingsKey.vocabulary) private var vocabulary = ""
     @AppStorage(SettingsKey.wordTimestamps) private var wordTimestamps = true
     @AppStorage(SettingsKey.recordMicrophone) private var recordMicrophone = true
@@ -79,7 +79,7 @@ private struct TranscriptionSettingsView: View {
                     .help("En nyare modell för att avgöra vem som pratar. Körs lokalt, som den nuvarande. Laddar ner en extra modell första gången.")
                 Toggle("Talaridentifiering för korta svar (Nemotron 3)", isOn: $sortformerDiarization)
                     .disabled(!ShortReplyDiarizer.isSupported)
-                    .help("NVIDIAs nyaste modell för korta repliker och snabba byten, med högst åtta talare. Går före den nya talaridentifieringen och ignorerar valet av antal talare. Körs lokalt och laddar ner en extra modell första gången.")
+                    .help("NVIDIAs nyaste modell för korta repliker och snabba byten, med högst åtta talare. Går före den nya talaridentifieringen och används när antal talare är automatiskt (den tar inget antal som önskemål). Körs lokalt och laddar ner en extra modell första gången.")
             } header: {
                 Text("Experiment")
             } footer: {
