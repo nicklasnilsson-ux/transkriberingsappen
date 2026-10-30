@@ -94,12 +94,38 @@ public enum SpeechCoverage {
         return uncovered(speech: speech, segments: segments, minimumGap: minimumGap)
     }
 
-    /// Lägger till de segment ur `reference` som ligger mitt i en lucka, för luckor som
-    /// ännu saknar text efter omkörningen.
+    /// Tal som finns i någon av listorna, hopslaget. Så läggs en andra taligenkännares
+    /// tal till ljudnivåns, utan att ersätta det.
+    public static func combine(_ first: [TimeRange], _ second: [TimeRange]) -> [TimeRange] {
+        merge((first + second).sorted { $0.start < $1.start }, within: 0)
+    }
+
+    /// Lägger till de ord ur `reference` som ligger i en lucka, för luckor som ännu saknar
+    /// text efter omkörningen. Per ord, så att en lucka som bara täcker en del av en lång
+    /// mening inte tar med resten av den (och inte missar den om meningen är lång).
     public static func fill(_ segments: [SegmentData], with reference: [SegmentData], gaps: [TimeRange]) -> [SegmentData] {
-        let found = reference.filter { segment in
-            let middle = (segment.start + segment.end) / 2
+        func inGap(_ start: Double, _ end: Double) -> Bool {
+            let middle = (start + end) / 2
             return gaps.contains { (($0.start)...($0.end)).contains(middle) }
+        }
+        var found: [SegmentData] = []
+        for segment in reference {
+            guard !segment.words.isEmpty else {
+                if inGap(segment.start, segment.end) { found.append(segment) }
+                continue
+            }
+            // Följder av ord i luckan blir varsitt segment.
+            var run: [WordTimingData] = []
+            func flush() {
+                guard let first = run.first, let last = run.last else { return }
+                let text = run.map { $0.word.trimmed }.joined(separator: " ")
+                found.append(SegmentData(start: first.start, end: last.end, text: text, words: run))
+                run = []
+            }
+            for word in segment.words {
+                if inGap(word.start, word.end) { run.append(word) } else { flush() }
+            }
+            flush()
         }
         return (segments + found).sorted { $0.start < $1.start }
     }

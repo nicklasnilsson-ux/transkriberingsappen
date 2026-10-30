@@ -25,7 +25,6 @@ private struct TranscriptionSettingsView: View {
     @AppStorage(SettingsKey.task) private var task = "transcribe"
     @AppStorage(SettingsKey.identifySpeakers) private var identifySpeakers = false
     @AppStorage(SettingsKey.speakers) private var speakers = SpeakerCount.automatic.rawValue
-    @AppStorage(SettingsKey.communityDiarization) private var communityDiarization = false
     @AppStorage(SettingsKey.sortformerDiarization) private var sortformerDiarization = true
     @AppStorage(SettingsKey.pianissimoGaps) private var pianissimoGaps = false
     @AppStorage(SettingsKey.vocabulary) private var vocabulary = ""
@@ -33,6 +32,9 @@ private struct TranscriptionSettingsView: View {
     @AppStorage(SettingsKey.recordMicrophone) private var recordMicrophone = true
     @AppStorage(SettingsKey.pianissimoCarefulSeams) private var carefulSeams = false
     @AppStorage(SettingsKey.levelVolume) private var levelVolume = true
+    @AppStorage(SettingsKey.model) private var modelRaw = WhisperModel.default.rawValue
+
+    private var usesParakeet: Bool { WhisperModel(rawValue: modelRaw)?.usesParakeet ?? false }
 
     var body: some View {
         Form {
@@ -55,8 +57,13 @@ private struct TranscriptionSettingsView: View {
                 Toggle("Skilj på vem som pratar", isOn: $identifySpeakers)
                 SpeakerCountPicker(selection: $speakers)
                     .disabled(!identifySpeakers)
+                Toggle("Bättre på korta svar (Nemotron 3)", isOn: $sortformerDiarization)
+                    .disabled(!identifySpeakers || !ShortReplyDiarizer.isSupported)
+                    .help("NVIDIAs modell för korta repliker och snabba byten, med högst åtta talare. Används när antal talare är automatiskt; med ett valt antal används den vanliga talaridentifieringen. Körs lokalt.")
             } footer: {
-                Text("Märker texten med Talare 1, Talare 2 … som du kan byta namn på. Vet du hur många som pratar blir uppdelningen säkrare. Laddar ner en extra modell (cirka 30 MB) första gången och tar lite längre tid.")
+                Text(ShortReplyDiarizer.isSupported
+                     ? "Märker texten med Talare 1, Talare 2 … som du kan byta namn på. Vet du hur många som pratar blir uppdelningen säkrare. Nemotron 3 är på som standard men gäller bara med automatiskt antal talare, och laddar ner en modell på några hundra MB första gången. Går det inte används den vanliga talaridentifieringen (cirka 30 MB)."
+                     : "Märker texten med Talare 1, Talare 2 … som du kan byta namn på. Vet du hur många som pratar blir uppdelningen säkrare. Laddar ner en extra modell (cirka 30 MB) första gången och tar lite längre tid. Nemotron 3 kräver macOS 15 eller senare.")
                     .foregroundStyle(.secondary)
             }
 
@@ -71,24 +78,27 @@ private struct TranscriptionSettingsView: View {
             }
 
             Section {
-                Toggle("Noggrannare skarvar (Pianissimo)", isOn: $carefulSeams)
-                    .help("Pianissimo lyssnar på 15 sekunder i taget. Med det här provar den flera sätt att skarva bitarna och väljer det säkraste.")
-                Toggle("Jämna ut volymen (KB-Whisper)", isOn: $levelVolume)
+                Toggle("Jämna ut volymen", isOn: $levelVolume)
+                    .disabled(usesParakeet)
                     .help("Förstärker svaga röster innan ljudet transkriberas. Tystnad och starka röster lämnas som de är. Gav färre ordfel med KB-Whisper i två intervjuer. Pianissimo jämnar ut volymen själv, så där gör valet ingenting.")
-                Toggle("Hitta luckor med Pianissimo (KB-Whisper)", isOn: $pianissimoGaps)
-                    .help("Pianissimo lyssnar igenom ljudet först och pekar ut var det finns tal som KB-Whisper missat. De ställena körs om, och saknas text ändå fylls den i från Pianissimo. Kräver att Pianissimo är nedladdad och tar lite längre tid.")
-                Toggle("Ny talaridentifiering (pyannote community-1)", isOn: $communityDiarization)
-                    .disabled(!CommunityDiarizer.isSupported)
-                    .help("En nyare modell för att avgöra vem som pratar. Körs lokalt, som den nuvarande. Laddar ner en extra modell första gången.")
-                Toggle("Talaridentifiering för korta svar (Nemotron 3)", isOn: $sortformerDiarization)
-                    .disabled(!ShortReplyDiarizer.isSupported)
-                    .help("NVIDIAs nyaste modell för korta repliker och snabba byten, med högst åtta talare. Går före den nya talaridentifieringen och används när antal talare är automatiskt (den tar inget antal som önskemål). Körs lokalt och laddar ner en extra modell första gången.")
+            } header: {
+                Text("Ordträff")
+            } footer: {
+                Text("Är på som standard och gäller KB-Whisper och andra Whisper-modeller. Pianissimo jämnar ut volymen själv.")
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
+                Toggle("Hitta fler luckor med Pianissimo", isOn: $pianissimoGaps)
+                    .disabled(usesParakeet)
+                    .help("Pianissimo lyssnar igenom ljudet först och pekar ut tal som KB-Whisper missat, utöver kontrollen med ljudnivå. De ställena körs om, och saknas text ändå fylls enstaka ord i från Pianissimo. Kräver att Pianissimo är nedladdad och tar längre tid.")
+                Toggle("Noggrannare skarvar", isOn: $carefulSeams)
+                    .disabled(!usesParakeet)
+                    .help("Pianissimo lyssnar på 15 sekunder i taget. Med det här provar den flera sätt att skarva bitarna och väljer det säkraste.")
             } header: {
                 Text("Experiment")
             } footer: {
-                Text(CommunityDiarizer.isSupported
-                     ? "För att jämföra kvaliteten. Noggrannare skarvar tar 10–50 % längre tid. Det som användes står efter modellens namn i transkriberingen."
-                     : "För att jämföra kvaliteten. Noggrannare skarvar tar 10–50 % längre tid. Den nya talaridentifieringen kräver macOS 15 eller senare. Det som användes står efter modellens namn i transkriberingen.")
+                Text("Ännu inte bevisat bättre. \"Hitta fler luckor\" gäller bara Whisper-modellerna och \"Noggrannare skarvar\" bara Pianissimo (tar 10–50 % längre tid). Det som användes står efter modellens namn i transkriberingen.")
                     .foregroundStyle(.secondary)
             }
 

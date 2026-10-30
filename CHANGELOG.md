@@ -6,6 +6,10 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+### Ändrat
+- Inställningarna är städade. "Ny talaridentifiering (pyannote community-1)" är borta: Nemotron 3 är standard, och går det inte att använda den eller du valt ett fast antal talare används den vanliga talaridentifieringen. Nemotron 3 ligger nu bland talarinställningarna, volymutjämningen under "Ordträff", och val som inte gäller vald modell är gråade.
+- "Hitta luckor med Pianissimo" heter nu "Hitta fler luckor med Pianissimo". Det lägger till Pianissimos luckor utöver kontrollen med ljudnivå i stället för att ersätta den, och fyller i saknade ord ett och ett i stället för hela meningar.
+
 ## [0.5.8] – 2026-10-30
 
 ### Nytt

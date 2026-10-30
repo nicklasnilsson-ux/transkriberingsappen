@@ -93,4 +93,37 @@ final class SpeechCoverageTests: XCTestCase {
         let segments = [SegmentData(start: 0, end: 10, text: "Hej.")]
         XCTAssertEqual(SpeechCoverage.missing(from: segments, in: segments), [])
     }
+
+    /// Påhittade tider: luckan täcker bara slutet av en lång mening hos den andra
+    /// taligenkännaren. Bara orden i luckan läggs till, inte hela meningen.
+    func testOnlyWordsInsideTheGapAreFilled() {
+        let words = (0..<10).map { WordTimingData(word: " ord\($0)", start: Double($0), end: Double($0) + 0.9, probability: 1) }
+        let reference = [SegmentData(start: 0, end: 9.9, text: "ord0 ord1 ord2 ord3 ord4 ord5 ord6 ord7 ord8 ord9", words: words)]
+        let existing = [SegmentData(start: 0, end: 5.9, text: "ord0 ord1 ord2 ord3 ord4 ord5")]
+
+        let filled = SpeechCoverage.fill(existing, with: reference, gaps: [TimeRange(start: 6, end: 10)])
+        XCTAssertEqual(filled.map(\.text), ["ord0 ord1 ord2 ord3 ord4 ord5", "ord6 ord7 ord8 ord9"])
+        XCTAssertEqual(filled[1].start, 6, accuracy: 0.001)
+        XCTAssertEqual(filled[1].words.count, 4)
+    }
+
+    /// Ord i två skilda luckor blir två segment, inte ett som spänner över texten emellan.
+    func testWordsInSeparateGapsBecomeSeparateSegments() {
+        let words = (0..<6).map { WordTimingData(word: " ord\($0)", start: Double($0), end: Double($0) + 0.9, probability: 1) }
+        let reference = [SegmentData(start: 0, end: 5.9, text: "ord0 ord1 ord2 ord3 ord4 ord5", words: words)]
+        let filled = SpeechCoverage.fill([], with: reference, gaps: [TimeRange(start: 0, end: 1.9), TimeRange(start: 4, end: 6)])
+        XCTAssertEqual(filled.map(\.text), ["ord0 ord1", "ord4 ord5"])
+    }
+
+    /// Den andra taligenkännarens tal läggs till ljudnivåns: luckor som bara någon av dem
+    /// ser ska båda hittas.
+    func testCombinedSpeechKeepsGapsFromBothSources() {
+        let energy = [TimeRange(start: 0, end: 5), TimeRange(start: 20, end: 26)]
+        let reference = [TimeRange(start: 10, end: 14), TimeRange(start: 21, end: 25)]
+        let combined = SpeechCoverage.combine(energy, reference)
+        XCTAssertEqual(combined, [TimeRange(start: 0, end: 5), TimeRange(start: 10, end: 14), TimeRange(start: 20, end: 26)])
+
+        let gaps = SpeechCoverage.uncovered(speech: combined, segments: [])
+        XCTAssertEqual(gaps.count, 3)
+    }
 }
