@@ -10,6 +10,16 @@ import WhisperKit
 struct TranscriptionOutput {
     var segments: [SegmentData]
     var language: String?
+    var diagnostics = TranscriptionDiagnostics()
+}
+
+/// Tider och mått från en körning, för Testlabbet. Ingen text.
+struct TranscriptionDiagnostics {
+    var transcriptionSeconds: Double = 0
+    var gapCheckSeconds: Double = 0
+    var gaps: TestLabReport.Gaps?
+    var whisperSegments: [TestLabReport.WhisperSegment]?
+    var pianissimoConfidence: Double?
 }
 
 enum TranscriberError: LocalizedError {
@@ -228,50 +238,120 @@ final class TranscriberService {
             let samples = try await AudioLoader.loadSamples(from: fileURL)
             guard !samples.isEmpty else { throw TranscriberError.emptyAudio }
 
-            phase = .transcribing(fraction: nil)
-            // Talaridentifieringen får originalljudet; bara modellen får det utjämnade.
-            let input = options.appliesLevelVolume ? VolumeLeveler.level(samples, sampleRate: AudioLoader.sampleRate) : samples
-            var segments: [SegmentData]
-            let language: String?
-            if options.model.usesParakeet {
-                segments = try await parakeet.transcribe(samples: input, carefulSeams: options.carefulSeams) { [weak self] fraction, text in
-                    let text = TextCleaning.clean(text)
-                    Task { @MainActor in
-                        guard let self else { return }
-                        self.advanceTranscribing(to: fraction)
-                        if !text.isEmpty { self.liveText = text }
-                    }
-                }
-                language = "sv"
-            } else {
-                guard let kit = whisperKit else { throw TranscriberError.modelNotLoaded }
-                let results = try await whisperTranscribe(kit: kit, samples: input, options: options)
-                segments = Self.segments(from: results)
-                segments = try await repairGaps(kit: kit, samples: input, segments: segments, options: options)
-                language = options.languageCode ?? results.first?.language
-            }
-            // Namn ur ordlistan som hörts nästan rätt. Pianissimo kan inte få ordlistan som
-            // ledtråd, och Whisper stavar ibland fel trots den.
-            segments = VocabularyCorrection.apply(segments, vocabulary: TextCleaning.wordList(options.vocabulary))
-
-            if options.identifySpeakers {
-                phase = .identifyingSpeakers
-                segments = try await diarizedSegments(samples: samples, segments: segments, options: options)
-            }
-            segments = segments.filter { !TextCleaning.isNonSpeechMarker($0.text) }
-
+            let output = try await recognize(samples: samples, options: options, speakerTurns: nil)
             phase = .idle
             liveText = ""
-            return TranscriptionOutput(segments: segments, language: language)
+            return output
         } catch {
-            if error is CancellationError {
-                phase = .idle
-            } else {
-                phase = .failed(error.localizedDescription)
-            }
-            liveText = ""
+            fail(error)
             throw error
         }
+    }
+
+    /// Testlabbet: samma väg som en vanlig transkribering, men på ljud som redan är inläst
+    /// och med talarturer som tagits fram en gång för alla körningar (`nil` = inga talare).
+    func transcribe(samples: [Float], options: TranscriptionOptions, speakerTurns: [SpeakerTurn]?) async throws -> TranscriptionOutput {
+        liveText = ""
+        do {
+            try await prepare(model: options.model)
+            let output = try await recognize(samples: samples, options: options, speakerTurns: speakerTurns)
+            phase = .idle
+            liveText = ""
+            return output
+        } catch {
+            fail(error)
+            throw error
+        }
+    }
+
+    private func fail(_ error: Error) {
+        phase = error is CancellationError ? .idle : .failed(error.localizedDescription)
+        liveText = ""
+    }
+
+    /// Taligenkänning, ordlista och talare på inläst ljud. Modellen ska redan vara inläst.
+    /// Med `speakerTurns` används de turerna i stället för att identifiera talarna igen.
+    private func recognize(
+        samples: [Float],
+        options: TranscriptionOptions,
+        speakerTurns: [SpeakerTurn]?
+    ) async throws -> TranscriptionOutput {
+        var diagnostics = TranscriptionDiagnostics()
+        let clock = ContinuousClock()
+        let transcriptionStart = clock.now
+
+        phase = .transcribing(fraction: nil)
+        // Talaridentifieringen får originalljudet; bara modellen får det utjämnade.
+        let input = options.appliesLevelVolume ? VolumeLeveler.level(samples, sampleRate: AudioLoader.sampleRate) : samples
+        var segments: [SegmentData]
+        let language: String?
+        if options.model.usesParakeet {
+            let output = try await parakeet.transcribe(
+                samples: input,
+                carefulSeams: options.carefulSeams,
+                tuning: options.tuning
+            ) { [weak self] fraction, text in
+                let text = TextCleaning.clean(text)
+                Task { @MainActor in
+                    guard let self else { return }
+                    self.advanceTranscribing(to: fraction)
+                    if !text.isEmpty { self.liveText = text }
+                }
+            }
+            segments = output.segments
+            diagnostics.pianissimoConfidence = output.confidence
+            diagnostics.transcriptionSeconds = Self.seconds(clock.now - transcriptionStart)
+            language = "sv"
+        } else {
+            guard let kit = whisperKit else { throw TranscriberError.modelNotLoaded }
+            let results = try await whisperTranscribe(kit: kit, samples: input, options: options)
+            segments = Self.segments(from: results)
+            diagnostics.whisperSegments = Self.segmentStatistics(results)
+            diagnostics.transcriptionSeconds = Self.seconds(clock.now - transcriptionStart)
+            if options.tuning.repairsGaps {
+                let gapStart = clock.now
+                let repaired = try await repairGaps(kit: kit, samples: input, segments: segments, options: options)
+                segments = repaired.segments
+                diagnostics.gaps = repaired.gaps
+                diagnostics.gapCheckSeconds = Self.seconds(clock.now - gapStart)
+            }
+            language = options.languageCode ?? results.first?.language
+        }
+        // Namn ur ordlistan som hörts nästan rätt. Pianissimo kan inte få ordlistan som
+        // ledtråd, och Whisper stavar ibland fel trots den.
+        segments = VocabularyCorrection.apply(segments, vocabulary: TextCleaning.wordList(options.vocabulary))
+
+        if let speakerTurns {
+            let assigned = SpeakerAssignment.assign(segments, turns: speakerTurns)
+            if assigned.contains(where: { $0.speaker != nil }) { segments = assigned }
+        } else if options.identifySpeakers {
+            phase = .identifyingSpeakers
+            segments = try await diarizedSegments(samples: samples, segments: segments, options: options)
+        }
+        segments = segments.filter { !TextCleaning.isNonSpeechMarker($0.text) }
+        return TranscriptionOutput(segments: segments, language: language, diagnostics: diagnostics)
+    }
+
+    private static func seconds(_ duration: Duration) -> Double {
+        Double(duration.components.seconds) + Double(duration.components.attoseconds) / 1e18
+    }
+
+    /// Hur säker Whisper var på varje stycke, och om det skrevs om med mer slump.
+    static func segmentStatistics(_ results: [TranscriptionResult]) -> [TestLabReport.WhisperSegment] {
+        results
+            .flatMap(\.segments)
+            .sorted { $0.start < $1.start }
+            .map { segment in
+                TestLabReport.WhisperSegment(
+                    start: Double(segment.start),
+                    end: Double(segment.end),
+                    words: TextCleaning.clean(segment.text).split(whereSeparator: \.isWhitespace).count,
+                    temperature: Double(segment.temperature),
+                    averageLogProbability: Double(segment.avgLogprob),
+                    compressionRatio: Double(segment.compressionRatio),
+                    noSpeechProbability: Double(segment.noSpeechProb)
+                )
+            }
     }
 
     private func whisperTranscribe(
@@ -282,13 +362,16 @@ final class TranscriberService {
         let decodeOptions = DecodingOptions(
             task: options.translateToEnglish ? .translate : .transcribe,
             language: options.languageCode,
-            temperatureFallbackCount: 3,
+            temperatureFallbackCount: options.tuning.temperatureFallbackCount,
             usePrefillPrompt: true,
             detectLanguage: options.languageCode == nil,
             skipSpecialTokens: true,
             withoutTimestamps: false,
             wordTimestamps: options.wordTimestamps || options.identifySpeakers,
+            windowClipTime: options.tuning.windowClipTime,
             promptTokens: Self.promptTokens(for: options.vocabulary, tokenizer: kit.tokenizer),
+            compressionRatioThreshold: options.tuning.compressionRatioThreshold,
+            logProbThreshold: options.tuning.logProbThreshold,
             // Tystnad klipps redan bort av VAD-uppdelningen. Spärrarna nedan kastar annars
             // bort hela 30-sekundersfönster när en svag röst gör modellen osäker.
             firstTokenLogProbThreshold: nil,
@@ -327,22 +410,26 @@ final class TranscriberService {
         samples: [Float],
         segments: [SegmentData],
         options: TranscriptionOptions
-    ) async throws -> [SegmentData] {
+    ) async throws -> (segments: [SegmentData], gaps: TestLabReport.Gaps) {
         phase = .recheckingGaps(fraction: 0)
         let rate = AudioLoader.sampleRate
         let speech = SpeechCoverage.speechRegions(in: samples, sampleRate: rate)
         let gaps = SpeechCoverage.uncovered(speech: speech, segments: segments)
-        guard !gaps.isEmpty else { return segments }
+        let none = TestLabReport.Gaps(count: 0, seconds: 0, segmentsAdded: 0)
+        guard !gaps.isEmpty else { return (segments, none) }
 
         let decodeOptions = DecodingOptions(
             task: options.translateToEnglish ? .translate : .transcribe,
             language: options.languageCode,
-            temperatureFallbackCount: 3,
+            temperatureFallbackCount: options.tuning.temperatureFallbackCount,
             usePrefillPrompt: true,
             detectLanguage: options.languageCode == nil,
             skipSpecialTokens: true,
             withoutTimestamps: false,
             wordTimestamps: options.wordTimestamps || options.identifySpeakers,
+            windowClipTime: options.tuning.windowClipTime,
+            compressionRatioThreshold: options.tuning.compressionRatioThreshold,
+            logProbThreshold: options.tuning.logProbThreshold,
             firstTokenLogProbThreshold: nil,
             noSpeechThreshold: nil,
             chunkingStrategy: .vad
@@ -362,7 +449,12 @@ final class TranscriberService {
                 .filter { (gap.start...gap.end).contains(($0.start + $0.end) / 2) }
             repaired += found
         }
-        return repaired.sorted { $0.start < $1.start }
+        let stats = TestLabReport.Gaps(
+            count: gaps.count,
+            seconds: gaps.reduce(0) { $0 + $1.duration },
+            segmentsAdded: repaired.count - segments.count
+        )
+        return (repaired.sorted { $0.start < $1.start }, stats)
     }
 
     // MARK: - Ordlista
@@ -408,20 +500,7 @@ final class TranscriberService {
     // MARK: - Talaridentifiering (Nemotron 3 eller SpeakerKit)
 
     private func diarizedSegments(samples: [Float], segments: [SegmentData], options: TranscriptionOptions) async throws -> [SegmentData] {
-        let turns: [SpeakerTurn]
-        let diarizerName: String
-        // Nemotron tar inget antal talare, så ett fast antal går till de andra. Går
-        // modellen inte att ladda ner eller ger den inga turer används den vanliga vägen.
-        let nemotronTurns: [SpeakerTurn]? = options.sortformerDiarization && options.speakerCount.exact == nil
-            ? try? await shortReplyDiarizer.turns(samples: samples)
-            : nil
-        if let nemotronTurns, !nemotronTurns.isEmpty {
-            turns = nemotronTurns
-            diarizerName = "Nemotron 3"
-        } else {
-            turns = try await speakerKitTurns(samples: samples, speakers: options.speakerCount)
-            diarizerName = "SpeakerKit"
-        }
+        let (turns, diarizerName) = try await speakerTurns(samples: samples, options: options)
 
         // Talare sätts per ord, så att repliker utan paus emellan ändå delas upp rätt.
         let assigned = SpeakerAssignment.assign(segments, turns: turns)
@@ -436,6 +515,19 @@ final class TranscriberService {
 
         // Om diariseringen inte gav något – behåll segmenten utan talare.
         return assigned.contains { $0.speaker != nil } ? assigned : segments
+    }
+
+    /// Vem som talar när, och vilken modell som kom fram till det.
+    func speakerTurns(samples: [Float], options: TranscriptionOptions) async throws -> (turns: [SpeakerTurn], diarizer: String) {
+        // Nemotron tar inget antal talare, så ett fast antal går till de andra. Går
+        // modellen inte att ladda ner eller ger den inga turer används den vanliga vägen.
+        let nemotronTurns: [SpeakerTurn]? = options.sortformerDiarization && options.speakerCount.exact == nil
+            ? try? await shortReplyDiarizer.turns(samples: samples)
+            : nil
+        if let nemotronTurns, !nemotronTurns.isEmpty {
+            return (nemotronTurns, "Nemotron 3")
+        }
+        return (try await speakerKitTurns(samples: samples, speakers: options.speakerCount), "SpeakerKit")
     }
 
     /// Sparar turerna så att fel i talartilldelningen går att söka efter utan att dela texten.

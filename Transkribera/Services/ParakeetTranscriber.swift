@@ -21,9 +21,21 @@ actor ParakeetTranscriber {
         "parakeet_vocab.json"
     ]
 
+    /// Texten och Pianissimos egen säkerhet för den (0–1).
+    struct Output {
+        var segments: [SegmentData]
+        var confidence: Double
+    }
+
+    /// Det som avgör hur `AsrManager` ställs in. Byts det skapas en ny.
+    private struct Setup: Equatable {
+        var carefulSeams: Bool
+        var tuning: DecoderTuning
+    }
+
     private var models: AsrModels?
     private var manager: AsrManager?
-    private var carefulSeams = false
+    private var setup: Setup?
     private var loadedFolder: URL?
 
     func load(folder: URL) async throws {
@@ -36,18 +48,24 @@ actor ParakeetTranscriber {
     func unload() {
         models = nil
         manager = nil
+        setup = nil
         loadedFolder = nil
     }
 
     /// Långa inspelningar delas i fönster på 15 sekunder. Med `carefulSeams` provar
     /// FluidAudio flera sätt att skarva fönstren i början av filen och väljer det
-    /// säkraste (tar 10–50 % längre tid).
-    private func manager(carefulSeams: Bool) throws -> AsrManager {
+    /// säkraste (tar 10–50 % längre tid). `tuning` ändras bara av Testlabbet.
+    private func manager(_ setup: Setup) throws -> AsrManager {
         guard let models else { throw TranscriberError.notLoaded }
-        if let manager, self.carefulSeams == carefulSeams { return manager }
-        let manager = AsrManager(config: ASRConfig(dualDecodeArbitration: carefulSeams), models: models)
+        if let manager, self.setup == setup { return manager }
+        let config = ASRConfig(
+            tdtConfig: TdtConfig(maxTokensPerChunk: setup.tuning.maxTokensPerChunk),
+            dualDecodeArbitration: setup.carefulSeams,
+            seamGapRepairMinGapSeconds: setup.tuning.seamGapRepairMinGapSeconds
+        )
+        let manager = AsrManager(config: config, models: models)
         self.manager = manager
-        self.carefulSeams = carefulSeams
+        self.setup = setup
         return manager
     }
 
@@ -55,9 +73,10 @@ actor ParakeetTranscriber {
     func transcribe(
         samples: [Float],
         carefulSeams: Bool = false,
+        tuning: DecoderTuning = .production,
         progress: @escaping @Sendable (Double, String) -> Void
-    ) async throws -> [SegmentData] {
-        let manager = try manager(carefulSeams: carefulSeams)
+    ) async throws -> Output {
+        let manager = try manager(Setup(carefulSeams: carefulSeams, tuning: tuning))
 
         // FluidAudio rapporterar bara andel klar (för ljud över ca 15 s), ingen löpande text.
         let stream = await manager.transcriptionProgressStream
@@ -76,11 +95,12 @@ actor ParakeetTranscriber {
             TimedToken(text: $0.token, start: $0.startTime, end: $0.endTime)
         }
         let words = TokenWords.words(from: tokens)
+        let confidence = Double(result.confidence)
         if words.isEmpty {
             let text = TextCleaning.clean(result.text)
             let duration = Double(samples.count) / 16_000
-            return text.isEmpty ? [] : [SegmentData(start: 0, end: duration, text: text)]
+            return Output(segments: text.isEmpty ? [] : [SegmentData(start: 0, end: duration, text: text)], confidence: confidence)
         }
-        return SentenceSegmenter.segments(from: words)
+        return Output(segments: SentenceSegmenter.segments(from: words), confidence: confidence)
     }
 }
