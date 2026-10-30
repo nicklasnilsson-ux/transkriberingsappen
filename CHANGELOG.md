@@ -7,6 +7,9 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 ## [Kommande]
 
 ### Nytt
+- Det går att ange flera intervjuare, till exempel när två från ert håll är med. De heter då
+  Intervjuare 1 och Intervjuare 2, och kunderna Kund 1, Kund 2 och så vidare. Välj under
+  Talare → Intervjuare.
 - Under Talare finns nu "Visa talarturer i Finder (för felsökning)". Där sparas, för de
   20 senaste transkriberingarna, när talaridentifieringen tycker att varje talare hörs och
   hur orden delades mellan dem. Filerna innehåller bara tider och talarnummer, ingen text,
