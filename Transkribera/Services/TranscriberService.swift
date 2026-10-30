@@ -247,23 +247,7 @@ final class TranscriberService {
                 guard let kit = whisperKit else { throw TranscriberError.modelNotLoaded }
                 let results = try await whisperTranscribe(kit: kit, samples: input, options: options)
                 segments = Self.segments(from: results)
-                var reference: [SegmentData]?
-                if options.pianissimoGaps {
-                    reference = await pianissimoReference(samples: samples)
-                }
-                let referenceSpeech = reference?.map { TimeRange(start: $0.start, end: $0.end) } ?? []
-                segments = try await repairGaps(
-                    kit: kit,
-                    samples: input,
-                    segments: segments,
-                    options: options,
-                    extraSpeech: referenceSpeech
-                )
-                if let reference {
-                    // Luckor som KB-Whisper inte fick text i ens vid omkörningen fylls ur Pianissimo.
-                    let remaining = SpeechCoverage.missing(from: reference, in: segments)
-                    segments = SpeechCoverage.fill(segments, with: reference, gaps: remaining)
-                }
+                segments = try await repairGaps(kit: kit, samples: input, segments: segments, options: options)
                 language = options.languageCode ?? results.first?.language
             }
             // Namn ur ordlistan som hörts nästan rätt. Pianissimo kan inte få ordlistan som
@@ -342,13 +326,11 @@ final class TranscriberService {
         kit: WhisperKit,
         samples: [Float],
         segments: [SegmentData],
-        options: TranscriptionOptions,
-        extraSpeech: [TimeRange] = []
+        options: TranscriptionOptions
     ) async throws -> [SegmentData] {
         phase = .recheckingGaps(fraction: 0)
         let rate = AudioLoader.sampleRate
-        // Ljudnivån är grunden. Tal som en andra taligenkännare hört läggs till, inte i stället.
-        let speech = SpeechCoverage.combine(SpeechCoverage.speechRegions(in: samples, sampleRate: rate), extraSpeech)
+        let speech = SpeechCoverage.speechRegions(in: samples, sampleRate: rate)
         let gaps = SpeechCoverage.uncovered(speech: speech, segments: segments)
         guard !gaps.isEmpty else { return segments }
 
@@ -381,21 +363,6 @@ final class TranscriberService {
             repaired += found
         }
         return repaired.sorted { $0.start < $1.start }
-    }
-
-    /// Pianissimo transkriberar hela ljudet som facit för var det finns tal. Saknas modellen
-    /// eller går något fel används ljudnivån som förut (`nil`).
-    private func pianissimoReference(samples: [Float]) async -> [SegmentData]? {
-        guard isDownloaded(.pianissimo) else { return nil }
-        phase = .recheckingGaps(fraction: 0)
-        let reference = ParakeetTranscriber()
-        defer { Task { await reference.unload() } }
-        do {
-            try await reference.load(folder: Self.localFolder(for: .pianissimo))
-            return try await reference.transcribe(samples: samples) { _, _ in }
-        } catch {
-            return nil
-        }
     }
 
     // MARK: - Ordlista

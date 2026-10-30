@@ -26,7 +26,6 @@ private struct TranscriptionSettingsView: View {
     @AppStorage(SettingsKey.identifySpeakers) private var identifySpeakers = false
     @AppStorage(SettingsKey.speakers) private var speakers = SpeakerCount.automatic.rawValue
     @AppStorage(SettingsKey.sortformerDiarization) private var sortformerDiarization = true
-    @AppStorage(SettingsKey.pianissimoGaps) private var pianissimoGaps = false
     @AppStorage(SettingsKey.vocabulary) private var vocabulary = ""
     @AppStorage(SettingsKey.wordTimestamps) private var wordTimestamps = true
     @AppStorage(SettingsKey.recordMicrophone) private var recordMicrophone = true
@@ -89,16 +88,13 @@ private struct TranscriptionSettingsView: View {
             }
 
             Section {
-                Toggle("Hitta fler luckor med Pianissimo", isOn: $pianissimoGaps)
-                    .disabled(usesParakeet)
-                    .help("Pianissimo lyssnar igenom ljudet först och pekar ut tal som KB-Whisper missat, utöver kontrollen med ljudnivå. De ställena körs om, och saknas text ändå fylls enstaka ord i från Pianissimo. Kräver att Pianissimo är nedladdad och tar längre tid.")
                 Toggle("Noggrannare skarvar", isOn: $carefulSeams)
                     .disabled(!usesParakeet)
                     .help("Pianissimo lyssnar på 15 sekunder i taget. Med det här provar den flera sätt att skarva bitarna och väljer det säkraste.")
             } header: {
                 Text("Experiment")
             } footer: {
-                Text("Ännu inte bevisat bättre. \"Hitta fler luckor\" gäller bara Whisper-modellerna och \"Noggrannare skarvar\" bara Pianissimo (tar 10–50 % längre tid). Det som användes står efter modellens namn i transkriberingen.")
+                Text("Ännu inte bevisat bättre. Gäller bara Pianissimo och tar 10–50 % längre tid. Det som användes står efter modellens namn i transkriberingen.")
                     .foregroundStyle(.secondary)
             }
 

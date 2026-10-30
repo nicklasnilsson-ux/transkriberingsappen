@@ -29,7 +29,6 @@ enum SettingsKey {
     static let pianissimoCarefulSeams = "pianissimoCarefulSeams"
     static let levelVolume = "levelVolume"
     static let sortformerDiarization = "sortformerDiarization"
-    static let pianissimoGaps = "pianissimoGaps"
 }
 
 enum SpeakerCountSetting {
@@ -127,8 +126,6 @@ struct TranscriptionOptions {
     var levelVolume = true
     /// Talaridentifiering med Nemotron 3 Diarization (FluidAudio), byggd för korta repliker. Används när antal talare är automatiskt, annars SpeakerKit.
     var sortformerDiarization = true
-    /// Experiment: Pianissimo pekar ut var tal saknar text i KB-Whisper-körningen. Kräver att Pianissimo är nedladdad.
-    var pianissimoGaps = false
 
     var appliesLevelVolume: Bool { levelVolume && !model.usesParakeet }
 
@@ -138,7 +135,6 @@ struct TranscriptionOptions {
         var extras: [String] = []
         if carefulSeams, model.usesParakeet { extras.append("noggranna skarvar") }
         if appliesLevelVolume { extras.append("jämnad volym") }
-        if pianissimoGaps, !model.usesParakeet { extras.append("luckor via Pianissimo") }
         if identifySpeakers {
             if sortformerDiarization, speakerCount.exact == nil { extras.append("Nemotron 3") }
         }
@@ -158,8 +154,7 @@ struct TranscriptionOptions {
             translateToEnglish: defaults.string(forKey: SettingsKey.task) == "translate",
             carefulSeams: defaults.bool(forKey: SettingsKey.pianissimoCarefulSeams),
             levelVolume: defaults.object(forKey: SettingsKey.levelVolume) as? Bool ?? true,
-            sortformerDiarization: (defaults.object(forKey: SettingsKey.sortformerDiarization) as? Bool ?? true) && ShortReplyDiarizer.isSupported,
-            pianissimoGaps: defaults.bool(forKey: SettingsKey.pianissimoGaps)
+            sortformerDiarization: (defaults.object(forKey: SettingsKey.sortformerDiarization) as? Bool ?? true) && ShortReplyDiarizer.isSupported
         )
     }
 }
