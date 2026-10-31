@@ -1,0 +1,46 @@
+name: Landningssida
+
+# Publicerar bara mappen site/ på GitHub Pages, så att interna dokument i docs/ aldrig hamnar där.
+# Kräver att Pages är påslaget med källan "GitHub Actions" (Settings › Pages).
+
+on:
+  push:
+    branches: [main]
+    paths: ["site/**", "scripts/check_site.py", "project.yml", ".github/workflows/pages.yml"]
+  pull_request:
+    paths: ["site/**", "scripts/check_site.py", "project.yml", ".github/workflows/pages.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Kontrollera sidan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/check_site.py
+      - uses: actions/upload-pages-artifact@v3
+        if: github.ref == 'refs/heads/main'
+        with:
+          path: site
+
+  deploy:
+    name: Publicera
+    needs: check
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

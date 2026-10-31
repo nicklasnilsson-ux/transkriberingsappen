@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transkribera – transkribera svenska intervjuer lokalt på din Mac</title>
+<meta name="description" content="Gratis Mac-app som transkriberar svenska intervjuer och möten helt lokalt med KB-Whisper. Talare, anonymisering och export för analys. Ljudet lämnar aldrig datorn.">
+<meta property="og:title" content="Transkribera – svenska intervjuer, transkriberade lokalt på din Mac">
+<meta property="og:description" content="Gratis och öppen källkod. KB-Whisper, talare, anonymisering och export för analys. Ljudet lämnar aldrig datorn.">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="sv_SE">
+<meta property="og:image" content="icon-512.png">
+<meta name="color-scheme" content="light dark">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" type="image/png" href="favicon.png">
+<style>
+  /* Färgerna följer appens palett (zinc + indigo #6366F1). Mörkt läge använder exakt
+     bakgrund #09090B, kort #18181B och linjer #27272A. Knappar och länkar har en
+     mörkare/ljusare indigo så att texten klarar WCAG AA (#6366F1 med vit text ger 4,47:1). */
+  :root {
+    --bg: #ffffff;
+    --bg-soft: #fafafa;
+    --card: #ffffff;
+    --text: #09090b;
+    --muted: #52525b;
+    --line: #e4e4e7;
+    --accent: #4f46e5;
+    --accent-hover: #4338ca;
+    --accent-text: #ffffff;
+    --glow: rgba(99, 102, 241, .16);
+    --focus: #f59e0b;
+    --radius: 12px;
+    --max: 68rem;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #09090b;
+      --bg-soft: #09090b;
+      --card: #18181b;
+      --text: #fafafa;
+      --muted: #a1a1aa;
+      --line: #27272a;
+      --accent: #818cf8;
+      --accent-hover: #a5b4fc;
+      --accent-text: #09090b;
+      --glow: rgba(99, 102, 241, .22);
+      --focus: #fbbf24;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0;
+    font: 1.0625rem/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-underline-offset: 0.15em; }
+  a:hover { color: var(--accent-hover); }
+  :focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; border-radius: 4px; }
+  .skip {
+    position: absolute; left: 1rem; top: -4rem; padding: .6rem 1rem;
+    background: var(--text); color: var(--bg); border-radius: 8px; z-index: 10;
+  }
+  .skip:focus { top: 1rem; }
+  .wrap { max-width: var(--max); margin: 0 auto; padding: 0 1.25rem; }
+
+  header.top { border-bottom: 1px solid var(--line); }
+  header.top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-block: .8rem; }
+  .brand { display: flex; align-items: center; gap: .6rem; font-weight: 650; color: var(--text); text-decoration: none; }
+  .brand img { width: 32px; height: 32px; }
+  nav ul { display: flex; gap: 1.25rem; list-style: none; margin: 0; padding: 0; font-size: .95rem; }
+  nav a { color: var(--muted); text-decoration: none; }
+  nav a:hover { color: var(--text); text-decoration: underline; }
+  @media (max-width: 40rem) { nav { display: none; } }
+
+  .hero { padding: 4.5rem 0 3.5rem; background: radial-gradient(60rem 26rem at 78% 40%, var(--glow), transparent 70%); }
+  .hero .wrap { display: grid; grid-template-columns: 1fr auto; gap: 3rem; align-items: center; }
+  @media (max-width: 52rem) {
+    .hero .wrap { grid-template-columns: 1fr; }
+    .hero .icon { order: -1; width: 112px; height: 112px; }
+  }
+  .hero h1 { font-size: clamp(2rem, 4.2vw, 3.1rem); line-height: 1.12; letter-spacing: -0.02em; margin: 0 0 1rem; }
+  .lead { font-size: 1.2rem; color: var(--muted); margin: 0 0 2rem; max-width: 38rem; }
+  .hero .icon { width: 220px; height: 220px; filter: drop-shadow(0 18px 40px var(--glow)); }
+
+  .cta { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1.25rem; }
+  .button {
+    display: inline-flex; align-items: center; gap: .55rem;
+    min-height: 48px; padding: .8rem 1.4rem;
+    background: var(--accent); color: var(--accent-text);
+    font-weight: 650; font-size: 1.05rem; text-decoration: none;
+    border-radius: 12px;
+  }
+  .button:hover { background: var(--accent-hover); color: var(--accent-text); }
+  .button svg { width: 20px; height: 20px; flex: none; }
+  .meta { color: var(--muted); font-size: .95rem; margin: .9rem 0 0; }
+
+  section { padding: 3.5rem 0; }
+  section.soft { background: var(--bg-soft); border-block: 1px solid var(--line); }
+  h2 { font-size: clamp(1.5rem, 2.6vw, 2rem); letter-spacing: -0.01em; line-height: 1.2; margin: 0 0 .5rem; }
+  .intro { color: var(--muted); margin: 0 0 2rem; max-width: 42rem; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 1.25rem; list-style: none; margin: 0; padding: 0; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem 1.4rem 1.2rem; }
+  section.soft .card { background: var(--card); }
+  .card h3 { font-size: 1.1rem; margin: 0 0 .4rem; }
+  .card p { margin: 0; color: var(--muted); }
+
+  ol.steps { counter-reset: step; list-style: none; padding: 0; margin: 0; display: grid; gap: 1rem; max-width: 46rem; }
+  ol.steps > li { counter-increment: step; position: relative; padding-left: 3.2rem; min-height: 2.4rem; }
+  ol.steps > li::before {
+    content: counter(step); position: absolute; left: 0; top: -.1rem;
+    width: 2.2rem; height: 2.2rem; border-radius: 50%;
+    display: grid; place-items: center;
+    background: var(--accent); color: var(--accent-text); font-weight: 700;
+  }
+  ol.steps > li > strong { display: block; }
+  ol.steps ol { margin: .4rem 0 0; padding-left: 1.3rem; color: var(--muted); }
+  ol.steps > li > p { margin: .15rem 0 0; color: var(--muted); }
+
+  .note {
+    border: 1px solid var(--line); border-left: 4px solid var(--accent); background: var(--card);
+    padding: 1rem 1.2rem; border-radius: 0 10px 10px 0; margin: 1.75rem 0 0; max-width: 46rem;
+  }
+  .note p { margin: 0; }
+  .note p + p { margin-top: .5rem; }
+  code {
+    font: .92em ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: .1em .35em;
+    overflow-wrap: anywhere;
+  }
+  details { margin-top: 1rem; max-width: 46rem; }
+  summary { cursor: pointer; font-weight: 600; color: var(--accent); }
+
+  dl.facts { display: grid; grid-template-columns: max-content 1fr; gap: .6rem 1.5rem; margin: 0; max-width: 46rem; }
+  dl.facts dt { font-weight: 650; }
+  dl.facts dd { margin: 0; color: var(--muted); }
+  @media (max-width: 36rem) { dl.facts { grid-template-columns: 1fr; } dl.facts dd { margin-bottom: .6rem; } }
+
+  footer { padding: 2.5rem 0 3rem; color: var(--muted); font-size: .95rem; border-top: 1px solid var(--line); }
+  footer p { margin: 0 0 .5rem; max-width: 50rem; }
+</style>
+</head>
+<body>
+<a class="skip" href="#innehall">Hoppa till innehållet</a>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="./" aria-label="Transkribera, startsida">
+      <img src="favicon.png" alt="" width="32" height="32">
+      <span>Transkribera</span>
+    </a>
+    <nav aria-label="Sidans avsnitt">
+      <ul>
+        <li><a href="#funktioner">Funktioner</a></li>
+        <li><a href="#kom-igang">Kom igång</a></li>
+        <li><a href="#integritet">Integritet</a></li>
+        <li><a href="https://github.com/nicklasnilsson-ux/transkriberingsappen">Källkod</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="innehall">
+  <div class="hero">
+    <div class="wrap">
+      <div>
+        <h1>Transkribera svenska intervjuer på din Mac. Ljudet lämnar aldrig datorn.</h1>
+        <p class="lead">Släpp in en inspelning och få text med talare och tidskoder, gjord helt lokalt med KB-Whisper från Kungliga biblioteket. Gratis och öppen källkod.</p>
+        <div class="cta">
+          <a class="button" id="ladda-ner"
+             href="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/latest">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10 3v10M5.5 8.5 10 13l4.5-4.5M4 17h12"/></svg>
+            <span id="ladda-ner-text">Ladda ner för Mac</span>
+          </a>
+          <a href="#forsta-gangen">Så öppnar du appen första gången</a>
+        </div>
+        <p class="meta" id="ladda-ner-info">Senaste versionen · Mac med Apple Silicon (M1 eller senare) · macOS 14 Sonoma eller senare</p>
+      </div>
+      <img class="icon" src="icon-512.png" alt="" width="220" height="220">
+    </div>
+  </div>
+
+  <section class="soft" id="funktioner" aria-labelledby="funktioner-rubrik">
+    <div class="wrap">
+      <h2 id="funktioner-rubrik">Byggd för intervjuer och möten på svenska</h2>
+      <p class="intro">För dig som spelar in intervjuer, samtal eller möten och behöver en text att läsa, citera eller analysera, utan att skicka inspelningen till en molntjänst.</p>
+      <ul class="grid">
+        <li class="card">
+          <h3>Helt lokalt</h3>
+          <p>Transkriberingen sker på din Mac. Ingen inloggning, inget konto och ingen uppladdning av ljud eller text.</p>
+        </li>
+        <li class="card">
+          <h3>Bra på svenska</h3>
+          <p>KB-Whisper från Kungliga biblioteket är tränad på svenska och gör betydligt färre fel än vanliga Whisper. Pianissimo från Klang finns som snabbare alternativ.</p>
+        </li>
+        <li class="card">
+          <h3>Vem sa vad</h3>
+          <p>Appen skiljer på talarna, och du kan ge dem roller som Intervjuare och Kund. Osäkra talarbyten markeras med ⚠ så att du vet var du ska lyssna.</p>
+        </li>
+        <li class="card">
+          <h3>Anonymisering</h3>
+          <p>Namn, platser, personnummer, telefonnummer med mera byts mot t.ex. [PERSON 1] när du kopierar och exporterar. Originalet sparas lokalt.</p>
+        </li>
+        <li class="card">
+          <h3>Export för analys</h3>
+          <p>En Markdown-fil per intervju, ett stycke per talarbyte med tidskod, redo att tematisera. Även text, SRT, WebVTT och JSON.</p>
+        </li>
+        <li class="card">
+          <h3>Lyssna och rätta</h3>
+          <p>Klicka på en mening så spelas den upp. Redigera texten direkt, sök i den och spela in möten från datorns ljud.</p>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="kom-igang" aria-labelledby="kom-igang-rubrik">
+    <div class="wrap">
+      <h2 id="kom-igang-rubrik">Kom igång</h2>
+      <p class="intro">Det tar ett par minuter. Första gången laddar appen ner den modell du väljer.</p>
+      <ol class="steps">
+        <li>
+          <strong>Ladda ner och installera</strong>
+          <p>Öppna .dmg-filen och dra Transkribera till mappen Program.</p>
+        </li>
+        <li id="forsta-gangen">
+          <strong>Öppna appen första gången</strong>
+          <p>Appen är ännu inte signerad hos Apple, så macOS varnar första gången: ”Apple kan inte kontrollera …”. Gör så här en gång:</p>
+          <ol>
+            <li>Försök öppna Transkribera och tryck <strong>Klar</strong> i varningen.</li>
+            <li>Öppna <strong>Systeminställningar › Integritet och säkerhet</strong>, scrolla ner och klicka <strong>Öppna ändå</strong> vid Transkribera.</li>
+            <li>Bekräfta med ditt lösenord eller Touch ID.</li>
+          </ol>
+          <details>
+            <summary>Alternativ för dig som använder Terminal</summary>
+            <p>Kör <code>xattr -dr com.apple.quarantine /Applications/Transkribera.app</code> och öppna sedan appen som vanligt.</p>
+          </details>
+        </li>
+        <li>
+          <strong>Släpp in en inspelning</strong>
+          <p>Dra en ljud- eller videofil (M4A, MP3, WAV, MP4, MOV …) till fönstret. Flera filer läggs i kö.</p>
+        </li>
+      </ol>
+      <div class="note">
+        <p><strong>Varför varnar macOS?</strong> Apple kräver ett betalt utvecklarkonto för att signera appar. Transkribera är ett gratis projekt med öppen källkod, så du kan själv läsa koden som bygger varje version. Appen uppdaterar sig sedan själv, och uppdateringarna kontrolleras med en egen signatur.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="soft" id="integritet" aria-labelledby="integritet-rubrik">
+    <div class="wrap">
+      <h2 id="integritet-rubrik">Integritet och ärliga förbehåll</h2>
+      <p class="intro">Intervjuer innehåller ofta känsliga uppgifter. Så här hanterar appen dem, och här är det du själv behöver tänka på.</p>
+      <dl class="facts">
+        <dt>Ljud och text</dt>
+        <dd>Stannar på din Mac. Appen skickar dem ingenstans.</dd>
+        <dt>Nätverk</dt>
+        <dd>Används bara för att ladda ner modeller första gången och för att söka efter uppdateringar.</dd>
+        <dt>Den här sidan</dt>
+        <dd>Har ingen statistik, inga cookies och inga typsnitt från andra tjänster. Nedladdningsknappen frågar GitHub vilken version som är senast.</dd>
+        <dt>Anonymisering</dt>
+        <dd>Ingen automatisk anonymisering är helt säker. Läs igenom texten innan du delar den.</dd>
+        <dt>Träffsäkerhet</dt>
+        <dd>Automatisk transkribering gör fel, särskilt på småord, namn och när flera pratar samtidigt. Lyssna på det som är viktigt för din analys.</dd>
+      </dl>
+    </div>
+  </section>
+
+  <section aria-labelledby="krav-rubrik">
+    <div class="wrap">
+      <h2 id="krav-rubrik">Krav</h2>
+      <dl class="facts">
+        <dt>Dator</dt>
+        <dd>Mac med Apple Silicon (M1 eller senare). Intel-Macar stöds inte.</dd>
+        <dt>System</dt>
+        <dd>macOS 14 Sonoma eller senare.</dd>
+        <dt>Utrymme</dt>
+        <dd>Appen är liten. Varje modell tar mellan 75 MB och 1,6 GB beroende på vilken du väljer.</dd>
+      </dl>
+      <p class="meta"><a href="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases">Alla versioner och vad som ändrats</a></p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Transkribera är öppen källkod under <a href="https://github.com/nicklasnilsson-ux/transkriberingsappen/blob/main/LICENSE">MIT-licensen</a>. <a href="https://github.com/nicklasnilsson-ux/transkriberingsappen">Källkoden finns på GitHub</a>, där du också kan <a href="https://github.com/nicklasnilsson-ux/transkriberingsappen/issues">rapportera fel</a>.</p>
+    <p>Bygger på WhisperKit och SpeakerKit (Argmax), KB-Whisper (KBLab, Kungliga biblioteket), Pianissimo (Klang, CC BY 4.0) och FluidAudio. Transkribera är inte knutet till någon av dem.</p>
+  </div>
+</footer>
+
+<script>
+  // Pekar knappen direkt på den senaste .dmg:n. Utan JavaScript eller om GitHub inte svarar
+  // går knappen till sidan för senaste versionen, där .dmg:n finns.
+  (function () {
+    var repo = "nicklasnilsson-ux/transkriberingsappen";
+    var button = document.getElementById("ladda-ner");
+    var label = document.getElementById("ladda-ner-text");
+    var info = document.getElementById("ladda-ner-info");
+    if (!window.fetch || !button) return;
+    var controller = window.AbortController ? new AbortController() : null;
+    var timer = setTimeout(function () { if (controller) controller.abort(); }, 5000);
+    fetch("https://api.github.com/repos/" + repo + "/releases/latest", {
+      headers: { "Accept": "application/vnd.github+json" },
+      signal: controller ? controller.signal : undefined
+    })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (release) {
+        clearTimeout(timer);
+        var dmg = (release.assets || []).filter(function (a) { return /\.dmg$/i.test(a.name); })[0];
+        if (!dmg || !/^https:\/\/github\.com\//.test(dmg.browser_download_url)) return;
+        var version = String(release.tag_name || "").replace(/^v/, "");
+        if (!/^[0-9][0-9A-Za-z.\-]*$/.test(version)) return;
+        var mb = Math.round(dmg.size / 1e6);
+        button.href = dmg.browser_download_url;
+        label.textContent = "Ladda ner för Mac";
+        info.textContent = "Version " + version + " · " + mb + " MB · Mac med Apple Silicon (M1 eller senare) · macOS 14 Sonoma eller senare";
+      })
+      .catch(function () { clearTimeout(timer); });
+  })();
+</script>
+</body>
+</html>
