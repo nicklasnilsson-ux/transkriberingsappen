@@ -6,6 +6,11 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.6.3] – 2026-10-31
+
+### Ändrat
+- Modellväljaren har bara tre modeller: **Pianissimo** (förstaval för svenska, snabbast), **KB Large ordagrann** (när varje ord måste stämma, t.ex. citat, namn och facktermer) och **Large v3 Turbo** (andra språk än svenska). Pianissimo är nu standard. De andra modellerna är dolda, inte borttagna, och redan nedladdade modeller ligger kvar. Hade du valt en dold modell byter appen till Pianissimo och väljaren visar "(ersätter …)" tills du väljer själv.
+
 ## [0.6.2] – 2026-10-31
 
 ### Nytt

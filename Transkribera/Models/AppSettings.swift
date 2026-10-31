@@ -145,7 +145,7 @@ struct TranscriptionOptions {
     }
 
     static func fromDefaults(_ defaults: UserDefaults = .standard) -> TranscriptionOptions {
-        let model = defaults.string(forKey: SettingsKey.model).flatMap(WhisperModel.init(rawValue:)) ?? .default
+        let model = WhisperModel.resolved(defaults.string(forKey: SettingsKey.model))
         let language = defaults.string(forKey: SettingsKey.language) ?? "sv"
         return TranscriptionOptions(
             model: model,
