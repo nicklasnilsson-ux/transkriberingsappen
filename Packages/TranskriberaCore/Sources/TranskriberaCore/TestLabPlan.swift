@@ -62,29 +62,19 @@ public enum TestLabPlan {
             change(&tuning)
             return TestLabRun(id: id, title: title, engine: .pianissimo, tuning: tuning, carefulSeams: carefulSeams)
         }
+        // Första omgången (13 körningar, v0.6.0) visade att spärrar och omkörningar inte spelar roll.
+        // Nu provas ledtråd för fyllnadsord, eftersom KB-Whisper rensar bort eh och mm helt.
+        let list = "Eh, öh, mm, ja, jaha, alltså, liksom."
+        let text = "Eh, ja alltså, det är ju så att, mm, vi har liksom, öh, ja precis. Mm, jaha, nej men eh, det stämmer."
         return [
             kb("01-kb-referens", "KB: som i dag"),
-            kb("02-kb-referens-igen", "KB: som i dag, igen (mäter bruset)"),
-            kb("03-kb-utan-upprepningssparr", "KB: utan upprepningsspärr") { $0.compressionRatioThreshold = nil },
-            kb("04-kb-utan-osakerhetssparr", "KB: utan osäkerhetsspärr") { $0.logProbThreshold = nil },
-            kb("05-kb-utan-bada-sparrarna", "KB: utan båda spärrarna") {
-                $0.compressionRatioThreshold = nil
-                $0.logProbThreshold = nil
+            kb("02-kb-fyllnadslista", "KB: ledtråd med fyllnadsord som lista") { $0.stylePrompt = list },
+            kb("03-kb-fyllnadstext", "KB: ledtråd med fyllnadsord i löpande text") { $0.stylePrompt = text },
+            kb("04-kb-fyllnadstext-huvudpass", "KB: ledtråd i löpande text, bara i huvudpasset") {
+                $0.stylePrompt = text
+                $0.stylePromptInGapCheck = false
             },
-            kb("06-kb-utan-fonsterklipp", "KB: utan fönsterklipp") { $0.windowClipTime = 0 },
-            kb("07-kb-utan-omkorningar", "KB: utan omkörningar med slump") { $0.temperatureFallbackCount = 0 },
-            kb("08-kb-utan-luckkontroll", "KB: utan luckkontroll") { $0.repairsGaps = false },
-            kb("09-kb-allt-lost", "KB: utan spärrar och fönsterklipp") {
-                $0.compressionRatioThreshold = nil
-                $0.logProbThreshold = nil
-                $0.windowClipTime = 0
-            },
-            pianissimo("10-pianissimo-referens", "Pianissimo: som i dag"),
-            pianissimo("11-pianissimo-fler-bitar", "Pianissimo: fler textbitar per fönster") { $0.maxTokensPerChunk = 300 },
-            pianissimo("12-pianissimo-tatare-skarvlagning", "Pianissimo: lagar mindre luckor vid skarvar") {
-                $0.seamGapRepairMinGapSeconds = 0.5
-            },
-            pianissimo("13-pianissimo-noggranna-skarvar", "Pianissimo: noggrannare skarvar", carefulSeams: true)
+            pianissimo("05-pianissimo-referens", "Pianissimo: som i dag")
         ]
     }()
 }

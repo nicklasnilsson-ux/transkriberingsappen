@@ -369,7 +369,7 @@ final class TranscriberService {
             withoutTimestamps: false,
             wordTimestamps: options.wordTimestamps || options.identifySpeakers,
             windowClipTime: options.tuning.windowClipTime,
-            promptTokens: Self.promptTokens(for: options.vocabulary, tokenizer: kit.tokenizer),
+            promptTokens: Self.promptTokens(for: options.vocabulary, style: options.tuning.stylePrompt, tokenizer: kit.tokenizer),
             compressionRatioThreshold: options.tuning.compressionRatioThreshold,
             logProbThreshold: options.tuning.logProbThreshold,
             // Tystnad klipps redan bort av VAD-uppdelningen. Spärrarna nedan kastar annars
@@ -428,6 +428,9 @@ final class TranscriberService {
             withoutTimestamps: false,
             wordTimestamps: options.wordTimestamps || options.identifySpeakers,
             windowClipTime: options.tuning.windowClipTime,
+            promptTokens: options.tuning.stylePromptInGapCheck
+                ? Self.promptTokens(for: "", style: options.tuning.stylePrompt, tokenizer: kit.tokenizer)
+                : nil,
             compressionRatioThreshold: options.tuning.compressionRatioThreshold,
             logProbThreshold: options.tuning.logProbThreshold,
             firstTokenLogProbThreshold: nil,
@@ -461,10 +464,13 @@ final class TranscriberService {
 
     /// Whisper kan få en text "före" ljudet som ledtråd. Står namn och fackord där
     /// stavas de oftare rätt, t.ex. "TG", "bruttovinst" eller "Fortnox".
-    static func promptTokens(for vocabulary: String, tokenizer: WhisperTokenizer?) -> [Int]? {
+    static func promptTokens(for vocabulary: String, style: String? = nil, tokenizer: WhisperTokenizer?) -> [Int]? {
         let words = TextCleaning.wordList(vocabulary)
-        guard let tokenizer, !words.isEmpty else { return nil }
-        let tokens = tokenizer.encode(text: " " + words.joined(separator: ", ") + ".")
+        var parts: [String] = []
+        if let style, !style.isEmpty { parts.append(style) }
+        if !words.isEmpty { parts.append(words.joined(separator: ", ") + ".") }
+        guard let tokenizer, !parts.isEmpty else { return nil }
+        let tokens = tokenizer.encode(text: " " + parts.joined(separator: " "))
             .filter { $0 < tokenizer.specialTokens.specialTokenBegin }
         return tokens.isEmpty ? nil : tokens
     }

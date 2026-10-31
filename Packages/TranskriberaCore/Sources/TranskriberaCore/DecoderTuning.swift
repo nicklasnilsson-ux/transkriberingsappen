@@ -19,6 +19,11 @@ public struct DecoderTuning: Codable, Hashable, Sendable {
     public var temperatureFallbackCount = 3
     /// Tal som saknar text efter körningen transkriberas om för sig (`repairGaps`).
     public var repairsGaps = true
+    /// Ledtråd i Whispers språk (en text "före" ljudet) som visar stilen: ordagrant med
+    /// "eh" och "mm". `nil` = ingen ledtråd, som i dag.
+    public var stylePrompt: String?
+    /// Om ledtråden också gäller luckkontrollens omkörningar (annars bara huvudpasset).
+    public var stylePromptInGapCheck = true
 
     // MARK: Pianissimo (FluidAudio)
 
@@ -48,6 +53,10 @@ public struct DecoderTuning: Codable, Hashable, Sendable {
             out.append("omkörningar \(temperatureFallbackCount)")
         }
         if repairsGaps != standard.repairsGaps { out.append(repairsGaps ? "luckkontroll på" : "luckkontroll av") }
+        if stylePrompt != standard.stylePrompt {
+            out.append("ledtråd \"\(stylePrompt ?? "av")\"")
+            if !stylePromptInGapCheck { out.append("ledtråden bara i huvudpasset") }
+        }
         if seamGapRepairMinGapSeconds != standard.seamGapRepairMinGapSeconds {
             out.append("skarvlagning från \(seamGapRepairMinGapSeconds) s")
         }

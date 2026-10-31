@@ -53,7 +53,7 @@ först när alla kontroller är gröna på exakt de filer som laddades upp.
 | Uppdateringsflödet går sönder (signatur, appcast, installation i sandlådan) | Uppgraderingstestet går genom Sparkle på riktigt, med appcasten signerad med den riktiga nyckeln | `upgrade-test.sh` |
 | Ett beroende byter version utan att vi märker det | Alla Swift-paket, även indirekta, är låsta i `Package.resolved`; bygget avbryts om låsfilen inte stämmer | `build-app.sh` |
 | Info.plist saknar något som krävs (uppdateringsnyckel, flöde, behörighetstexter, lägsta macOS) | Kontrolleras i röktestet | `smoke-test.sh` |
-| Testlabbet ändrar taligenkänningens inställningar per körning, och ett fel där skulle tyst ändra alla vanliga transkriberingar | Enhetstest: standardinställningarna är exakt de som appen alltid använt (WhisperKit 1.1.1 och FluidAudio 0.17.7, tre omkörningar); labbets körlista har unika filnamn och varje försök ändrar en sak; loggen innehåller ingen text | `DecoderTuningTests`, `TestLabPlanTests`, `TestLabReportTests` |
+| Testlabbet ändrar taligenkänningens inställningar per körning, och ett fel där skulle tyst ändra alla vanliga transkriberingar | Enhetstest: standardinställningarna är exakt de som appen alltid använt (WhisperKit 1.1.1 och FluidAudio 0.17.7, tre omkörningar, ingen ledtråd); labbets körlista har unika filnamn och varje försök ändrar en sak; loggen innehåller ingen text | `DecoderTuningTests`, `TestLabPlanTests`, `TestLabReportTests` |
 | En ny version saknar beskrivning | Versionen måste ha ett avsnitt i `CHANGELOG.md`, redan i PR:en som höjer den | `changelog.py check` |
 
 ## Vad CI inte kan kontrollera
