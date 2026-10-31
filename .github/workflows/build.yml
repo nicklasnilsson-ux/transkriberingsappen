@@ -290,3 +290,21 @@ jobs:
         run: |
           ./scripts/publish-appcast.sh "${{ steps.version.outputs.name }}" \
             "${{ steps.version.outputs.short }}" "${{ steps.version.outputs.build }}" "${{ steps.version.outputs.channel }}"
+
+      # Appcasten är det som får installerade appar att uppdatera sig. Efter publiceringen
+      # laddas zip:en ner från releasen och jämförs med posten i appcasten.
+      - name: Kontrollera appcasten mot den publicerade filen
+        if: steps.version.outputs.release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SPARKLE_KEY_FINNS: ${{ secrets.SPARKLE_PRIVATE_KEY != '' }}
+          TAG: ${{ steps.version.outputs.name }}
+        run: |
+          if [[ "$SPARKLE_KEY_FINNS" != true ]]; then echo "Ingen signeringsnyckel, appcasten är inte uppdaterad."; exit 0; fi
+          dir="$RUNNER_TEMP/appcast-check"; mkdir -p "$dir"
+          gh release download "$TAG" -R "$GITHUB_REPOSITORY" -p "Transkribera-$TAG.zip" -D "$dir"
+          git fetch --quiet origin appcast
+          git show FETCH_HEAD:appcast.xml > "$dir/appcast.xml"
+          $PYTHON scripts/appcast.py verify "$dir/appcast.xml" --archive "$dir/Transkribera-$TAG.zip" \
+            --url "https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/Transkribera-$TAG.zip" \
+            --version "${{ steps.version.outputs.build }}" --short-version "${{ steps.version.outputs.short }}"

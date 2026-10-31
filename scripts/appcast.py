@@ -10,7 +10,11 @@
       lägger in den som ny version överst i appcasten. Signaturen kontrolleras mot
       SUPublicEDKey i project.yml (eller --public-key) innan något skrivs.
 
-Kräver paketet `cryptography` för `add`.
+  appcast.py verify APPCAST --archive ZIP --url URL --version BUILD --short-version VERSION
+      Körs efter publiceringen på filen så som den ligger publicerad: appcasten ska ha en
+      post med rätt version, adress, storlek och signatur. Annars avbryts bygget.
+
+Kräver paketet `cryptography` för `add` och `verify`.
 """
 from __future__ import annotations
 
@@ -85,6 +89,29 @@ def sign(archive: bytes, private_key_b64: str, public_key_b64: str) -> str:
         sys.exit("SPARKLE_PRIVATE_KEY hör inte ihop med SUPublicEDKey i project.yml.")
     Ed25519PublicKey.from_public_bytes(expected).verify(signature, archive)
     return base64.b64encode(signature).decode()
+
+
+def verify(tree: ET.ElementTree, *, archive: bytes, url: str, version: str, short_version: str, public_key_b64: str) -> None:
+    """Kontrollerar att appcasten pekar på just den publicerade filen: version, adress, storlek och signatur."""
+    from cryptography.exceptions import InvalidSignature
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+
+    found = [i for i in items(tree) if i.findtext(sp("version"), "") == version]
+    if len(found) != 1:
+        sys.exit(f"Appcasten har {len(found)} poster med byggnummer {version}, förväntade 1.")
+    item = found[0]
+    if item.findtext(sp("shortVersionString"), "") != short_version:
+        sys.exit(f"Appcasten anger version {item.findtext(sp('shortVersionString'), '')}, förväntade {short_version}.")
+    enclosure = item.find("enclosure")
+    if enclosure is None or enclosure.get("url") != url:
+        sys.exit(f"Appcasten pekar på {enclosure.get('url') if enclosure is not None else 'ingen fil'}, förväntade {url}.")
+    if enclosure.get("length") != str(len(archive)):
+        sys.exit(f"Appcasten anger storleken {enclosure.get('length')}, filen är {len(archive)} byte.")
+    try:
+        signature = base64.b64decode(enclosure.get(sp("edSignature"), ""))
+        Ed25519PublicKey.from_public_bytes(base64.b64decode(public_key_b64)).verify(signature, archive)
+    except (InvalidSignature, ValueError):
+        sys.exit("Signaturen i appcasten stämmer inte med den publicerade filen.")
 
 
 def markdown_to_html(text: str) -> str:
@@ -198,6 +225,15 @@ def main() -> None:
     p_check.add_argument("appcast", type=Path)
     p_check.add_argument("--version", required=True)
 
+    p_verify = sub.add_parser("verify")
+    p_verify.add_argument("appcast", type=Path)
+    p_verify.add_argument("--archive", type=Path, required=True, help="Filen så som den ligger publicerad")
+    p_verify.add_argument("--url", required=True)
+    p_verify.add_argument("--version", required=True)
+    p_verify.add_argument("--short-version", required=True)
+    p_verify.add_argument("--public-key")
+    p_verify.add_argument("--project", type=Path, default=Path(__file__).resolve().parent.parent / "project.yml")
+
     p_add = sub.add_parser("add")
     p_add.add_argument("appcast", type=Path)
     p_add.add_argument("--archive", type=Path, required=True)
@@ -216,6 +252,18 @@ def main() -> None:
     if args.command == "check":
         check(tree, args.version)
         print(f"Byggnummer {args.version} är OK.")
+        return
+
+    if args.command == "verify":
+        verify(
+            tree,
+            archive=args.archive.read_bytes(),
+            url=args.url,
+            version=args.version,
+            short_version=args.short_version,
+            public_key_b64=args.public_key or public_key_from_project(args.project),
+        )
+        print(f"Appcasten pekar rätt för {args.short_version} ({args.version}).")
         return
 
     private_key = os.environ.get("SPARKLE_PRIVATE_KEY", "")
