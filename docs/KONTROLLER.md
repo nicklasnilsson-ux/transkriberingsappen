@@ -57,6 +57,7 @@ först när alla kontroller är gröna på exakt de filer som laddades upp.
 | En ny version saknar beskrivning | Versionen måste ha ett avsnitt i `CHANGELOG.md`, redan i PR:en som höjer den | `changelog.py check` |
 | Appcasten (som får installerade appar att uppdatera sig) kontrollerades bara när den skrevs, inte mot den publicerade filen (0.6.1 verifierades för hand) | Efter publiceringen laddas zip:en ner från releasen och appcastens post kontrolleras: version, adress, storlek och EdDSA-signatur | `appcast.py verify`, `test_appcast.py`, `build.yml` *Kontrollera appcasten* |
 | Exporten för analys saknade förklaring av ⚠, roller och platshållare, så en AI som läser filen kunde tolka dem fel | Förklaringen är på som standard i exportdialogen; enhetstest: den innehåller bara det som gäller filen (⚠, roller, platshållare) och står före första repliken | `AnalysisExporterTests.testGuideExplainsOnlyWhatAppliesToTheFile` |
+| Landningssidan publicerar interna dokument (Pages från docs/), får en död nedladdningsknapp eller pekar på fel repo efter ett namnbyte | Bara site/ publiceras. Sidan kontrolleras före publicering: lokala länkar och ankare finns, knappen fungerar utan JavaScript, inga skript eller typsnitt från andra tjänster, alla länkar till repot stämmer med SUFeedURL i project.yml, bilder har alt-text, bara filtyper för en statisk sida | `check_site.py`, `pages.yml` |
 
 ## Vad CI inte kan kontrollera
 
@@ -65,4 +66,3 @@ först när alla kontroller är gröna på exakt de filer som laddades upp.
   ett Developer ID; då kräver röktestet att Gatekeeper godkänner appen.
 - **Mikrofon, datorljud och riktiga möten.** Behörighetsdialoger och inspelning går inte att
   testa på CI-maskinerna. Det ingår i checklistan i [RELEASE.md](RELEASE.md).
-| Landningssidan kunde publicera interna dokument (Pages från docs/), få en död nedladdningsknapp eller peka på fel repo efter ett namnbyte | – | Bara site/ publiceras. Sidan kontrolleras före publicering: lokala länkar och ankare finns, knappen fungerar utan JavaScript, inga skript eller typsnitt från andra tjänster, alla länkar till repot stämmer med SUFeedURL i project.yml, bilder har alt-text, bara filtyper för en statisk sida | `check_site.py`, `pages.yml` |
