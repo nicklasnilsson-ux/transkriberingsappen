@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Transkribera – transkribera svenska intervjuer lokalt på din Mac</title>
-<meta name="description" content="Gratis Mac-app som transkriberar svenska intervjuer och möten helt lokalt med KB-Whisper. Talare, anonymisering och export för analys. Ljudet lämnar aldrig datorn.">
+<meta name="description" content="Gratis Mac-app som transkriberar svenska intervjuer och möten helt lokalt med modeller tränade på svenska. Talare, mötesinspelning, anonymisering och export för analys. Ljudet lämnar aldrig datorn.">
 <meta property="og:title" content="Transkribera – svenska intervjuer, transkriberade lokalt på din Mac">
-<meta property="og:description" content="Gratis och öppen källkod. KB-Whisper, talare, anonymisering och export för analys. Ljudet lämnar aldrig datorn.">
+<meta property="og:description" content="Gratis och öppen källkod. Svenska modeller, talare, mötesinspelning, anonymisering och export för analys. Ljudet lämnar aldrig datorn.">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="sv_SE">
 <meta property="og:image" content="icon-512.png">
@@ -169,7 +169,7 @@
     <div class="wrap">
       <div>
         <h1>Transkribera svenska intervjuer på din Mac. Ljudet lämnar aldrig datorn.</h1>
-        <p class="lead">Släpp in en inspelning och få text med talare och tidskoder, gjord helt lokalt med KB-Whisper från Kungliga biblioteket. Gratis och öppen källkod.</p>
+        <p class="lead">Släpp in en inspelning och få text med talare och tidskoder, gjord helt lokalt med modeller tränade på svenska. Du kan också spela in möten direkt i appen. Gratis och öppen källkod.</p>
         <div class="cta">
           <a class="button" id="ladda-ner"
              href="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/latest">
@@ -190,16 +190,20 @@
       <p class="intro">För dig som spelar in intervjuer, samtal eller möten och behöver en text att läsa, citera eller analysera, utan att skicka inspelningen till en molntjänst.</p>
       <ul class="grid">
         <li class="card">
-          <h3>Helt lokalt</h3>
-          <p>Transkriberingen sker på din Mac. Ingen inloggning, inget konto och ingen uppladdning av ljud eller text.</p>
-        </li>
-        <li class="card">
-          <h3>Bra på svenska</h3>
-          <p>KB-Whisper från Kungliga biblioteket är tränad på svenska och gör betydligt färre fel än vanliga Whisper. Pianissimo från Klang finns som snabbare alternativ.</p>
+          <h3>Rätt modell för jobbet</h3>
+          <p>Pianissimo från Klang är förstavalet för svenska och snabbast. KB Large ordagrann från Kungliga biblioteket tar du när varje ord måste stämma, som citat, namn och facktermer. Large v3 Turbo för andra språk.</p>
         </li>
         <li class="card">
           <h3>Vem sa vad</h3>
           <p>Appen skiljer på talarna, och du kan ge dem roller som Intervjuare och Kund. Osäkra talarbyten markeras med ⚠ så att du vet var du ska lyssna.</p>
+        </li>
+        <li class="card">
+          <h3>Spela in möten</h3>
+          <p>Spela in ett digitalt möte, t.ex. i Teams eller Google Meet, direkt i appen: datorns ljud och, från macOS 15, även din mikrofon. Texten kommer när du stoppar. Berätta för deltagarna att du spelar in.</p>
+        </li>
+        <li class="card">
+          <h3>Lyssna och rätta</h3>
+          <p>Klicka på en mening så spelas den upp. Redigera texten direkt och sök i den.</p>
         </li>
         <li class="card">
           <h3>Anonymisering</h3>
@@ -208,10 +212,6 @@
         <li class="card">
           <h3>Export för analys</h3>
           <p>En Markdown-fil per intervju, ett stycke per talarbyte med tidskod, redo att tematisera. Även text, SRT, WebVTT och JSON.</p>
-        </li>
-        <li class="card">
-          <h3>Lyssna och rätta</h3>
-          <p>Klicka på en mening så spelas den upp. Redigera texten direkt, sök i den och spela in möten från datorns ljud.</p>
         </li>
       </ul>
     </div>
@@ -257,6 +257,8 @@
       <dl class="facts">
         <dt>Ljud och text</dt>
         <dd>Stannar på din Mac. Appen skickar dem ingenstans.</dd>
+        <dt>Konto</dt>
+        <dd>Behövs inte. Ingen inloggning och ingen registrering.</dd>
         <dt>Nätverk</dt>
         <dd>Används bara för att ladda ner modeller första gången och för att söka efter uppdateringar.</dd>
         <dt>Den här sidan</dt>
@@ -278,7 +280,7 @@
         <dt>System</dt>
         <dd>macOS 14 Sonoma eller senare.</dd>
         <dt>Utrymme</dt>
-        <dd>Appen är liten. Varje modell tar mellan 75 MB och 1,6 GB beroende på vilken du väljer.</dd>
+        <dd>Appen är liten. Varje modell tar mellan 650 MB och 1,6 GB och laddas ner första gången du använder den.</dd>
       </dl>
       <p class="meta"><a href="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases">Alla versioner och vad som ändrats</a></p>
     </div>
@@ -288,7 +290,7 @@
 <footer>
   <div class="wrap">
     <p>Transkribera är öppen källkod under <a href="https://github.com/nicklasnilsson-ux/transkriberingsappen/blob/main/LICENSE">MIT-licensen</a>. <a href="https://github.com/nicklasnilsson-ux/transkriberingsappen">Källkoden finns på GitHub</a>, där du också kan <a href="https://github.com/nicklasnilsson-ux/transkriberingsappen/issues">rapportera fel</a>.</p>
-    <p>Bygger på WhisperKit och SpeakerKit (Argmax), KB-Whisper (KBLab, Kungliga biblioteket), Pianissimo (Klang, CC BY 4.0) och FluidAudio. Transkribera är inte knutet till någon av dem.</p>
+    <p>Bygger på Pianissimo (Klang, CC BY 4.0), KB-Whisper (KBLab, Kungliga biblioteket), Whisper (OpenAI), WhisperKit och SpeakerKit (Argmax) och FluidAudio. Transkribera är inte knutet till någon av dem.</p>
   </div>
 </footer>
 
