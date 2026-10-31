@@ -126,6 +126,8 @@ struct TranscriptionOptions {
     var levelVolume = true
     /// Talaridentifiering med Nemotron 3 Diarization (FluidAudio), byggd för korta repliker. Används när antal talare är automatiskt, annars SpeakerKit.
     var sortformerDiarization = true
+    /// Taligenkänningens spärrar och gränser. Ändras bara av Testlabbet.
+    var tuning = DecoderTuning.production
 
     var appliesLevelVolume: Bool { levelVolume && !model.usesParakeet }
 
@@ -135,6 +137,7 @@ struct TranscriptionOptions {
         var extras: [String] = []
         if carefulSeams, model.usesParakeet { extras.append("noggranna skarvar") }
         if appliesLevelVolume { extras.append("jämnad volym") }
+        extras += tuning.differences
         if identifySpeakers {
             if sortformerDiarization, speakerCount.exact == nil { extras.append("Nemotron 3") }
         }

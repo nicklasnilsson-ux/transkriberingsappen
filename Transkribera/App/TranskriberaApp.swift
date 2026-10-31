@@ -7,6 +7,7 @@ struct TranskriberaApp: App {
     @State private var appState: AppState
     @State private var queue: TranscriptionQueue
     @State private var recorder = MeetingRecorder()
+    @State private var lab = TestLab()
     @StateObject private var updater = AppUpdater()
 
     init() {
@@ -43,13 +44,34 @@ struct TranskriberaApp: App {
                 Button("Exportera för analys…") { appState.isAnalysisExportPresented = true }
                     .keyboardShortcut("e", modifiers: [.command, .shift])
             }
+            CommandGroup(after: .help) {
+                TestLabMenuButton()
+            }
         }
+
+        Window("Testlabb", id: TestLabMenuButton.windowID) {
+            TestLabView()
+                .environment(queue)
+                .environment(lab)
+        }
+        .modelContainer(container)
 
         Settings {
             SettingsView()
                 .environment(queue)
                 .environmentObject(updater)
         }
+    }
+}
+
+/// Menyvalet "Testlabb…" i Hjälp-menyn. Ett verktyg för att jämföra inställningar,
+/// inte för vanlig användning, därför inte i Arkiv-menyn.
+private struct TestLabMenuButton: View {
+    static let windowID = "testlab"
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        Button("Testlabb…") { openWindow(id: Self.windowID) }
     }
 }
 
