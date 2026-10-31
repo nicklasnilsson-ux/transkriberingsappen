@@ -4,7 +4,10 @@ on:
   push:
     branches: [main]
     tags: ["v*"]
+    paths-ignore: ["site/**", "scripts/check_site.py", ".github/workflows/pages.yml"]
   pull_request:
+    # Ändringar som bara rör landningssidan bygger inte appen; sidan har egen workflow (pages.yml).
+    paths-ignore: ["site/**", "scripts/check_site.py", ".github/workflows/pages.yml"]
   workflow_dispatch:
     inputs:
       channel:
