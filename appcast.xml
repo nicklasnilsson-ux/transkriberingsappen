@@ -6,6 +6,23 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.6.0</title>
+      <pubDate>Sat, 31 Oct 2026 08:09:16 GMT</pubDate>
+      <sparkle:version>17</sparkle:version>
+      <sparkle:shortVersionString>0.6.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.6.0</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Nytt&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Testlabb under Hjälp → Testlabb…, för att jämföra inställningar. Välj en inspelning så körs den med KB Large ordagrann och Pianissimo med ett antal olika inställningar efter varandra (t.ex. utan spärrarna som kastar text modellen är osäker på). Varje körning sparas som en textfil och en logg i en mapp. Vanliga transkriberingar påverkas inte; nya filer väntar i kön medan labbet kör.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Ändrat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Valet &amp;quot;Hitta fler luckor med Pianissimo&amp;quot; är borta. I en testintervju gav det 14,5 % ordfel mot 14,7 % utan, och två körningar med samma inställningar skiljer sig lika mycket, så det syns ingen vinst. Det krävde också en extra modell och längre tid.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.6.0/Transkribera-v0.6.0.zip" length="13996089" type="application/octet-stream" sparkle:edSignature="qujSMhLbE7lB+QoWHZNAeNSRFig3UT/0hl6pPjqSTQRqf9L07bOcq1nW//tN1lZseNnPrAkz09dd2TlASgJpAg==" />
+    </item>
+    <item>
       <title>Version 0.5.9</title>
       <pubDate>Fri, 30 Oct 2026 13:48:12 GMT</pubDate>
       <sparkle:version>16</sparkle:version>
