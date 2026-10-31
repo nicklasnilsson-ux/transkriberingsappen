@@ -65,3 +65,4 @@ först när alla kontroller är gröna på exakt de filer som laddades upp.
   ett Developer ID; då kräver röktestet att Gatekeeper godkänner appen.
 - **Mikrofon, datorljud och riktiga möten.** Behörighetsdialoger och inspelning går inte att
   testa på CI-maskinerna. Det ingår i checklistan i [RELEASE.md](RELEASE.md).
+| Landningssidan kunde publicera interna dokument (Pages från docs/), få en död nedladdningsknapp eller peka på fel repo efter ett namnbyte | – | Bara site/ publiceras. Sidan kontrolleras före publicering: lokala länkar och ankare finns, knappen fungerar utan JavaScript, inga skript eller typsnitt från andra tjänster, alla länkar till repot stämmer med SUFeedURL i project.yml, bilder har alt-text, bara filtyper för en statisk sida | `check_site.py`, `pages.yml` |
