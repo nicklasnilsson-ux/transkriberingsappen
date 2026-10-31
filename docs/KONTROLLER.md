@@ -56,6 +56,7 @@ först när alla kontroller är gröna på exakt de filer som laddades upp.
 | Testlabbet ändrar taligenkänningens inställningar per körning, och ett fel där skulle tyst ändra alla vanliga transkriberingar | Enhetstest: standardinställningarna är exakt de som appen alltid använt (WhisperKit 1.1.1 och FluidAudio 0.17.7, tre omkörningar, ingen ledtråd); labbets körlista har unika filnamn och varje försök ändrar en sak; loggen innehåller ingen text | `DecoderTuningTests`, `TestLabPlanTests`, `TestLabReportTests` |
 | En ny version saknar beskrivning | Versionen måste ha ett avsnitt i `CHANGELOG.md`, redan i PR:en som höjer den | `changelog.py check` |
 | Appcasten (som får installerade appar att uppdatera sig) kontrollerades bara när den skrevs, inte mot den publicerade filen (0.6.1 verifierades för hand) | Efter publiceringen laddas zip:en ner från releasen och appcastens post kontrolleras: version, adress, storlek och EdDSA-signatur | `appcast.py verify`, `test_appcast.py`, `build.yml` *Kontrollera appcasten* |
+| Exporten för analys saknade förklaring av ⚠, roller och platshållare, så en AI som läser filen kunde tolka dem fel | Förklaringen är på som standard i exportdialogen; enhetstest: den innehåller bara det som gäller filen (⚠, roller, platshållare) och står före första repliken | `AnalysisExporterTests.testGuideExplainsOnlyWhatAppliesToTheFile` |
 
 ## Vad CI inte kan kontrollera
 

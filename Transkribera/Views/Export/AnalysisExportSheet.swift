@@ -10,6 +10,7 @@ struct AnalysisExportSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \Transcript.createdAt, order: .reverse) private var transcripts: [Transcript]
     @State private var selected: Set<UUID>
+    @AppStorage("analysisExportGuide") private var includeGuide = true
 
     init(preselected: Transcript?) {
         _selected = State(initialValue: preselected.map { [$0.id] } ?? [])
@@ -50,6 +51,9 @@ struct AnalysisExportSheet: View {
                 .listStyle(.bordered)
             }
 
+            Toggle("Förklara filen överst (”Om den här filen”)", isOn: $includeGuide)
+                .help("Kort text om vad ⚠, roller och platshållare betyder och vad en automatisk transkribering kan missa, så att den som läser filen, t.ex. en AI, förstår den.")
+
             HStack {
                 Button("Markera alla") { selected = Set(exportable.map(\.id)) }
                     .disabled(exportable.isEmpty || chosen.count == exportable.count)
@@ -62,7 +66,7 @@ struct AnalysisExportSheet: View {
             }
         }
         .padding(20)
-        .frame(width: 480, height: 440)
+        .frame(width: 480, height: 470)
     }
 
     private func binding(for transcript: Transcript) -> Binding<Bool> {
@@ -78,7 +82,7 @@ struct AnalysisExportSheet: View {
         let items = chosen
         let names = AnalysisExporter.uniqueFileNames(for: items.map(\.title))
         let files = zip(items, names).map { transcript, name in
-            (name: name, content: AnalysisExporter.markdown(Self.segments(for: transcript), metadata: transcript.metadata))
+            (name: name, content: AnalysisExporter.markdown(Self.segments(for: transcript), metadata: transcript.metadata, includeGuide: includeGuide))
         }
 
         if files.count == 1, let file = files.first {

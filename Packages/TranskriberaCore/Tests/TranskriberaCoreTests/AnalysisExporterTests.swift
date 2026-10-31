@@ -114,6 +114,33 @@ final class AnalysisExporterTests: XCTestCase {
         XCTAssertEqual(AnalysisExporter.paragraphRanges([]), [])
     }
 
+    func testGuideExplainsOnlyWhatAppliesToTheFile() {
+        let plain = [SegmentData(start: 0, end: 2, text: "Hej på dig.", speaker: "Talare 1")]
+        let without = AnalysisExporter.markdown(plain, metadata: metadata, timeZone: utc)
+        XCTAssertFalse(without.contains(AnalysisExporter.guideHeading), "Förklaringen är av som standard i biblioteket")
+
+        let simple = AnalysisExporter.markdown(plain, metadata: metadata, timeZone: utc, includeGuide: true)
+        XCTAssertTrue(simple.contains("## \(AnalysisExporter.guideHeading)"))
+        XCTAssertTrue(simple.contains("automatisk transkribering"))
+        XCTAssertFalse(simple.contains("osäkert vem som sa just den repliken"))
+        XCTAssertFalse(simple.contains("platshållare"))
+        XCTAssertFalse(simple.contains("är roller"))
+
+        let rich = [
+            SegmentData(start: 0, end: 2, text: "Hej [PERSON 1].", speaker: "Intervjuare"),
+            SegmentData(start: 2, end: 4, text: "Hej.", speaker: "Kund 1", uncertainSpeaker: true)
+        ]
+        let full = AnalysisExporter.markdown(rich, metadata: metadata, timeZone: utc, includeGuide: true)
+        XCTAssertTrue(full.contains("platshållare"))
+        XCTAssertTrue(full.contains("är roller"))
+        // Förklaringen står före första replikens tidskod.
+        let guideAt = full.range(of: AnalysisExporter.guideHeading)?.lowerBound
+        let firstLineAt = full.range(of: "[00:00]")?.lowerBound
+        XCTAssertNotNil(guideAt)
+        XCTAssertNotNil(firstLineAt)
+        if let guideAt, let firstLineAt { XCTAssertLessThan(guideAt, firstLineAt) }
+    }
+
     func testFileNames() {
         XCTAssertEqual(AnalysisExporter.fileName(for: "Test 1: P01/P02"), "Test 1- P01-P02.md")
         XCTAssertEqual(AnalysisExporter.fileName(for: "  "), "Transkribering.md")

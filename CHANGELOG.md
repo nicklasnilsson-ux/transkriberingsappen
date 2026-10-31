@@ -6,6 +6,11 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.6.2] – 2026-10-31
+
+### Nytt
+- Exporten för analys börjar med ett avsnitt, "Om den här filen", som förklarar vad ⚠, platshållare som [PERSON 1] och rollerna Intervjuare och Kund betyder, och att en automatisk transkribering kan missa småord och ”eh”/”mm”, så att den som läser filen (t.ex. en AI) förstår den. Bara det som gäller filen tas med. Du kan stänga av det i exportdialogen.
+
 ## [0.6.1] – 2026-10-31
 
 ### Ändrat
