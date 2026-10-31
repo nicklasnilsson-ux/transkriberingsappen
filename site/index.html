@@ -14,30 +14,37 @@
 <meta name="referrer" content="no-referrer">
 <link rel="icon" type="image/png" href="favicon.png">
 <style>
+  /* Färgerna följer appens palett (zinc + indigo #6366F1). Mörkt läge använder exakt
+     bakgrund #09090B, kort #18181B och linjer #27272A. Knappar och länkar har en
+     mörkare/ljusare indigo så att texten klarar WCAG AA (#6366F1 med vit text ger 4,47:1). */
   :root {
     --bg: #ffffff;
-    --bg-soft: #f4f6fb;
-    --text: #14182b;
-    --muted: #4a5068;
-    --line: #dde2ee;
-    --accent: #2f4fd0;
-    --accent-hover: #2440b3;
+    --bg-soft: #fafafa;
+    --card: #ffffff;
+    --text: #09090b;
+    --muted: #52525b;
+    --line: #e4e4e7;
+    --accent: #4f46e5;
+    --accent-hover: #4338ca;
     --accent-text: #ffffff;
-    --focus: #f0a400;
-    --radius: 14px;
+    --glow: rgba(99, 102, 241, .16);
+    --focus: #f59e0b;
+    --radius: 12px;
     --max: 68rem;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #10131f;
-      --bg-soft: #181c2c;
-      --text: #eef0f7;
-      --muted: #b4b9cc;
-      --line: #2b3048;
-      --accent: #7f9cff;
-      --accent-hover: #a3b8ff;
-      --accent-text: #0b0e1a;
-      --focus: #ffc94a;
+      --bg: #09090b;
+      --bg-soft: #09090b;
+      --card: #18181b;
+      --text: #fafafa;
+      --muted: #a1a1aa;
+      --line: #27272a;
+      --accent: #818cf8;
+      --accent-hover: #a5b4fc;
+      --accent-text: #09090b;
+      --glow: rgba(99, 102, 241, .22);
+      --focus: #fbbf24;
     }
   }
   * { box-sizing: border-box; }
@@ -69,7 +76,7 @@
   nav a:hover { color: var(--text); text-decoration: underline; }
   @media (max-width: 40rem) { nav { display: none; } }
 
-  .hero { padding: 4.5rem 0 3.5rem; }
+  .hero { padding: 4.5rem 0 3.5rem; background: radial-gradient(60rem 26rem at 78% 40%, var(--glow), transparent 70%); }
   .hero .wrap { display: grid; grid-template-columns: 1fr auto; gap: 3rem; align-items: center; }
   @media (max-width: 52rem) {
     .hero .wrap { grid-template-columns: 1fr; }
@@ -77,7 +84,7 @@
   }
   .hero h1 { font-size: clamp(2rem, 4.2vw, 3.1rem); line-height: 1.12; letter-spacing: -0.02em; margin: 0 0 1rem; }
   .lead { font-size: 1.2rem; color: var(--muted); margin: 0 0 2rem; max-width: 38rem; }
-  .hero .icon { width: 220px; height: 220px; }
+  .hero .icon { width: 220px; height: 220px; filter: drop-shadow(0 18px 40px var(--glow)); }
 
   .cta { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1.25rem; }
   .button {
@@ -97,8 +104,8 @@
   .intro { color: var(--muted); margin: 0 0 2rem; max-width: 42rem; }
 
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 1.25rem; list-style: none; margin: 0; padding: 0; }
-  .card { background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem 1.4rem 1.2rem; }
-  section.soft .card { background: var(--bg); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem 1.4rem 1.2rem; }
+  section.soft .card { background: var(--card); }
   .card h3 { font-size: 1.1rem; margin: 0 0 .4rem; }
   .card p { margin: 0; color: var(--muted); }
 
@@ -115,7 +122,7 @@
   ol.steps > li > p { margin: .15rem 0 0; color: var(--muted); }
 
   .note {
-    border-left: 4px solid var(--accent); background: var(--bg-soft);
+    border: 1px solid var(--line); border-left: 4px solid var(--accent); background: var(--card);
     padding: 1rem 1.2rem; border-radius: 0 10px 10px 0; margin: 1.75rem 0 0; max-width: 46rem;
   }
   .note p { margin: 0; }
