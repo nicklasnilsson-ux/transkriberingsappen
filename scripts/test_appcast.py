@@ -85,6 +85,29 @@ class AppcastTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertFalse(self.appcast.exists())
 
+    def verify(self, archive, **overrides):
+        args = {"--url": "https://example.com/0.4.0.zip", "--version": "4", "--short-version": "0.4.0"}
+        args.update(overrides)
+        flat = [x for pair in args.items() for x in pair]
+        return self.run_script("verify", str(self.appcast), "--archive", str(archive), "--public-key", self.public,
+                               *flat, check=False)
+
+    def test_verify_accepts_the_published_file(self):
+        archive, _ = self.add("4", "0.4.0")
+        self.assertEqual(self.verify(archive).returncode, 0)
+
+    def test_verify_rejects_a_changed_file(self):
+        archive, _ = self.add("4", "0.4.0")
+        other = self.dir / "other.zip"
+        other.write_bytes(archive.read_bytes()[:-1] + b"x")
+        self.assertNotEqual(self.verify(other).returncode, 0)
+
+    def test_verify_rejects_missing_wrong_version_and_wrong_url(self):
+        archive, _ = self.add("4", "0.4.0")
+        self.assertNotEqual(self.verify(archive, **{"--version": "5"}).returncode, 0)
+        self.assertNotEqual(self.verify(archive, **{"--short-version": "0.4.1"}).returncode, 0)
+        self.assertNotEqual(self.verify(archive, **{"--url": "https://example.com/x.zip"}).returncode, 0)
+
     def test_release_notes_become_html(self):
         self.add("4", "0.4.0", notes="## What's Changed\n* Lägg till <uppdateringar> by @x in https://github.com/a/b/pull/10\n")
         description = self.items()[0].findtext("description")
