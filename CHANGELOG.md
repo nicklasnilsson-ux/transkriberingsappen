@@ -6,6 +6,8 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.6.0] – 2026-10-31
+
 ### Nytt
 - Testlabb under Hjälp → Testlabb…, för att jämföra inställningar. Välj en inspelning så körs den med KB Large ordagrann och Pianissimo med ett antal olika inställningar efter varandra (t.ex. utan spärrarna som kastar text modellen är osäker på). Varje körning sparas som en textfil och en logg i en mapp. Vanliga transkriberingar påverkas inte; nya filer väntar i kön medan labbet kör.
 
