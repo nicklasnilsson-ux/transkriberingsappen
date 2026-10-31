@@ -6,6 +6,19 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.6.1</title>
+      <pubDate>Sat, 31 Oct 2026 09:46:51 GMT</pubDate>
+      <sparkle:version>18</sparkle:version>
+      <sparkle:shortVersionString>0.6.1</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.6.1</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Ändrat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Testlabbet har en ny körlista. Första omgången visade att spärrarna, fönsterklippet och omkörningarna inte spelar någon roll, och att KB-Whisper inte skriver ut &amp;quot;eh&amp;quot; och &amp;quot;mm&amp;quot; alls (facit har ungefär 60 på 18 minuter). Nu provas en ledtråd med fyllnadsord, som lista och som löpande text, med och utan i luckkontrollen, plus Pianissimo som jämförelse. Vanliga transkriberingar påverkas inte.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.6.1/Transkribera-v0.6.1.zip" length="14003621" type="application/octet-stream" sparkle:edSignature="yx1fkSDW98MYPOsy0bsbMXA43kxYvU1DPKBKnb22Jp3K+Z20HFAGhaSiqhbxRkQk4PryN5/ako2F1660bseCCQ==" />
+    </item>
+    <item>
       <title>Version 0.6.0</title>
       <pubDate>Sat, 31 Oct 2026 08:09:16 GMT</pubDate>
       <sparkle:version>17</sparkle:version>
