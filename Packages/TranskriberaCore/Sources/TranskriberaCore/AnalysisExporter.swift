@@ -22,10 +22,40 @@ public enum AnalysisExporter {
     /// Står efter talarens namn när det är osäkert vem som sa repliken.
     public static let uncertainMark = "⚠"
 
+    /// Rubriken över förklaringen av filen.
+    public static let guideHeading = "Om den här filen"
+
+    /// Förklarar filen för den som läser den, t.ex. en AI som ska analysera intervjun:
+    /// vad ⚠, platshållare och roller betyder och vad en automatisk transkribering kan missa.
+    /// Bara det som gäller filen tas med, och texten är en beskrivning, inga order.
+    static func guide(speakers: [String], hasUncertainty: Bool, isAnonymized: Bool) -> [String] {
+        var lines = [
+            "Texten är en automatisk transkribering och kan innehålla hörfel, särskilt i namn, facktermer och korta ord.",
+            "Enstaka småord och fyllnadsljud som ”eh” och ”mm” kan saknas, och ett talarbyte kan ligga några ord fel.",
+            "Tidskoden i början av varje stycke är när stycket börjar (minuter:sekunder)."
+        ]
+        if hasUncertainty {
+            lines.append("\(uncertainMark) betyder att det är osäkert vem som sa just den repliken (eller delen efter märket). Det säger inget om hur säker texten är. Märkta delar kan höra till grannens replik.")
+        }
+        if speakers.contains(where: { $0.hasPrefix("Intervjuare") || $0.hasPrefix("Kund") }) {
+            lines.append("Intervjuare och Kund 1, Kund 2 … är roller, inte namn. Rollerna har bestämts av programmet och användaren.")
+        }
+        if isAnonymized {
+            lines.append("Namn och andra uppgifter som kan identifiera någon är ersatta med platshållare som [PERSON 1] eller [PLATS 1]. Samma nummer är samma person eller plats i hela filen. Platshållarna är inga ord i originalet.")
+        }
+        return lines
+    }
+
+    /// Sant om texten innehåller platshållare från anonymiseringen, t.ex. "[PERSON 1]".
+    static func isAnonymized(_ segments: [SegmentData]) -> Bool {
+        segments.contains { $0.text.range(of: #"\[[A-ZÅÄÖ]+( \d+)?\]"#, options: .regularExpression) != nil }
+    }
+
     public static func markdown(
         _ segments: [SegmentData],
         metadata: TranscriptMetadata,
-        timeZone: TimeZone = .current
+        timeZone: TimeZone = .current,
+        includeGuide: Bool = false
     ) -> String {
         let segments = segments.filter { !$0.text.trimmed.isEmpty }
         let paragraphs = paragraphs(segments)
@@ -45,7 +75,13 @@ public enum AnalysisExporter {
         if paragraphs.contains(where: { ($0.uncertain || $0.hasUncertainPart) && $0.speaker != nil }) {
             header.append("- \(uncertainMark) = osäkert vem som sa repliken")
         }
-        out += header.joined(separator: "\n") + "\n\n---\n\n"
+        out += header.joined(separator: "\n") + "\n\n"
+        if includeGuide {
+            let uncertain = paragraphs.contains { ($0.uncertain || $0.hasUncertainPart) && $0.speaker != nil }
+            let lines = guide(speakers: speakers, hasUncertainty: uncertain, isAnonymized: isAnonymized(segments))
+            out += "## \(guideHeading)\n\n" + lines.map { "- \($0)" }.joined(separator: "\n") + "\n\n"
+        }
+        out += "---\n\n"
 
         out += paragraphs.map { paragraph in
             var line = "[\(TimeFormatting.short(paragraph.start))] "
