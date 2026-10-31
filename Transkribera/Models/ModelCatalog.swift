@@ -1,8 +1,9 @@
 import Foundation
 
-/// Modellerna som appen erbjuder, i den ordning de visas i väljaren: först KBLab:s
-/// svenska Whisper-modeller och Klangs svenska Pianissimo, sedan OpenAI:s flerspråkiga.
-/// Alla utom Pianissimo körs med WhisperKit; Pianissimo körs med FluidAudio.
+/// Alla modeller som koden kan köra. Väljaren visar bara `offered`: Pianissimo, KB Large
+/// ordagrann och Large v3 Turbo. De övriga är dolda men kvar, så att redan nedladdade
+/// modeller och koden fungerar. Alla utom Pianissimo körs med WhisperKit; Pianissimo
+/// körs med FluidAudio.
 enum WhisperModel: String, CaseIterable, Identifiable, Codable {
     case kbBase = "kb-whisper-base"
     case kbSmall = "kb-whisper-small"
@@ -18,7 +19,7 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
     case largeV3TurboCompressed = "large-v3-v20240930_626MB"
 
     enum Family: String, CaseIterable, Identifiable {
-        case kb, klang, openAI
+        case klang, kb, openAI
 
         var id: String { rawValue }
 
@@ -33,9 +34,28 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
         var models: [WhisperModel] { WhisperModel.offered.filter { $0.family == self } }
     }
 
-    /// Modellerna som visas i väljaren. Dölj en modell här tills dess nedladdning är
-    /// publicerad; scripts/check-models.sh stoppar bygget om en visad modell saknas.
-    static let offered: [WhisperModel] = allCases
+    /// Modellerna som visas i väljaren, i visningsordning. Pianissimo först (snabbast och
+    /// standard), KB Large ordagrann när varje ord måste stämma, Large v3 Turbo för andra
+    /// språk. Dölj en modell här tills dess nedladdning är publicerad;
+    /// scripts/check-models.sh stoppar bygget om en visad modell saknas.
+    static let offered: [WhisperModel] = [.pianissimo, .kbLargeStrict, .largeV3Turbo]
+
+    /// Sant för modeller som finns kvar i koden men inte visas i väljaren.
+    var isHidden: Bool { !Self.offered.contains(self) }
+
+    /// Modellen en sparad inställning ska ge: den sparade om den visas i väljaren,
+    /// annars standardmodellen (okänt värde, eller en dold modell från en äldre version).
+    static func resolved(_ raw: String?) -> WhisperModel {
+        guard let raw, let model = WhisperModel(rawValue: raw), offered.contains(model) else { return .default }
+        return model
+    }
+
+    /// Den dolda modellen en sparad inställning pekar på, om någon. Används för att
+    /// berätta att inställningen har bytts mot standardmodellen.
+    static func hiddenModel(_ raw: String?) -> WhisperModel? {
+        guard let raw, let model = WhisperModel(rawValue: raw), model.isHidden else { return nil }
+        return model
+    }
 
     /// Var modellen laddas ner ifrån.
     enum Source {
@@ -170,9 +190,9 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
         case .kbMediumStrict:
             return "Som Medium, men skriver mer ordagrant och stryker mindre. Bra för intervjuer om datorn har för lite minne för Large."
         case .kbLargeStrict:
-            return "Som Large, men skriver mer ordagrant och stryker mindre. Bäst för intervjuer där du vill citera exakt vad som sades."
+            return "Välj den när varje ord måste stämma, t.ex. för citat, namn och facktermer. Skriver ordagrant, men är långsammare och behöver mer minne."
         case .pianissimo:
-            return "Svensk modell från Klang som inte bygger på Whisper. Ungefär lika träffsäker som KB Medium men många gånger snabbare, även på långa inspelningar. Namn i ordlistan rättas i efterhand."
+            return "Snabbast och ger en komplett text. Välj den till de flesta svenska intervjuer och möten, även långa. Namn i ordlistan rättas i efterhand."
         case .tiny:
             return "Minsta modellen, bra för att snabbt testa appen. Gör många fel på svenska."
         case .base:
@@ -180,7 +200,7 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
         case .small:
             return "Bra balans mellan fart och kvalitet för engelska och andra stora språk."
         case .largeV3Turbo:
-            return "Bästa valet för andra språk än svenska och för blandade språk. Snabb för sin storlek."
+            return "För andra språk än svenska och för blandade språk. Snabb för sin storlek."
         case .largeV3TurboCompressed:
             return "Samma som Large v3 Turbo men komprimerad: mindre nedladdning och minne, nästan lika bra."
         }
@@ -203,7 +223,7 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
     var memoryWarning: String? {
         let installedGB = Int(ProcessInfo.processInfo.physicalMemory / 1_073_741_824)
         guard installedGB < minimumMemoryGB else { return nil }
-        return "Din Mac har \(installedGB) GB minne. Modellen kan bli seg, så prova KB Medium eller Small."
+        return "Din Mac har \(installedGB) GB minne. Modellen kan bli seg, så prova Pianissimo."
     }
 
     var isRecommended: Bool { self == .default }
@@ -214,7 +234,7 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
     /// Sant för Pianissimo, som körs med FluidAudio i stället för WhisperKit.
     var usesParakeet: Bool { family == .klang }
 
-    static let `default`: WhisperModel = .kbSmall
+    static let `default`: WhisperModel = .pianissimo
 }
 
 /// Språk som visas i språkväljaren. Whisper stöder fler – lägg till vid behov.

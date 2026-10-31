@@ -33,7 +33,7 @@ private struct TranscriptionSettingsView: View {
     @AppStorage(SettingsKey.levelVolume) private var levelVolume = true
     @AppStorage(SettingsKey.model) private var modelRaw = WhisperModel.default.rawValue
 
-    private var usesParakeet: Bool { WhisperModel(rawValue: modelRaw)?.usesParakeet ?? false }
+    private var usesParakeet: Bool { WhisperModel.resolved(modelRaw).usesParakeet }
 
     var body: some View {
         Form {
@@ -201,7 +201,7 @@ private struct ModelSettingsView: View {
                         }
                     }
             } footer: {
-                Text("KB-modellerna är bäst på svenska. Välj en OpenAI-modell för andra språk. Modellen laddas ner automatiskt första gången den används.")
+                Text("Pianissimo är snabbast och bäst som förstaval för svenska. Välj Large v3 Turbo för andra språk. Modellen laddas ner automatiskt första gången den används.")
                     .foregroundStyle(.secondary)
             }
 

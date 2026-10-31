@@ -8,13 +8,17 @@ struct ModelPicker: View {
     @State private var isPresented = false
 
     var body: some View {
-        let current = WhisperModel(rawValue: selection) ?? .default
+        let current = WhisperModel.resolved(selection)
+        let replaced = WhisperModel.hiddenModel(selection)
         Button {
             isPresented.toggle()
         } label: {
             HStack(spacing: 6) {
                 Text(current.displayName)
                 Text("· \(current.downloadSize)").foregroundStyle(.secondary)
+                if let replaced {
+                    Text("(ersätter \(replaced.displayName))").foregroundStyle(.orange)
+                }
                 Spacer(minLength: 8)
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.caption)
@@ -22,7 +26,8 @@ struct ModelPicker: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .help("Välj vilken Whisper-modell som ska transkribera")
+        .help(replaced.map { "\($0.displayName) finns inte längre i väljaren, så \(current.displayName) används. Välj en modell här för att spara valet." }
+              ?? "Välj vilken modell som ska transkribera")
         .popover(isPresented: $isPresented, arrowEdge: .bottom) {
             ModelList(selection: current, transcriber: queue.transcriber) { model in
                 selection = model.rawValue
@@ -122,8 +127,8 @@ private struct ModelAdvice: View {
     var body: some View {
         Label {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Pratas det svenska? Välj en KB-modell.").font(.callout.weight(.medium))
-                Text("KB Small räcker för de flesta möten och intervjuer. Välj KB Large när varje ord måste stämma, t.ex. för citat eller dåligt ljud, och du inte har bråttom. Andra språk: välj en OpenAI-modell.")
+                Text("Pratas det svenska? Välj Pianissimo.").font(.callout.weight(.medium))
+                Text("Pianissimo är snabbast och ger en komplett text. Välj KB Large ordagrann när varje ord måste stämma, t.ex. för citat, namn och facktermer. Andra språk än svenska: välj Large v3 Turbo.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -200,20 +205,17 @@ struct ModelGuideView: View {
                 Text("Vilken modell ska jag välja?")
                     .font(.title3.weight(.semibold))
 
-                section("Svenska: välj en KB-modell",
-                        "KB-modellerna kommer från Kungliga biblioteket (KBLab). De bygger på OpenAI:s Whisper men är vidaretränade på över 50 000 timmar svenskt tal, främst undertextad tv och riksdagsdebatter men också dialektinspelningar. Därför gör de mycket färre fel på svenska än OpenAI:s egna modeller.")
-
-                section("Liten modell, bättre resultat",
-                        "Skillnaden är så stor att KB Small, som bara är en sjättedel så stor, gör färre fel på svenska än OpenAI:s största modell Large v3. Mest märks det på vanligt vardagstal och namn.")
-
-                section("Ordagrann eller vanlig",
-                        "De vanliga KB-modellerna skriver som en undertext och stryker ibland upprepningar och småord. De ordagranna varianterna skriver mer exakt vad som sägs. Välj KB Large ordagrann för intervjuer där du vill kunna citera, eller KB Medium ordagrann om datorn har för lite minne.")
-
-                section("Pianissimo: snabbast",
-                        "Pianissimo från Klang bygger inte på Whisper utan på NVIDIA:s Parakeet och är vidaretränad på omkring 50 000 timmar svenskt tal. Den gör ungefär lika få fel som KB Medium men är många gånger snabbare, och sätter själv punkt och stor bokstav. Välj den för långa inspelningar när tiden är viktigare än det sista ordet.")
+                section("Pianissimo: första valet för svenska",
+                        "Pianissimo från Klang bygger inte på Whisper utan på NVIDIA:s Parakeet och är vidaretränad på omkring 50 000 timmar svenskt tal. Den är många gånger snabbare än Whisper-modellerna, även på långa inspelningar, och sätter själv punkt och stor bokstav. I våra jämförelser på riktiga intervjuer låg den nära KB Large på innehållet; skillnaden syns mest i småord och ordlydelse.")
                 Link("Pianissimo av KlangAI, licens CC BY 4.0",
                      destination: URL(string: "https://huggingface.co/KlangAI/pianissimo-sv")!)
                     .font(.caption)
+
+                section("KB Large ordagrann: när varje ord måste stämma",
+                        "KB-modellerna kommer från Kungliga biblioteket (KBLab) och är vidaretränade på över 50 000 timmar svenskt tal. Den ordagranna varianten skriver mer exakt vad som sägs och stryker mindre. Välj den för citat, namn och facktermer, när du kan vänta längre och datorn har minst 16 GB minne.")
+
+                section("Andra språk: Large v3 Turbo",
+                        "Pianissimo och KB-modellen är tränade för svenska och blir sämre på andra språk. Pratas det engelska eller blandade språk, välj Large v3 Turbo.")
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Fel per 100 ord på svenska").font(.headline)
@@ -243,12 +245,6 @@ struct ModelGuideView: View {
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-
-                section("Vilken KB-modell?",
-                        "KB Small räcker för de flesta möten och intervjuer, särskilt om du ändå läser igenom texten. KB Large gör ungefär en fjärdedel färre fel, märks mest på namn, facktermer, dialekter och dåligt ljud, men tar 3–5 gånger så lång tid och behöver mer minne. KB Medium är bara lite bättre än Small, så den passar mest om datorn har för lite minne för Large. KB Base är snabbast och duger för utkast.")
-
-                section("Andra språk",
-                        "KB-modellerna är tränade för svenska och blir sämre på andra språk. Pratas det engelska eller blandade språk, välj Large v3 Turbo eller dess komprimerade version.")
 
                 ModelSourceNote()
             }

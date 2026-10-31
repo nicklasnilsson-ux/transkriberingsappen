@@ -81,7 +81,7 @@ struct QuickSettingsView: View {
 
     var body: some View {
         let transcriber = queue.transcriber
-        let model = WhisperModel(rawValue: modelRaw) ?? .default
+        let model = WhisperModel.resolved(modelRaw)
 
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline) {
