@@ -6,6 +6,11 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.6.1] – 2026-10-31
+
+### Ändrat
+- Testlabbet har en ny körlista. Första omgången visade att spärrarna, fönsterklippet och omkörningarna inte spelar någon roll, och att KB-Whisper inte skriver ut "eh" och "mm" alls (facit har ungefär 60 på 18 minuter). Nu provas en ledtråd med fyllnadsord, som lista och som löpande text, med och utan i luckkontrollen, plus Pianissimo som jämförelse. Vanliga transkriberingar påverkas inte.
+
 ## [0.6.0] – 2026-10-31
 
 ### Nytt

@@ -14,8 +14,18 @@ final class DecoderTuningTests: XCTestCase {
         XCTAssertTrue(tuning.repairsGaps)
         XCTAssertEqual(tuning.seamGapRepairMinGapSeconds, 1.5)
         XCTAssertEqual(tuning.maxTokensPerChunk, 150)
+        XCTAssertNil(tuning.stylePrompt)
+        XCTAssertTrue(tuning.stylePromptInGapCheck)
         XCTAssertEqual(tuning, DecoderTuning())
         XCTAssertEqual(tuning.differences, [])
+    }
+
+    func testStylePromptIsReported() {
+        var tuning = DecoderTuning.production
+        tuning.stylePrompt = "Eh, mm."
+        XCTAssertEqual(tuning.differences, ["ledtråd \"Eh, mm.\""])
+        tuning.stylePromptInGapCheck = false
+        XCTAssertEqual(tuning.differences.count, 2)
     }
 
     func testDifferencesAreSpelledOut() {
@@ -37,15 +47,15 @@ final class TestLabPlanTests: XCTestCase {
         }
     }
 
-    /// Referensen körs två gånger med KB (för bruset) och en gång med Pianissimo, utan ändringar.
+    /// Referensen körs en gång med KB och en gång med Pianissimo, utan ändringar.
     func testReferencesChangeNothing() {
         let references = plan.filter { $0.differences.isEmpty }
-        XCTAssertEqual(references.map(\.id), ["01-kb-referens", "02-kb-referens-igen", "10-pianissimo-referens"])
+        XCTAssertEqual(references.map(\.id), ["01-kb-referens", "05-pianissimo-referens"])
     }
 
-    /// Varje försök ändrar en sak, utom de två som uttryckligen kombinerar spärrarna.
+    /// Varje försök ändrar en sak, utom den som uttryckligen kombinerar ledtråd och huvudpass.
     func testEachExperimentChangesOneThing() {
-        let combined: Set = ["05-kb-utan-bada-sparrarna", "09-kb-allt-lost"]
+        let combined: Set = ["04-kb-fyllnadstext-huvudpass"]
         for run in plan where !run.differences.isEmpty && !combined.contains(run.id) {
             XCTAssertEqual(run.differences.count, 1, "\(run.id): \(run.differences)")
         }
