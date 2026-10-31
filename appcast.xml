@@ -6,6 +6,19 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.6.2</title>
+      <pubDate>Sat, 31 Oct 2026 10:43:50 GMT</pubDate>
+      <sparkle:version>19</sparkle:version>
+      <sparkle:shortVersionString>0.6.2</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.6.2</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Nytt&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Exporten för analys börjar med ett avsnitt, &amp;quot;Om den här filen&amp;quot;, som förklarar vad ⚠, platshållare som [PERSON 1] och rollerna Intervjuare och Kund betyder, och att en automatisk transkribering kan missa småord och ”eh”/”mm”, så att den som läser filen (t.ex. en AI) förstår den. Bara det som gäller filen tas med. Du kan stänga av det i exportdialogen.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.6.2/Transkribera-v0.6.2.zip" length="14005915" type="application/octet-stream" sparkle:edSignature="+cb/QdN53A3my1H5YuQ5IayYF+rz1iuCbgSUkXF3Qi6FiS9GhrbtTZiPEVBMMd2lsGyP6NFpj1hlUpYX+u69CA==" />
+    </item>
+    <item>
       <title>Version 0.6.1</title>
       <pubDate>Sat, 31 Oct 2026 09:46:51 GMT</pubDate>
       <sparkle:version>18</sparkle:version>
