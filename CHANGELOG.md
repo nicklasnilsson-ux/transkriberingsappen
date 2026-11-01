@@ -6,6 +6,8 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.7.6] – 2026-11-01
+
 ### Rättat
 - Inställningsraden och dess popover heter nu "Ny transkribering", som i sidopanelen och menyn, i stället för "Nästa transkribering".
 
