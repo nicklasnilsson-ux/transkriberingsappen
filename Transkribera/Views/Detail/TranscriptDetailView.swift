@@ -843,7 +843,7 @@ struct DisplaySegment: Identifiable {
 }
 
 /// Hur långt texten har skrollats förbi toppen, för det hopfällda titelkortet
-/// (macOS 14 saknar `onScrollGeometryChange`).
+/// (i macOS 14 finns inget färdigt API för skrollposition).
 private struct ScrollOffsetKey: PreferenceKey {
     static let defaultValue: Double = 0
     static func reduce(value: inout Double, nextValue: () -> Double) { value = nextValue() }
