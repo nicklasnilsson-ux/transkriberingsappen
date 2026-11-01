@@ -6,6 +6,8 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.7.2] – 2026-11-01
+
 ### Rättat
 - Raden med inställningar för nästa transkribering sitter nu kloss i toppen av vyn i stället för mitt i fönstret.
 - Titelkortet och videobilden fälls ihop när du skrollar i en transkribering. Skrollpositionen läses nu direkt från skrollytan.
