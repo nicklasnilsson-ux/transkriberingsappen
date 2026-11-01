@@ -35,6 +35,9 @@ struct TranscriptDetailView: View {
     @FocusState private var searchFocused: Bool
     @State private var isCollapsed = false
     @State private var confirmRetranscribe = false
+    @State private var overrides = TranscriptionOverrides()
+    @State private var showRerunSettings = false
+    @AppStorage(MiniPlayerSize.storageKey) private var miniSizeRaw = MiniPlayerSize.small.rawValue
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private static let scrollSpace = "detailScroll"
@@ -70,7 +73,7 @@ struct TranscriptDetailView: View {
     private func mainScroll(proxy: ScrollViewProxy) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                scrollOffsetProbe
+                Color.clear.frame(height: 1).id(Self.topID)
                 chipsRow
                 titleCard
                 playerCard
@@ -81,19 +84,16 @@ struct TranscriptDetailView: View {
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 20)
             .padding(.vertical, 14)
-        }
-        .coordinateSpace(name: Self.scrollSpace)
-        .onPreferenceChange(ScrollOffsetKey.self) { updateCollapse(offset: $0) }
-    }
-
-    private var scrollOffsetProbe: some View {
-        Color.clear.frame(height: 0).id(Self.topID)
+            // Hela innehållet mäts, så att skrollpositionen alltid rapporteras.
             .background(GeometryReader { geo in
                 Color.clear.preference(
                     key: ScrollOffsetKey.self,
                     value: -geo.frame(in: .named(Self.scrollSpace)).minY
                 )
             })
+        }
+        .coordinateSpace(name: Self.scrollSpace)
+        .onPreferenceChange(ScrollOffsetKey.self) { updateCollapse(offset: $0) }
     }
 
     private func updateCollapse(offset: Double) {
@@ -124,13 +124,10 @@ struct TranscriptDetailView: View {
     /// 1. Modell, språk och antal talare som transkriberingen gjordes med, och Transkribera igen.
     private var chipsRow: some View {
         HStack(spacing: 8) {
-            infoChip(transcript.modelName, help: "Modellen som transkriberingen gjordes med")
-            if let language = transcript.language {
-                infoChip(Language.displayName(for: language), help: "Språket som transkriberingen gjordes med")
-            }
-            if !transcript.speakers.isEmpty {
-                let n = transcript.speakers.count
-                infoChip(n == 1 ? "1 talare" : "\(n) talare", help: "Antal talare i transkriberingen")
+            settingsChip(modelChipText, help: "Modell. Klicka för att välja en annan till nästa omtagning.")
+            settingsChip(languageChipText, help: "Språk. Klicka för att välja ett annat till nästa omtagning.")
+            if let speakersText = speakersChipText {
+                settingsChip(speakersText, help: "Talare. Klicka för att ändra till nästa omtagning.")
             }
             Spacer()
             Button {
@@ -143,17 +140,47 @@ struct TranscriptDetailView: View {
                 Label("Transkribera igen", systemImage: "arrow.clockwise")
             }
             .disabled(isWorking)
-            .help("Transkribera filen igen med nuvarande inställningar. Rättningar och talarnamn ersätts.")
+            .help("Transkribera filen igen med valen i chipsen. Rättningar och talarnamn ersätts.")
+        }
+        .popover(isPresented: $showRerunSettings, arrowEdge: .bottom) {
+            RerunSettingsPopover(overrides: $overrides)
         }
     }
 
-    private func infoChip(_ text: String, help: String) -> some View {
-        Text(text)
+    private var modelChipText: String {
+        overrides.modelRaw.map { WhisperModel.resolved($0).displayName } ?? transcript.modelName
+    }
+
+    private var languageChipText: String {
+        if let language = overrides.language { return language == "auto" ? "Automatiskt språk" : Language.displayName(for: language) }
+        return transcript.language.map { Language.displayName(for: $0) } ?? "Språk"
+    }
+
+    private var speakersChipText: String? {
+        if overrides.identifySpeakers == false { return "Ingen talarseparering" }
+        if let count = overrides.speakerCount { return count.label }
+        if overrides.identifySpeakers == true { return "Talare: automatiskt" }
+        guard !transcript.speakers.isEmpty else { return nil }
+        let n = transcript.speakers.count
+        return n == 1 ? "1 talare" : "\(n) talare"
+    }
+
+    /// Chip som öppnar valen för omtagningen; accentkant när något är ändrat.
+    private func settingsChip(_ text: String, help: String) -> some View {
+        Button { showRerunSettings = true } label: {
+            HStack(spacing: 4) {
+                Text(text)
+                Image(systemName: "chevron.down").font(.caption2)
+            }
             .font(.callout)
             .padding(.horizontal, 10)
             .padding(.vertical, 4)
             .background(.quaternary.opacity(0.5), in: Capsule())
-            .help(help)
+            .overlay(Capsule().strokeBorder(overrides.isEmpty ? Color.clear : Color.accentColor, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+        .disabled(isWorking)
+        .help(help)
     }
 
     private var statusText: String {
@@ -415,6 +442,9 @@ struct TranscriptDetailView: View {
     /// 7. Den hopfällda raden som ligger kvar överst som ett overlay, så att texten inte hoppar.
     private func collapsedBar(proxy: ScrollViewProxy) -> some View {
         HStack(spacing: 10) {
+            if transcript.isVideo, let player {
+                miniPlayer(player)
+            }
             if let player {
                 Button { player.togglePlayPause() } label: {
                     Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
@@ -465,9 +495,31 @@ struct TranscriptDetailView: View {
         .frame(maxWidth: 860)
     }
 
+    /// Videobilden i den hopfällda raden. Liten som standard; Bildstorlek väljer mellan tre.
+    private func miniPlayer(_ player: PlayerController) -> some View {
+        let size = MiniPlayerSize.resolved(miniSizeRaw)
+        return HStack(spacing: 6) {
+            PlayerView(player: player.player, isVideo: true, compact: true)
+                .frame(width: size.width, height: size.height)
+                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            Menu {
+                Picker("Bildstorlek", selection: $miniSizeRaw) {
+                    ForEach(MiniPlayerSize.allCases, id: \.rawValue) { Text($0.label).tag($0.rawValue) }
+                }
+                .pickerStyle(.inline)
+            } label: {
+                Image(systemName: "arrow.up.left.and.arrow.down.right").accessibilityLabel("Bildstorlek")
+            }
+            .menuStyle(.borderlessButton)
+            .fixedSize()
+            .help("Bildstorlek: liten, mellan eller stor")
+        }
+    }
+
     private func retranscribe(confirmed: Bool = true) {
         guard let confirmation = RetranscribeConfirmation(replacingText: hasText, confirmed: confirmed) else { return }
-        queue.retranscribe(transcript, confirmation: confirmation)
+        queue.retranscribe(transcript, confirmation: confirmation, overrides: overrides)
+        overrides = TranscriptionOverrides()
     }
 
     // MARK: - Text

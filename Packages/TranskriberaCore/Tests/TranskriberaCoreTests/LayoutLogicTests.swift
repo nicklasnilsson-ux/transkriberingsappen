@@ -31,4 +31,20 @@ final class LayoutLogicTests: XCTestCase {
     func testNegativeOffsetFromOverscrollIsExpanded() {
         XCTAssertFalse(TitleCardCollapse.isCollapsed(offset: -30, wasCollapsed: true))
     }
+
+    func testMiniPlayerSizesGrowAndKeepAspect() {
+        let sizes = MiniPlayerSize.allCases
+        XCTAssertEqual(sizes, [.small, .medium, .large])
+        XCTAssertTrue(MiniPlayerSize.small.width < MiniPlayerSize.medium.width)
+        XCTAssertTrue(MiniPlayerSize.medium.width < MiniPlayerSize.large.width)
+        for size in sizes {
+            XCTAssertEqual(size.height, (size.width * 9 / 16).rounded())
+        }
+    }
+
+    func testMiniPlayerSizeDefaultsToSmall() {
+        XCTAssertEqual(MiniPlayerSize.resolved(nil), .small)
+        XCTAssertEqual(MiniPlayerSize.resolved("skräp"), .small)
+        XCTAssertEqual(MiniPlayerSize.resolved("large"), .large)
+    }
 }

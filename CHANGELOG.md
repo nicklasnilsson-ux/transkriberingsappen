@@ -6,6 +6,12 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+### Rättat
+- Sidopanelen har nu en synlig släppyta med "Välj filer…" (den markeras när du drar en fil över fönstret). Sökfältet ligger under rubriken Transkriberingar.
+- Modell och språk för nästa transkribering ligger högst upp i sidopanelen i stället för längst ner. Knappen öppnar inställningarna (modell, språk, talare, ordlista); den startar ingenting.
+- På en utförd transkribering är chipsen för modell, språk och talare nu knappar. Du väljer andra värden och trycker **Transkribera igen**. Valen gäller bara den omtagningen, dina vanliga inställningar ändras inte.
+- Den hopfällda raden vid skroll mäts om och ska nu fällas ihop. För videofiler visas en liten bild i raden; med knappen Bildstorlek väljer du liten, mellan eller stor.
+
 ## [0.7.0] – 2026-11-01
 
 ### Ändrat

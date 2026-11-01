@@ -8,6 +8,8 @@ final class AppState {
     var isImporterPresented = false
     var isAnalysisExportPresented = false
     var selection: Transcript?
+    /// En fil dras över fönstret (för att markera släppytan i sidopanelen).
+    var isDropTargeted = false
     /// Fil eller Mötesinspelning. Gäller när ingen transkribering är vald.
     var mode: AppMode = .file
     /// Visas vid start om databasen inte kunde öppnas (se `Database`).
@@ -67,7 +69,7 @@ struct ContentView: View {
                 }
             }
             return true
-        } isTargeted: { isTargeted = $0 }
+        } isTargeted: { isTargeted = $0; appState.isDropTargeted = $0 }
         .overlay {
             if isTargeted {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
