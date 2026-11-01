@@ -24,54 +24,77 @@ struct ParagraphRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 6) {
-                if let speaker = rows.first?.speaker {
-                    SpeakerLabel(name: speaker)
-                    if let speakerMenu {
-                        Menu { speakerMenu(speaker) } label: { Image(systemName: "chevron.down").font(.caption) }
-                            .menuStyle(.borderlessButton)
-                            .menuIndicator(.hidden)
-                            .fixedSize()
-                            .help("Byt namn på talaren eller ange intervjuare")
-                    }
-                    if rows.contains(where: { $0.segment.isSpeakerUncertain }) {
-                        UncertainSpeakerMark()
-                    }
-                }
-                Button { onSeek(start) } label: {
-                    Text(TimeFormatting.short(start))
-                        .font(.system(.callout, design: .monospaced))
-                        .foregroundStyle(isActive ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.secondary))
-                }
-                .buttonStyle(.plain)
-                .help("Spela upp från \(TimeFormatting.short(start))")
-                if isActive {
-                    Text("Spelas nu")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color.accentColor)
-                }
-            }
-
-            if isEditing {
-                // Varje segment rättas för sig, så att tidskoderna stämmer.
-                VStack(alignment: .leading, spacing: 6) {
-                    ForEach(rows) { row in
-                        SegmentEditor(segment: row.segment)
-                    }
-                }
-                .frame(maxWidth: textWidth, alignment: .leading)
-            } else {
-                Text(attributedText)
-                    .font(.system(size: ReadingTextSize.clamped(readingSize)))
-                    .lineSpacing(4)
-                    .textSelection(.enabled)
-                    .frame(maxWidth: textWidth, alignment: .leading)
-            }
+            headerLine
+            paragraphText
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 12)
         .padding(.horizontal, 12)
         .modifier(ActiveParagraphStyle(isActive: isActive))
+    }
+
+    private var headerLine: some View {
+        HStack(spacing: 6) {
+            if let speaker = rows.first?.speaker {
+                speakerGroup(speaker)
+            }
+            timeButton
+            if isActive {
+                Text("Spelas nu")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.accentColor)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func speakerGroup(_ speaker: String) -> some View {
+        SpeakerLabel(name: speaker)
+        if let speakerMenu {
+            Menu {
+                speakerMenu(speaker)
+            } label: {
+                Image(systemName: "chevron.down").font(.caption)
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .help("Byt namn på talaren eller ange intervjuare")
+        }
+        if rows.contains(where: { $0.segment.isSpeakerUncertain }) {
+            UncertainSpeakerMark()
+        }
+    }
+
+    private var timeButton: some View {
+        let color: AnyShapeStyle = isActive ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.secondary)
+        return Button { onSeek(start) } label: {
+            Text(TimeFormatting.short(start))
+                .font(.system(.callout, design: .monospaced))
+                .foregroundStyle(color)
+        }
+        .buttonStyle(.plain)
+        .help("Spela upp från \(TimeFormatting.short(start))")
+    }
+
+    @ViewBuilder
+    private var paragraphText: some View {
+        let size = ReadingTextSize.clamped(readingSize)
+        if isEditing {
+            // Varje segment rättas för sig, så att tidskoderna stämmer.
+            VStack(alignment: .leading, spacing: 6) {
+                ForEach(rows) { row in
+                    SegmentEditor(segment: row.segment)
+                }
+            }
+            .frame(maxWidth: textWidth, alignment: .leading)
+        } else {
+            Text(attributedText)
+                .font(.system(size: size))
+                .lineSpacing(4)
+                .textSelection(.enabled)
+                .frame(maxWidth: textWidth, alignment: .leading)
+        }
     }
 
     /// Segmentens text efter varandra, med sökträffar och det ord som spelas upp markerade.

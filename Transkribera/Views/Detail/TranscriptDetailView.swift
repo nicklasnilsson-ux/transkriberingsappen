@@ -43,78 +43,66 @@ struct TranscriptDetailView: View {
     var body: some View {
         ScrollViewReader { proxy in
             ZStack(alignment: .top) {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 14) {
-                        Color.clear.frame(height: 0).id(Self.topID)
-                            .background(GeometryReader { geo in
-                                Color.clear.preference(
-                                    key: ScrollOffsetKey.self,
-                                    value: -geo.frame(in: .named(Self.scrollSpace)).minY
-                                )
-                            })
-                        chipsRow
-                        titleCard
-                        playerCard
-                        noticeCard
-                        textArea(proxy: proxy)
-                    }
-                    .frame(maxWidth: 820)
-                    .frame(maxWidth: .infinity)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 14)
-                }
-                .coordinateSpace(name: Self.scrollSpace)
-                .onPreferenceChange(ScrollOffsetKey.self) { offset in
-                    let next = TitleCardCollapse.isCollapsed(offset: offset, wasCollapsed: isCollapsed)
-                    guard next != isCollapsed else { return }
-                    if reduceMotion {
-                        isCollapsed = next
-                    } else {
-                        withAnimation(.easeInOut(duration: 0.15)) { isCollapsed = next }
-                    }
-                }
-
+                mainScroll(proxy: proxy)
                 if isCollapsed {
                     collapsedBar(proxy: proxy)
                         .transition(reduceMotion ? .identity : .move(edge: .top).combined(with: .opacity))
                 }
             }
         }
+        // Fönstrets titel behålls för Fönster-menyn; macOS 14 kan inte dölja den (kräver macOS 15).
         .navigationTitle(transcript.title)
-        .toolbar(removing: .title)
-        .onAppear {
-            if player == nil { player = PlayerController(url: transcript.mediaURL) }
-        }
-        .onDisappear {
-            player?.invalidate()
-            player = nil
-        }
-        .task(id: anonymizationInput(transcript.sortedSegments)) {
-            await refreshAnonymization()
-        }
-        .confirmationDialog(
-            "Transkribera igen?",
-            isPresented: $confirmRetranscribe,
-            titleVisibility: .visible
-        ) {
-            Button("Transkribera igen", role: .destructive) { retranscribe() }
-        } message: {
-            Text(RetranscribeConfirmation.dialogMessage)
-        }
-        .alert("Byt namn på talare", isPresented: Binding(
-            get: { speakerToRename != nil },
-            set: { if !$0 { speakerToRename = nil } }
-        )) {
-            TextField("Namn", text: $newSpeakerName)
-            Button("Spara") {
-                if let old = speakerToRename {
-                    transcript.renameSpeaker(old, to: newSpeakerName)
-                }
-                speakerToRename = nil
+        .modifier(DetailLifecycle(
+            transcript: transcript,
+            player: $player,
+            anonymizationKey: anonymizationInput(transcript.sortedSegments),
+            refresh: refreshAnonymization
+        ))
+        .modifier(DetailDialogs(
+            confirmRetranscribe: $confirmRetranscribe,
+            speakerToRename: $speakerToRename,
+            newSpeakerName: $newSpeakerName,
+            transcript: transcript,
+            onRetranscribe: { retranscribe() }
+        ))
+    }
+
+    private func mainScroll(proxy: ScrollViewProxy) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                scrollOffsetProbe
+                chipsRow
+                titleCard
+                playerCard
+                noticeCard
+                textArea(proxy: proxy)
             }
-            Button("Avbryt", role: .cancel) { speakerToRename = nil }
-        } message: {
-            Text("Det nya namnet används överallt där \(speakerToRename ?? "") pratar.")
+            .frame(maxWidth: 820)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 14)
+        }
+        .coordinateSpace(name: Self.scrollSpace)
+        .onPreferenceChange(ScrollOffsetKey.self) { updateCollapse(offset: $0) }
+    }
+
+    private var scrollOffsetProbe: some View {
+        Color.clear.frame(height: 0).id(Self.topID)
+            .background(GeometryReader { geo in
+                Color.clear.preference(
+                    key: ScrollOffsetKey.self,
+                    value: -geo.frame(in: .named(Self.scrollSpace)).minY
+                )
+            })
+    }
+
+    private func updateCollapse(offset: Double) {
+        let next = TitleCardCollapse.isCollapsed(offset: offset, wasCollapsed: isCollapsed)
+        guard next != isCollapsed else { return }
+        if reduceMotion {
+            isCollapsed = next
+        } else {
+            withAnimation(.easeInOut(duration: 0.15)) { isCollapsed = next }
         }
     }
 
@@ -834,7 +822,7 @@ struct TranscriptDetailView: View {
 }
 
 /// Indata till anonymiseringen. När något ändras räknas resultatet om.
-private struct AnonymizationInput: Equatable {
+struct AnonymizationInput: Equatable {
     var texts: [String]
     var speakers: [String?]
     var options: AnonymizationOptions?
@@ -859,4 +847,57 @@ struct DisplaySegment: Identifiable {
 private struct ScrollOffsetKey: PreferenceKey {
     static let defaultValue: Double = 0
     static func reduce(value: inout Double, nextValue: () -> Double) { value = nextValue() }
+}
+
+/// Spelaren startas när vyn visas och stängs när den försvinner; anonymiseringen räknas om vid ändring.
+private struct DetailLifecycle: ViewModifier {
+    let transcript: Transcript
+    @Binding var player: PlayerController?
+    let anonymizationKey: AnonymizationInput
+    let refresh: () async -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear {
+                if player == nil { player = PlayerController(url: transcript.mediaURL) }
+            }
+            .onDisappear {
+                player?.invalidate()
+                player = nil
+            }
+            .task(id: anonymizationKey) { await refresh() }
+    }
+}
+
+/// Dialogerna: bekräftelse för Transkribera igen och Byt namn på talare.
+private struct DetailDialogs: ViewModifier {
+    @Binding var confirmRetranscribe: Bool
+    @Binding var speakerToRename: String?
+    @Binding var newSpeakerName: String
+    let transcript: Transcript
+    let onRetranscribe: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .confirmationDialog("Transkribera igen?", isPresented: $confirmRetranscribe, titleVisibility: .visible) {
+                Button("Transkribera igen", role: .destructive, action: onRetranscribe)
+            } message: {
+                Text(RetranscribeConfirmation.dialogMessage)
+            }
+            .alert("Byt namn på talare", isPresented: Binding(
+                get: { speakerToRename != nil },
+                set: { if !$0 { speakerToRename = nil } }
+            )) {
+                TextField("Namn", text: $newSpeakerName)
+                Button("Spara") {
+                    if let old = speakerToRename {
+                        transcript.renameSpeaker(old, to: newSpeakerName)
+                    }
+                    speakerToRename = nil
+                }
+                Button("Avbryt", role: .cancel) { speakerToRename = nil }
+            } message: {
+                Text("Det nya namnet används överallt där \(speakerToRename ?? "") pratar.")
+            }
+    }
 }

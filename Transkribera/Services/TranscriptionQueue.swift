@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import SwiftData
+import TranskriberaCore
 
 /// Tar emot filer, sparar dem som `Transcript` och transkriberar dem en i taget.
 @MainActor
