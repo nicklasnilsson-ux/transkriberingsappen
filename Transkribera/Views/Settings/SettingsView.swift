@@ -47,6 +47,8 @@ private struct TranscriptionSettingsView: View {
                     Text("Text på originalspråket").tag("transcribe")
                     Text("Översätt till engelska").tag("translate")
                 }
+            } header: {
+                Text("Språk")
             } footer: {
                 Text("Välj språket som talas. Automatiskt fungerar oftast, men ett angivet språk ger säkrare resultat. Inställningarna gäller nya transkriberingar.")
                     .foregroundStyle(.secondary)
@@ -59,6 +61,8 @@ private struct TranscriptionSettingsView: View {
                 Toggle("Bättre på korta svar (Nemotron 3)", isOn: $sortformerDiarization)
                     .disabled(!identifySpeakers || !ShortReplyDiarizer.isSupported)
                     .help("NVIDIAs modell för korta repliker och snabba byten, med högst åtta talare. Används när antal talare är automatiskt; med ett valt antal används den vanliga talaridentifieringen. Körs lokalt.")
+            } header: {
+                Text("Talare")
             } footer: {
                 Text(ShortReplyDiarizer.isSupported
                      ? "Märker texten med Talare 1, Talare 2 … som du kan byta namn på. Vet du hur många som pratar blir uppdelningen säkrare. Nemotron 3 är på som standard men gäller bara med automatiskt antal talare, och laddar ner en modell på några hundra MB första gången. Går det inte används den vanliga talaridentifieringen (cirka 30 MB)."
@@ -88,18 +92,9 @@ private struct TranscriptionSettingsView: View {
             }
 
             Section {
-                Toggle("Noggrannare skarvar", isOn: $carefulSeams)
-                    .disabled(!usesParakeet)
-                    .help("Pianissimo lyssnar på 15 sekunder i taget. Med det här provar den flera sätt att skarva bitarna och väljer det säkraste.")
-            } header: {
-                Text("Experiment")
-            } footer: {
-                Text("Ännu inte bevisat bättre. Gäller bara Pianissimo och tar 10–50 % längre tid. Det som användes står efter modellens namn i transkriberingen.")
-                    .foregroundStyle(.secondary)
-            }
-
-            Section {
                 Toggle("Tidsstämplar per ord", isOn: $wordTimestamps)
+            } header: {
+                Text("Tidsstämplar")
             } footer: {
                 Text("Gör att ordet som spelas upp markeras i texten och att långa undertexter delas upp bättre vid export.")
                     .foregroundStyle(.secondary)
@@ -114,6 +109,17 @@ private struct TranscriptionSettingsView: View {
                     Text("Ta med din egen röst. Annars spelas bara datorns ljud in, alltså de andra deltagarna.")
                         .foregroundStyle(.secondary)
                 }
+            }
+
+            Section {
+                Toggle("Noggrannare skarvar", isOn: $carefulSeams)
+                    .disabled(!usesParakeet)
+                    .help("Pianissimo lyssnar på 15 sekunder i taget. Med det här provar den flera sätt att skarva bitarna och väljer det säkraste.")
+            } header: {
+                Text("Experiment")
+            } footer: {
+                Text("Ännu inte bevisat bättre. Gäller bara Pianissimo och tar 10–50 % längre tid. Det som användes står efter modellens namn i transkriberingen.")
+                    .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
