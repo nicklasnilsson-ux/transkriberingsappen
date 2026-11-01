@@ -139,5 +139,15 @@ class MultiSelectTests(unittest.TestCase):
                 self.assertIn("confirmation:", tail, f"{path.name}: {tail}")
 
 
+class WordingTests(unittest.TestCase):
+    def test_new_transcription_is_never_called_next_transcription(self):
+        # Samma begrepp på alla ställen: "Ny transkribering", aldrig "Nästa transkribering".
+        for path in V.rglob("*.swift"):
+            for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+                if line.lstrip().startswith("//"):
+                    continue
+                self.assertNotRegex(line, r"(?i)nästa transkribering", f"{path.name}:{n}: {line.strip()}")
+
+
 if __name__ == "__main__":
     unittest.main()

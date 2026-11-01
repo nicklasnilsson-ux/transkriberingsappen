@@ -34,7 +34,7 @@ struct NextTranscriptionChips: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            Text("Nästa transkribering:")
+            Text("Ny transkribering:")
                 .font(.callout)
                 .foregroundStyle(.secondary)
             chip("Modell", value: WhisperModel.resolved(modelRaw).displayName) {
@@ -93,7 +93,7 @@ private struct ChipButton<Content: View>: View {
             .background(.quaternary.opacity(0.5), in: Capsule())
         }
         .buttonStyle(.plain)
-        .help("Ändra \(title.lowercased()) för nästa transkribering")
+        .help("Ändra \(title.lowercased()) för en ny transkribering")
         .popover(isPresented: $isOpen, arrowEdge: .bottom) {
             content().padding(16)
         }
@@ -112,7 +112,7 @@ struct NextTranscriptionSettingsForm: View {
     var body: some View {
         let model = WhisperModel.resolved(modelRaw)
         VStack(alignment: .leading, spacing: 12) {
-            Text("Nästa transkribering").font(.headline)
+            Text("Ny transkribering").font(.headline)
             LabeledContent("Modell") { ModelPicker(selection: $modelRaw).frame(width: 240) }
             Text(queue.transcriber.isDownloaded(model) ? "Finns på datorn" : "Laddas ner automatiskt första gången")
                 .font(.caption)
