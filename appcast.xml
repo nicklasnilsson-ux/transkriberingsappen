@@ -6,6 +6,24 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.7.4</title>
+      <pubDate>Sun, 01 Nov 2026 21:16:55 GMT</pubDate>
+      <sparkle:version>25</sparkle:version>
+      <sparkle:shortVersionString>0.7.4</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.7.4</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Ändrat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Inställningarna för nästa transkribering och släppytan ligger nu i samma ruta, &amp;quot;Ny transkribering&amp;quot;, överst i sidopanelen.&lt;/li&gt;
+&lt;li&gt;Val i sidopanelen följer macOS: ett klick väljer raden, ⌘-klick lägger till eller tar bort en rad, ⇧-klick väljer en följd, och Esc avmarkerar allt så att vyn blir tom. Ett vanligt klick på en vald rad avmarkerar inte längre.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Rättat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Att välja i sidopanelen svarar direkt igen, var du än klickar på raden. I 0.7.3 svarade bara texten och klicken kändes sega.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.7.4/Transkribera-v0.7.4.zip" length="14220685" type="application/octet-stream" sparkle:edSignature="3QGiWuW7Pnb+egBltbF+PLbWCjATELK668Kp3wyTj3SYHgKnFSJWL1j9G8uh6i9RsrkayQKlNbK4D3roWDhJDA==" />
+    </item>
+    <item>
       <title>Version 0.7.3</title>
       <pubDate>Sun, 01 Nov 2026 20:09:02 GMT</pubDate>
       <sparkle:version>24</sparkle:version>
