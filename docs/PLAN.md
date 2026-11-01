@@ -37,7 +37,7 @@ TranskriberaApp ─┬─ AppState (vald transkribering, filväljare)
                  └─ MeetingRecorder (ScreenCaptureKit → M4A) ──> TranscriptionQueue
 Views: ContentView (NavigationSplitView)
        ├─ SidebarView (grupperad lista, filter, radera, transkribera igen)
-       ├─ NewTranscriptionView (drop-zon, snabbinställningar, mötesinspelning)
+       ├─ FileModeEmptyView / MeetingModeView (chips för nästa transkribering, mötesinspelning)
        └─ TranscriptDetailView (AVPlayerView, segmentlista, sök, redigering, export)
 ```
 

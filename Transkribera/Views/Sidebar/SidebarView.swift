@@ -6,6 +6,9 @@ import TranskriberaCore
 struct SidebarView: View {
     @Binding var selection: Transcript?
     @Environment(TranscriptionQueue.self) private var queue
+    @Environment(AppState.self) private var appState
+    @AppStorage(SettingsKey.model) private var modelRaw = WhisperModel.default.rawValue
+    @AppStorage(SettingsKey.language) private var language = "sv"
     @Query(sort: \Transcript.createdAt, order: .reverse) private var transcripts: [Transcript]
     @State private var filter = ""
     @State private var transcriptToDelete: Transcript?
@@ -16,44 +19,36 @@ struct SidebarView: View {
     }
 
     private struct TranscriptGroup: Identifiable {
-        let title: String
+        let group: SidebarGroup
         let items: [Transcript]
-        var id: String { title }
+        var id: String { group.rawValue }
     }
 
     private var groups: [TranscriptGroup] {
-        let calendar = Calendar.current
-        var today: [Transcript] = []
-        var week: [Transcript] = []
-        var older: [Transcript] = []
-        for transcript in filtered {
-            if calendar.isDateInToday(transcript.createdAt) {
-                today.append(transcript)
-            } else if let days = calendar.dateComponents([.day], from: transcript.createdAt, to: Date()).day, days < 7 {
-                week.append(transcript)
-            } else {
-                older.append(transcript)
-            }
+        let now = Date()
+        return SidebarGroup.allCases.compactMap { group in
+            let items = filtered.filter { SidebarGroup.group(for: $0.createdAt, now: now) == group }
+            return items.isEmpty ? nil : TranscriptGroup(group: group, items: items)
         }
-        return [
-            TranscriptGroup(title: "Idag", items: today),
-            TranscriptGroup(title: "Senaste veckan", items: week),
-            TranscriptGroup(title: "Tidigare", items: older)
-        ].filter { !$0.items.isEmpty }
     }
 
     var body: some View {
         List(selection: $selection) {
             Button {
-                selection = nil
+                appState.isImporterPresented = true
             } label: {
-                Label("Ny transkribering", systemImage: "plus.circle.fill")
-                    .font(.body.weight(.medium))
+                Label("Välj filer…", systemImage: "square.and.arrow.down")
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 6)
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(.tint)
-            .padding(.vertical, 4)
-            .help("Transkribera en fil eller spela in ett möte (⌘N)")
+            .buttonStyle(.bordered)
+            .help("Välj ljud- eller videofiler att transkribera (⌘O). Du kan också släppa dem var som helst i fönstret.")
+            .listRowSeparator(.hidden)
+
+            Text("Transkriberingar (\(transcripts.count))")
+                .font(.headline)
+                .padding(.top, 6)
+                .selectionDisabled()
 
             if transcripts.isEmpty {
                 Text("Inga transkriberingar än. Släpp en fil eller spela in ett möte så hamnar resultatet här.")
@@ -63,7 +58,7 @@ struct SidebarView: View {
             }
 
             ForEach(groups) { group in
-                Section(group.title) {
+                Section(group.group.rawValue) {
                     ForEach(group.items) { transcript in
                         SidebarRow(transcript: transcript, isCurrent: queue.currentTranscriptID == transcript.id)
                             .tag(transcript)
@@ -74,6 +69,7 @@ struct SidebarView: View {
         }
         .listStyle(.sidebar)
         .searchable(text: $filter, placement: .sidebar, prompt: "Sök på titel")
+        .safeAreaInset(edge: .bottom, spacing: 0) { modelFooter }
         .navigationSplitViewColumnWidth(min: 220, ideal: 260, max: 360)
         .confirmationDialog(
             "Radera ”\(transcriptToDelete?.title ?? "")”?",
@@ -95,6 +91,24 @@ struct SidebarView: View {
         .onDeleteCommand {
             if let selection { transcriptToDelete = selection }
         }
+    }
+
+    /// Längst ner: modellen och språket som nästa transkribering använder.
+    private var modelFooter: some View {
+        let model = WhisperModel.resolved(modelRaw)
+        return VStack(alignment: .leading, spacing: 2) {
+            Divider()
+            Text("\(model.displayName) · \(Language.displayName(for: language))")
+                .font(.callout.weight(.medium))
+                .padding(.top, 6)
+            Text(queue.transcriber.isDownloaded(model) ? "Finns på datorn" : "Laddas ner automatiskt första gången")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 12)
+        .padding(.bottom, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .help("Modell och språk för nästa transkribering. Ändras under Nästa transkribering eller i Inställningar.")
     }
 
     @ViewBuilder
@@ -123,9 +137,12 @@ private struct SidebarRow: View {
                     .lineLimit(1)
                     .font(.body.weight(.medium))
                 Text(detail)
-                    .font(.caption)
+                    .font(.system(.caption, design: .monospaced))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
+                Text(statusLabel.text)
+                    .font(.caption)
+                    .foregroundStyle(statusLabel.isWarning ? AnyShapeStyle(Color.warning) : AnyShapeStyle(.secondary))
             }
         }
         .padding(.vertical, 3)
@@ -154,11 +171,17 @@ private struct SidebarRow: View {
 
     private var detail: String {
         let date = transcript.createdAt.formatted(date: .abbreviated, time: .shortened)
+        return transcript.status == .completed
+            ? "\(TimeFormatting.duration(transcript.duration)) · \(date)"
+            : date
+    }
+
+    private var statusLabel: (text: String, isWarning: Bool) {
         switch transcript.status {
-        case .queued: return "I kö · \(date)"
-        case .transcribing: return "Transkriberar… · \(date)"
-        case .failed: return transcript.errorMessage ?? "Misslyckades"
-        case .completed: return "\(date) · \(TimeFormatting.duration(transcript.duration))"
+        case .completed: ("Klar", false)
+        case .transcribing: ("Transkriberar", false)
+        case .queued: ("I kö", false)
+        case .failed: ("Misslyckades", true)
         }
     }
 }
