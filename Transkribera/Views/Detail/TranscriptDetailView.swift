@@ -145,8 +145,12 @@ struct TranscriptDetailView: View {
             .help("Transkribera filen igen med valen i chipsen. Rättningar och talarnamn ersätts.")
         }
         .popover(isPresented: $showRerunSettings, arrowEdge: .bottom) {
-            RerunSettingsPopover(overrides: $overrides)
+            RerunSettingsPopover(overrides: $overrides, file: fileBaseline)
         }
+    }
+
+    private var fileBaseline: FileBaseline {
+        FileBaseline(modelName: transcript.modelName, language: transcript.language, hasSpeakers: !transcript.speakers.isEmpty)
     }
 
     /// Blå knapp först när något val skiljer sig från det filen transkriberades med.
@@ -164,7 +168,7 @@ struct TranscriptDetailView: View {
     }
 
     private var modelChipText: String {
-        overrides.modelRaw.map { WhisperModel.resolved($0).displayName } ?? transcript.modelName
+        overrides.modelRaw.map { WhisperModel.resolved($0).displayName } ?? RerunChange.baseModelName(transcript.modelName)
     }
 
     private var languageChipText: String {
@@ -534,7 +538,7 @@ struct TranscriptDetailView: View {
 
     private func retranscribe(confirmed: Bool = true) {
         guard let confirmation = RetranscribeConfirmation(replacingText: hasText, confirmed: confirmed) else { return }
-        queue.retranscribe(transcript, confirmation: confirmation, overrides: overrides)
+        queue.retranscribe(transcript, confirmation: confirmation, overrides: overrides.filled(with: fileBaseline))
         overrides = TranscriptionOverrides()
     }
 

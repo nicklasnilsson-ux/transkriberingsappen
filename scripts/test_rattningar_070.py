@@ -53,6 +53,21 @@ class FinishedTranscriptionSettingsTests(unittest.TestCase):
         # Bara läsning av standardvärden; skrivningar går till overrides.
         self.assertNotRegex(popover, r"\$(defaultModel|defaultLanguage|defaultIdentify|defaultSpeakers)")
 
+    def test_rerun_popover_starts_from_the_file_not_from_the_defaults(self):
+        popover = (V / "Views/Detail/RerunSettingsPopover.swift").read_text(encoding="utf-8")
+        # Popovern får inte läsa standardinställningarna; den visar det filen har.
+        self.assertNotIn("@AppStorage", popover)
+        self.assertIn("file.modelRaw", popover)
+        self.assertIn("file: fileBaseline", detail)
+
+    def test_model_chip_hides_experiment_labels(self):
+        # "(Nemotron 3)", "(jämnad volym)" osv. hör till jämförelsen, inte till modellvalet.
+        self.assertIn("RerunChange.baseModelName(transcript.modelName)", detail)
+
+    def test_rerun_does_what_the_chips_show(self):
+        # Ändrar man inget ska omtagningen ändå göras med filens modell, språk och talarval.
+        self.assertIn("overrides.filled(with: fileBaseline)", detail)
+
 
 class EmptyViewTests(unittest.TestCase):
     def test_settings_row_sits_at_the_top_of_the_empty_view(self):
