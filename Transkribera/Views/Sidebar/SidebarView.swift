@@ -31,6 +31,11 @@ struct SidebarView: View {
         )
     }
 
+    private var filtered: [Transcript] {
+        guard !filter.isEmpty else { return transcripts }
+        return transcripts.filter { TextSearch.matches($0.title, query: filter) }
+    }
+
     private struct TranscriptGroup: Identifiable {
         let group: SidebarGroup
         let items: [Transcript]

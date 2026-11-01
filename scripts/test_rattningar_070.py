@@ -25,6 +25,12 @@ class SidebarOrderTests(unittest.TestCase):
         self.assertIn('Button("Välj filer…")', sidebar)
         self.assertIn("isDropTargeted", sidebar)
 
+    def test_title_search_still_filters_the_list(self):
+        # PR #72 tog av misstag bort sökfiltret när kod raderades i ett svep (bygget föll).
+        self.assertIn("private var filtered: [Transcript]", sidebar)
+        self.assertIn("TextSearch.matches($0.title, query: filter)", sidebar)
+        self.assertIn("filtered.filter", sidebar)
+
     def test_search_is_under_the_heading(self):
         header = sidebar[sidebar.index("var listHeader"):]
         self.assertLess(header.index("Transkriberingar ("), header.index("TextField"))
