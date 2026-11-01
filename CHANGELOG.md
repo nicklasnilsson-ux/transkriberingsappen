@@ -7,6 +7,7 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 ## [Kommande]
 
 ### Ändrat
+- Mötesinspelning har ett statuskort överst (röd tid och "Spelar in" under inspelning, knappen Stoppa och transkribera) och en högerpanel med "Spela även in min mikrofon" och inställningarna som inspelningen transkriberas med. Texten skapas som förut när du stoppar.
 - Ny vy för en transkribering: chips överst (modell, språk, antal talare) med **Transkribera igen**, ett titelkort med status, titel, intervjuare, **Sök i texten** och **Exportera**, verktygen (Redigera, Anonymisera, Talare, Kopiera text) och Stycken/Rader, spelaren i ett eget kort, och texten med tunna avdelare. Talarraden har en ▾-meny, tidskod och "Spelas nu". När du skrollat förbi titelkortet ligger en smal rad kvar överst med spela/pausa, skjutreglage, titel, verktygen som ikoner, sök och Exportera.
 - **Transkribera igen** frågar nu först, eftersom det ersätter rättningar och talarnamn och inte går att ångra.
 - Nytt fönster: en växlare överst mellan **Fil** och **Mötesinspelning** (en röd prick syns på Mötesinspelning medan det spelas in). Sidopanelen har "Välj filer…", antalet transkriberingar, sök, listan med längd, datum och status (Klar, Transkriberar, I kö, Misslyckades) och längst ner modell och språk. Du kan släppa filer var som helst i fönstret.
