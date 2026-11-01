@@ -44,6 +44,47 @@ class MinimumOSTests(unittest.TestCase):
         self.assertEqual(hits, [], f"API som kräver macOS 15: {hits}")
 
 
+class EditModeTests(unittest.TestCase):
+    """Redigeringsläget får inte flytta texten, ska synas tydligt och gå att stänga med Esc."""
+
+    DETAIL = VIEWS / "Detail"
+
+    def test_entering_edit_mode_inserts_nothing_above_the_text(self):
+        text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
+        start = text.index("private var noticeCard")
+        block = text[start:text.index("// 7.", start)]
+        self.assertNotIn("isEditing", block, "Kortet ovanför texten får inte bero på redigeringsläget (layouten hoppar)")
+        roles = text[text.index("private var showsRolesBanner"):][:200]
+        self.assertNotIn("!isEditing", roles, "Rollbannern får inte försvinna när redigeringsläget slås på (layouten hoppar)")
+
+    def test_view_and_edit_text_share_the_same_surface(self):
+        for name in ("ParagraphRow.swift", "SegmentRow.swift"):
+            self.assertIn("EditSurface(isEditing: false)", (self.DETAIL / name).read_text(encoding="utf-8"), name)
+        row = (self.DETAIL / "SegmentRow.swift").read_text(encoding="utf-8")
+        self.assertIn("EditSurface(isEditing: isEditable", row)
+        self.assertIn(".lineSpacing(lineSpacing)", row, "Fältet ska ha samma radavstånd som visningen")
+
+    def test_edit_mode_is_labelled_and_closes_with_escape(self):
+        text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
+        for needle in ('"Klar"', "editingPill", ".onExitCommand", ".keyboardShortcut(.escape"):
+            self.assertIn(needle, text)
+
+    def test_escape_shortcut_only_exists_while_editing(self):
+        text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
+        i = text.index(".keyboardShortcut(.escape")
+        self.assertIn("if isEditing", text[i - 200:i], "Esc får inte slå PÅ redigeringsläget")
+
+
+class TimecodeTests(unittest.TestCase):
+    def test_paragraphs_and_rows_use_the_same_timecode_button(self):
+        for name in ("ParagraphRow.swift", "SegmentRow.swift"):
+            self.assertIn("TimecodeButton(", (VIEWS / "Detail" / name).read_text(encoding="utf-8"), name)
+
+    def test_play_icon_space_is_always_reserved(self):
+        text = (VIEWS / "Detail" / "SegmentRow.swift").read_text(encoding="utf-8")
+        self.assertIn(".opacity(hovering ? 1 : 0)", text, "Ikonen ska tonas, inte läggas till, så att inget flyttar sig")
+
+
 class RetranscribeTests(unittest.TestCase):
     def test_every_retranscribe_call_carries_a_confirmation(self):
         calls = []
