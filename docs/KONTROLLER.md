@@ -64,6 +64,7 @@ först när alla kontroller är gröna på exakt de filer som laddades upp.
 | Flera transkriberingar kan raderas eller transkriberas om på en gång, och det skulle kunna ske utan fråga eller utan att säga hur många | Köns funktioner för flera kräver en bekräftelsetyp (`DeleteConfirmation`, `RetranscribeConfirmation`) som bara kan skapas efter ett ja; dialogtexterna nämner antalet. Enhetstest av båda, kodkontroll att alla anrop skickar med bekräftelsen | `LayoutLogicTests`, `test_rattningar_070.py` |
 | I 0.7.3 kändes val i sidopanelen segt och svarade bara på texten, eftersom en egen klickhanterare på raderna slogs med listans inbyggda val | Raderna får inga egna klick-gester och ingen musövervakning; valet sköts helt av listan (macOS-standard, Esc avmarkerar). Kodkontroll förbjuder gester och musövervakning i listan | `test_rattningar_070.py` |
 | Filens inställningsruta visade standardmodellen (Pianissimo) medan chipsen visade filens (KB Large ordagrann), och "Transkribera igen" tog standardinställningarna trots att chipsen sa något annat | Rutan utgår från det filen har (`FileBaseline`), ingenting läses från standardinställningarna, och omtagningen fylls i med filens värden (`filled(with:)`). Kodkontroll av båda | `test_rattningar_070.py` |
+| Samma sak hette "Ny transkribering" i sidopanelen och menyn men "Nästa transkribering" i inställningsraden | Kodkontroll: texten "Nästa transkribering" får inte finnas i appens kod (utom i kommentarer) | `test_rattningar_070.py` |
 
 ## Vad CI inte kan kontrollera
 

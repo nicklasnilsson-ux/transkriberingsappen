@@ -143,7 +143,7 @@ struct SidebarView: View {
             .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
         .buttonStyle(.plain)
-        .help("Inställningar för nästa transkribering: modell, språk, antal talare och ordlista")
+        .help("Inställningar för en ny transkribering: modell, språk, antal talare och ordlista")
         .popover(isPresented: $showsNextSettings, arrowEdge: .trailing) {
             NextTranscriptionSettingsForm()
         }
