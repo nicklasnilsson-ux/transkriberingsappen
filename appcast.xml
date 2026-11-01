@@ -6,6 +6,22 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.7.1</title>
+      <pubDate>Sun, 01 Nov 2026 18:38:41 GMT</pubDate>
+      <sparkle:version>22</sparkle:version>
+      <sparkle:shortVersionString>0.7.1</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.7.1</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Rättat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Sidopanelen har nu en synlig släppyta med &amp;quot;Välj filer…&amp;quot; (den markeras när du drar en fil över fönstret). Sökfältet ligger under rubriken Transkriberingar.&lt;/li&gt;
+&lt;li&gt;Modell och språk för nästa transkribering ligger högst upp i sidopanelen i stället för längst ner. Knappen öppnar inställningarna (modell, språk, talare, ordlista); den startar ingenting.&lt;/li&gt;
+&lt;li&gt;På en utförd transkribering är chipsen för modell, språk och talare nu knappar. Du väljer andra värden och trycker &lt;b&gt;Transkribera igen&lt;/b&gt;. Valen gäller bara den omtagningen, dina vanliga inställningar ändras inte.&lt;/li&gt;
+&lt;li&gt;Den hopfällda raden vid skroll mäts om och ska nu fällas ihop. För videofiler visas en liten bild i raden; med knappen Bildstorlek väljer du liten, mellan eller stor.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.7.1/Transkribera-v0.7.1.zip" length="14175969" type="application/octet-stream" sparkle:edSignature="79M0gPeBXEpFzz0n0xjemP+1N9vPry4cPOi/yvQkgxTT1koIL9BV0tQSUwiOQdx2RiWdUjzxNkn/xJIHPJd3DQ==" />
+    </item>
+    <item>
       <title>Version 0.7.0</title>
       <pubDate>Sun, 01 Nov 2026 15:42:57 GMT</pubDate>
       <sparkle:version>21</sparkle:version>
