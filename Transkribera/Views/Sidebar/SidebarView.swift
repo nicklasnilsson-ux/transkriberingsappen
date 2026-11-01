@@ -145,7 +145,7 @@ private struct SidebarRow: View {
         case .queued, .transcribing:
             Image(systemName: "clock").foregroundStyle(.secondary)
         case .failed:
-            Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+            Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Color.warning)
         case .completed:
             Image(systemName: transcript.isRecording ? "record.circle" : (transcript.isVideo ? "film" : "waveform"))
                 .foregroundStyle(.tint)

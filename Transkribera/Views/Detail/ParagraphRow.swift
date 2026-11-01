@@ -12,6 +12,8 @@ struct ParagraphRow: View {
     let isEditing: Bool
     let onSeek: (Double) -> Void
 
+    @AppStorage(SettingsKey.readingTextSize) private var readingSize = ReadingTextSize.standard
+
     private var start: Double { rows.first?.segment.start ?? 0 }
     private var isActive: Bool { rows.contains { $0.id == activeID } }
 
@@ -28,10 +30,8 @@ struct ParagraphRow: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 if let speaker = rows.first?.speaker {
-                    HStack(spacing: 4) {
-                        Text(speaker)
-                            .font(.callout.weight(.semibold))
-                            .foregroundStyle(SpeakerPalette.color(for: speaker))
+                    HStack(spacing: 6) {
+                        SpeakerLabel(name: speaker)
                         if rows.contains(where: { $0.segment.isSpeakerUncertain }) {
                             UncertainSpeakerMark()
                         }
@@ -47,7 +47,7 @@ struct ParagraphRow: View {
                     }
                 } else {
                     Text(attributedText)
-                        .font(.body)
+                        .font(.system(size: ReadingTextSize.clamped(readingSize)))
                         .lineSpacing(4)
                         .textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -57,10 +57,7 @@ struct ParagraphRow: View {
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 12)
-        .background {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(isActive ? Color.accentColor.opacity(0.06) : Color.clear)
-        }
+        .modifier(ActiveParagraphStyle(isActive: isActive))
     }
 
     /// Segmentens text efter varandra, med sökträffar och det ord som spelas upp markerade.

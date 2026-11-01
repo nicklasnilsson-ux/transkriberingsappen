@@ -386,6 +386,8 @@ struct TranscriptDetailView: View {
                 Text("Vem av talarna är du?")
                 ForEach(speakers, id: \.self) { speaker in
                     HStack(spacing: 2) {
+                        Circle().fill(SpeakerPalette.color(for: speaker)).frame(width: 8, height: 8)
+                            .accessibilityHidden(true)
                         Button(speaker) { transcript.setInterviewer(speaker) }
                             .help("\(speaker) blir Intervjuare och övriga Kund 1, Kund 2 … Det går att ändra under Talare i verktygsfältet.")
                         Button {
@@ -398,7 +400,6 @@ struct TranscriptDetailView: View {
                         .buttonStyle(.borderless)
                         .help("Lyssna på \(speaker)")
                     }
-                    .foregroundStyle(SpeakerPalette.color(for: speaker))
                 }
                 Spacer()
                 Button("Inte nu") { rolesDismissed = true }

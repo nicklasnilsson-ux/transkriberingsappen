@@ -17,7 +17,7 @@ struct ModelPicker: View {
                 Text(current.displayName)
                 Text("· \(current.downloadSize)").foregroundStyle(.secondary)
                 if let replaced {
-                    Text("(ersätter \(replaced.displayName))").foregroundStyle(.orange)
+                    Text("(ersätter \(replaced.displayName))").foregroundStyle(Color.warning)
                 }
                 Spacer(minLength: 8)
                 Image(systemName: "chevron.up.chevron.down")
@@ -102,7 +102,7 @@ struct ModelInfoRow: View {
             if let warning = model.memoryWarning {
                 Label(warning, systemImage: "memorychip")
                     .font(.caption)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(Color.warning)
                     .fixedSize(horizontal: false, vertical: true)
             }
             HStack(spacing: 14) {
