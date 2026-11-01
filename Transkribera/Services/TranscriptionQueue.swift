@@ -145,6 +145,18 @@ final class TranscriptionQueue {
         enqueue(transcript)
     }
 
+    /// Flera på en gång; samma krav på bekräftelse som en enda.
+    func retranscribe(_ transcripts: [Transcript], confirmation: RetranscribeConfirmation) {
+        for transcript in transcripts where transcript.status != .queued && transcript.status != .transcribing {
+            retranscribe(transcript, confirmation: confirmation)
+        }
+    }
+
+    /// Raderar flera. Kräver en bekräftelse (`DeleteConfirmation`), så det går inte utan fråga.
+    func delete(_ transcripts: [Transcript], confirmation: DeleteConfirmation) {
+        for transcript in transcripts { delete(transcript) }
+    }
+
     func cancel(_ transcript: Transcript) {
         if currentTranscriptID == transcript.id {
             currentJob?.cancel()

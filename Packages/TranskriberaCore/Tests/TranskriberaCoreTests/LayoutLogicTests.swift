@@ -47,4 +47,48 @@ final class LayoutLogicTests: XCTestCase {
         XCTAssertEqual(MiniPlayerSize.resolved("skräp"), .small)
         XCTAssertEqual(MiniPlayerSize.resolved("large"), .large)
     }
+
+    func testDeleteNeedsConfirmationAndSomethingToDelete() {
+        XCTAssertNil(DeleteConfirmation(count: 3, confirmed: false))
+        XCTAssertNil(DeleteConfirmation(count: 0, confirmed: true))
+        XCTAssertNotNil(DeleteConfirmation(count: 3, confirmed: true))
+    }
+
+    func testBulkDialogsNameHowManyAreAffected() {
+        XCTAssertTrue(DeleteConfirmation.title(count: 4).contains("4"))
+        XCTAssertTrue(DeleteConfirmation.message(count: 4).contains("4"))
+        XCTAssertTrue(BulkRetranscribe.title(count: 4).contains("4"))
+        XCTAssertTrue(BulkRetranscribe.message(count: 4).contains("4"))
+        XCTAssertTrue(BulkRetranscribe.message(count: 4).contains("Rättningar"))
+        XCTAssertEqual(DeleteConfirmation.title(count: 1), "Radera 1 transkribering?")
+    }
+
+    func testRerunIsNotChangedWhenChoicesMatchTheFile() {
+        XCTAssertFalse(RerunChange.isChanged(
+            modelOnFile: "KB Large ordagrann (jämnad volym)", chosenModel: nil,
+            languageOnFile: "sv", chosenLanguage: nil,
+            identifiedSpeakersOnFile: true, chosenIdentify: nil,
+            speakerCountOnFile: 2, chosenExactSpeakers: nil))
+        // Samma värden valda uttryckligen räknas inte som ändring.
+        XCTAssertFalse(RerunChange.isChanged(
+            modelOnFile: "KB Large ordagrann (jämnad volym)", chosenModel: "KB Large ordagrann",
+            languageOnFile: "sv", chosenLanguage: "sv",
+            identifiedSpeakersOnFile: true, chosenIdentify: true,
+            speakerCountOnFile: 2, chosenExactSpeakers: 2))
+    }
+
+    func testRerunIsChangedWhenAnyChoiceDiffers() {
+        func changed(model: String? = nil, language: String? = nil, identify: Bool? = nil, speakers: Int? = nil) -> Bool {
+            RerunChange.isChanged(
+                modelOnFile: "Pianissimo", chosenModel: model,
+                languageOnFile: "sv", chosenLanguage: language,
+                identifiedSpeakersOnFile: true, chosenIdentify: identify,
+                speakerCountOnFile: 2, chosenExactSpeakers: speakers)
+        }
+        XCTAssertTrue(changed(model: "KB Large ordagrann"))
+        XCTAssertTrue(changed(language: "en"))
+        XCTAssertTrue(changed(language: "auto"))
+        XCTAssertTrue(changed(identify: false))
+        XCTAssertTrue(changed(speakers: 3))
+    }
 }

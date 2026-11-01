@@ -140,12 +140,27 @@ struct TranscriptDetailView: View {
             } label: {
                 Label("Transkribera igen", systemImage: "arrow.clockwise")
             }
+            .buttonStyle(RerunButtonStyle(isEmphasized: rerunSettingsChanged))
             .disabled(isWorking)
             .help("Transkribera filen igen med valen i chipsen. Rättningar och talarnamn ersätts.")
         }
         .popover(isPresented: $showRerunSettings, arrowEdge: .bottom) {
             RerunSettingsPopover(overrides: $overrides)
         }
+    }
+
+    /// Blå knapp först när något val skiljer sig från det filen transkriberades med.
+    private var rerunSettingsChanged: Bool {
+        RerunChange.isChanged(
+            modelOnFile: transcript.modelName,
+            chosenModel: overrides.modelRaw.map { WhisperModel.resolved($0).displayName },
+            languageOnFile: transcript.language,
+            chosenLanguage: overrides.language,
+            identifiedSpeakersOnFile: !transcript.speakers.isEmpty,
+            chosenIdentify: overrides.identifySpeakers,
+            speakerCountOnFile: transcript.speakers.count,
+            chosenExactSpeakers: overrides.speakerCount?.exact
+        )
     }
 
     private var modelChipText: String {
@@ -952,5 +967,24 @@ private struct DetailDialogs: ViewModifier {
             } message: {
                 Text("Det nya namnet används överallt där \(speakerToRename ?? "") pratar.")
             }
+    }
+}
+
+/// "Transkribera igen": grå som standard, blå (accent) när valen skiljer sig från filens.
+private struct RerunButtonStyle: ButtonStyle {
+    let isEmphasized: Bool
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.callout)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 5)
+            .foregroundStyle(isEmphasized ? AnyShapeStyle(Color.white) : AnyShapeStyle(.primary))
+            .background(
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .fill(isEmphasized ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.quaternary.opacity(0.6)))
+            )
+            .opacity(isEnabled ? (configuration.isPressed ? 0.8 : 1) : 0.5)
     }
 }

@@ -69,5 +69,39 @@ class CollapseAndPlayerTests(unittest.TestCase):
         self.assertIn("MiniPlayerSize.allCases", detail)
 
 
+class RerunButtonTests(unittest.TestCase):
+    def test_button_is_emphasized_only_when_settings_changed(self):
+        self.assertIn("RerunButtonStyle(isEmphasized: rerunSettingsChanged)", detail)
+        self.assertIn("RerunChange.isChanged(", detail)
+
+
+class MultiSelectTests(unittest.TestCase):
+    def test_list_supports_multiple_selection_and_click_to_deselect(self):
+        self.assertIn("List(selection: listSelection)", sidebar)
+        self.assertIn("toggleOff(", sidebar)
+        self.assertIn("leftMouseDown", sidebar)  # vad som var valt innan klicket
+
+    def test_detail_shows_multi_selection_view(self):
+        content = (V / "Views/ContentView.swift").read_text(encoding="utf-8")
+        self.assertIn("MultiSelectionView(", content)
+
+    def test_bulk_actions_ask_first_and_say_how_many(self):
+        view = (V / "Views/Home/MultiSelectionView.swift").read_text(encoding="utf-8")
+        self.assertIn("RetranscribeConfirmation(replacingText", view)
+        self.assertIn("DeleteConfirmation(count:", view)
+        self.assertIn("BulkRetranscribe.message(count: count)", view)
+        self.assertIn("DeleteConfirmation.message(count: count)", view)
+        # Köns flerfunktioner kan inte anropas utan bekräftelsetypen.
+        self.assertRegex(queue, r"func delete\(_ transcripts: \[Transcript\], confirmation: DeleteConfirmation\)")
+        self.assertRegex(queue, r"func retranscribe\(_ transcripts: \[Transcript\], confirmation: RetranscribeConfirmation\)")
+
+    def test_every_bulk_call_passes_a_confirmation(self):
+        for path in V.rglob("*.swift"):
+            text = path.read_text(encoding="utf-8")
+            for m in re.finditer(r"queue\.(retranscribe|delete)\(\s*(chosen|transcripts)", text):
+                tail = text[m.start():m.start() + 120]
+                self.assertIn("confirmation:", tail, f"{path.name}: {tail}")
+
+
 if __name__ == "__main__":
     unittest.main()
