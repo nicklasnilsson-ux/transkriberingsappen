@@ -43,7 +43,22 @@ class FinishedTranscriptionSettingsTests(unittest.TestCase):
         self.assertNotRegex(popover, r"\$(defaultModel|defaultLanguage|defaultIdentify|defaultSpeakers)")
 
 
+class EmptyViewTests(unittest.TestCase):
+    def test_settings_row_sits_at_the_top_of_the_empty_view(self):
+        empty = (V / "Views/Home/FileModeEmptyView.swift").read_text(encoding="utf-8")
+        view = empty[empty.index("struct FileModeEmptyView"):empty.index("struct NextTranscriptionChips")]
+        self.assertLess(view.index("NextTranscriptionChips()"), view.index("ContentUnavailableView"))
+        self.assertRegex(view, r"alignment: \.top\)\s*\n\s*\.navigationTitle")
+
+
 class CollapseAndPlayerTests(unittest.TestCase):
+    def test_scroll_is_read_from_the_real_scroll_view(self):
+        # GeometryReader ensam rapporterade inte under skrollning (0.7.1 fällde inte ihop).
+        self.assertIn("ScrollOffsetObserver {", detail)
+        probe = (V / "Views/Detail/ScrollOffsetObserver.swift").read_text(encoding="utf-8")
+        self.assertIn("boundsDidChangeNotification", probe)
+        self.assertIn("postsBoundsChangedNotifications = true", probe)
+
     def test_scroll_offset_measured_on_whole_content(self):
         self.assertRegex(detail, r"\.background\(GeometryReader[\s\S]{0,200}ScrollOffsetKey")
         self.assertNotIn("scrollOffsetProbe", detail)
