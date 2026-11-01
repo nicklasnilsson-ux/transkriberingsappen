@@ -22,6 +22,19 @@ class LayoutTests(unittest.TestCase):
         self.assertIn("SidebarGroup.group(", text)
 
 
+class MeetingModeTests(unittest.TestCase):
+    def test_no_live_text_during_recording(self):
+        # Beslut: möte = inspelningsstatus, texten skapas först när inspelningen stoppas.
+        for name in ("Home/RecordingPanel.swift", "Home/FileModeEmptyView.swift"):
+            text = (VIEWS / name).read_text(encoding="utf-8")
+            self.assertNotIn("liveText", text, name)
+
+    def test_microphone_toggle_lives_in_the_inspector(self):
+        inspector = (VIEWS / "Home" / "MeetingInspector.swift").read_text(encoding="utf-8")
+        self.assertIn("Spela även in min mikrofon", inspector)
+        self.assertIn(".inspector(", (VIEWS / "Home" / "FileModeEmptyView.swift").read_text(encoding="utf-8"))
+
+
 class MinimumOSTests(unittest.TestCase):
     def test_no_macos_15_only_api(self):
         # Lägsta version är macOS 14 (project.yml). Dessa finns först i macOS 15.

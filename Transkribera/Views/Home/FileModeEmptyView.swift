@@ -96,7 +96,7 @@ private struct ChipButton<Content: View>: View {
     }
 }
 
-/// Mötesinspelning-läget (innehållet flyttas och byggs om i nästa del).
+/// Mötesinspelning-läget: kort för status, och en högerpanel med inställningarna.
 struct MeetingModeView: View {
     var onCreated: (Transcript) -> Void
 
@@ -104,12 +104,12 @@ struct MeetingModeView: View {
         ScrollView {
             VStack(spacing: 24) {
                 RecordingPanel(onCreated: onCreated)
-                QuickSettingsView()
             }
             .frame(maxWidth: 560)
             .padding(32)
             .frame(maxWidth: .infinity)
         }
+        .inspector(isPresented: .constant(true)) { MeetingInspector() }
         .navigationTitle("Mötesinspelning")
     }
 }

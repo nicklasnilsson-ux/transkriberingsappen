@@ -11,23 +11,42 @@ struct RecordingPanel: View {
     @AppStorage(SettingsKey.recordMicrophone) private var recordMicrophone = true
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(spacing: 14) {
+            controlCard
+            statusCard
+        }
+    }
+
+    private var cardShape: RoundedRectangle { RoundedRectangle(cornerRadius: 12, style: .continuous) }
+
+    private func card<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        content()
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(cardShape.fill(Color(nsColor: .controlBackgroundColor)))
+            .overlay(cardShape.strokeBorder(Color(nsColor: .separatorColor), lineWidth: 1))
+    }
+
+    /// Överst: inspelningsstatus och knappen. Under inspelning en röd tid och "Spelar in".
+    private var controlCard: some View {
+        card {
             HStack(spacing: 14) {
-                Image(systemName: recorder.isRecording ? "record.circle.fill" : "record.circle")
-                    .font(.system(size: 30))
-                    .foregroundStyle(recorder.isRecording ? AnyShapeStyle(Color.red) : AnyShapeStyle(.secondary))
-                    .symbolEffect(.pulse, isActive: recorder.isRecording)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Mötesinspelning")
-                        .font(.headline)
-                    statusText
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 4) {
+                    if case .recording(let since) = recorder.state {
+                        TimelineView(.periodic(from: since, by: 1)) { context in
+                            Text(TimeFormatting.short(context.date.timeIntervalSince(since)))
+                                .font(.system(.largeTitle, design: .monospaced).weight(.semibold))
+                                .foregroundStyle(Color.red)
+                        }
+                        Text("Spelar in").font(.headline)
+                    } else {
+                        Text("Mötesinspelning").font(.headline)
+                        Text("Spelar in allt ljud som hörs på datorn tills du stoppar.")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                    }
                 }
-
                 Spacer()
-
                 Button {
                     Task { await toggle() }
                 } label: {
@@ -42,45 +61,48 @@ struct RecordingPanel: View {
                       ? "Avslutar inspelningen och börjar transkribera den"
                       : "Spelar in allt ljud som hörs på datorn tills du stoppar")
             }
+        }
+    }
 
-            if MeetingRecorder.supportsMicrophone {
-                Toggle("Spela även in min mikrofon", isOn: $recordMicrophone)
-                    .disabled(recorder.isBusy)
-                    .help("Ta med din egen röst. Annars spelas bara datorns ljud in, alltså de andra deltagarna.")
-            }
-
-            if let error = recorder.errorMessage {
-                Label(error, systemImage: "exclamationmark.triangle.fill")
+    /// Statuskort. Texten skapas när inspelningen stoppas, inte under tiden.
+    private var statusCard: some View {
+        card {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    Circle()
+                        .fill(recorder.isRecording ? Color.red : Color.secondary)
+                        .frame(width: 8, height: 8)
+                        .accessibilityHidden(true)
+                    statusText.font(.headline)
+                }
+                Text("Texten skapas när du stoppar inspelningen.")
                     .font(.callout)
-                    .foregroundStyle(Color.warning)
-                    .fixedSize(horizontal: false, vertical: true)
-                if error == RecordingError.permissionDenied.errorDescription {
-                    Button("Öppna Systeminställningar") {
-                        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
-                            NSWorkspace.shared.open(url)
+                    .foregroundStyle(.secondary)
+
+                if let error = recorder.errorMessage {
+                    Label(error, systemImage: "exclamationmark.triangle.fill")
+                        .font(.callout)
+                        .foregroundStyle(Color.warning)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if error == RecordingError.permissionDenied.errorDescription {
+                        Button("Öppna Systeminställningar") {
+                            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
+                                NSWorkspace.shared.open(url)
+                            }
                         }
                     }
                 }
             }
         }
-        .padding(18)
-        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
     @ViewBuilder
     private var statusText: some View {
         switch recorder.state {
-        case .idle:
-            Text("Spelar in datorns ljud, t.ex. ett Teams- eller Meet-möte, och transkriberar när du stoppar.")
-        case .starting:
-            Text("Startar inspelningen…")
-        case .recording(let since):
-            TimelineView(.periodic(from: since, by: 1)) { context in
-                Text("Spelar in · \(TimeFormatting.short(context.date.timeIntervalSince(since)))")
-                    .monospacedDigit()
-            }
-        case .finishing:
-            Text("Sparar inspelningen…")
+        case .idle: Text("Redo att spela in")
+        case .starting: Text("Startar inspelningen…")
+        case .recording: Text("Inspelningen pågår")
+        case .finishing: Text("Sparar inspelningen…")
         }
     }
 
