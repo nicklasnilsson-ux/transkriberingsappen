@@ -6,6 +6,24 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.7.3</title>
+      <pubDate>Sun, 01 Nov 2026 20:09:02 GMT</pubDate>
+      <sparkle:version>24</sparkle:version>
+      <sparkle:shortVersionString>0.7.3</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.7.3</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Nytt&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Du kan välja flera transkriberingar i sidopanelen med ⌘-klick (enstaka) eller ⇧-klick (följd). Huvudytan visar de valda med knapparna &lt;b&gt;Transkribera N igen&lt;/b&gt;, &lt;b&gt;Exportera för analys…&lt;/b&gt; och &lt;b&gt;Radera N…&lt;/b&gt;. Både omtagning och radering frågar först och säger hur många som berörs.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Rättat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;b&gt;Transkribera igen&lt;/b&gt; är grå så länge valen är samma som filen transkriberades med, och blir blå när du ändrar modell, språk eller talare.&lt;/li&gt;
+&lt;li&gt;Ett klick på den transkribering som redan är vald avmarkerar den, och vyn blir tom.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.7.3/Transkribera-v0.7.3.zip" length="14224948" type="application/octet-stream" sparkle:edSignature="F9rkkXovOuNldFIT6rUQmrps0uNUHW8yMMP+TPrpOFZZcbtLGKKFCIhISuAwl15VP6W3nGMAEb3+uRJ9woN4Cw==" />
+    </item>
+    <item>
       <title>Version 0.7.2</title>
       <pubDate>Sun, 01 Nov 2026 19:23:16 GMT</pubDate>
       <sparkle:version>23</sparkle:version>
