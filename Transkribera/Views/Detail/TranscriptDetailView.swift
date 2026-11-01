@@ -279,7 +279,7 @@ struct TranscriptDetailView: View {
 
     /// Visar att man är i redigeringsläget. Ligger på titelraden, så att ingenting flyttar sig.
     private var editingPill: some View {
-        Label(anonymizationOptions != nil ? "Redigerar originaltexten" : "Redigerar", systemImage: "pencil")
+        Label(anonymizationOptions != nil ? "Redigerar anonymiserad text" : "Redigerar originaltexten", systemImage: "pencil")
             .font(.callout.weight(.semibold))
             .foregroundStyle(Color.accentColor)
             .padding(.horizontal, 8)
@@ -632,6 +632,7 @@ struct TranscriptDetailView: View {
                         isActive: segment.persistentModelID == activeID,
                         currentTime: currentTime,
                         isEditing: isEditing,
+                        isAnonymized: row.isAnonymized,
                         onSeek: { player?.seek(to: segment.start) }
                     )
                     .id(segment.persistentModelID)
@@ -777,9 +778,7 @@ struct TranscriptDetailView: View {
         if anonymizationOptions != nil, !transcript.segments.isEmpty {
             HStack(spacing: 6) {
                 Image(systemName: "eye.slash")
-                if isEditing {
-                    Text("Redigeringsläget visar originaltexten.")
-                } else if let result = currentAnonymization(for: transcript.sortedSegments) {
+                if let result = currentAnonymization(for: transcript.sortedSegments) {
                     Text(result.replacementCount == 1
                          ? "Anonymiserad: 1 uppgift är dold."
                          : "Anonymiserad: \(result.replacementCount) uppgifter är dolda.")
@@ -839,12 +838,15 @@ struct TranscriptDetailView: View {
     /// Det som visas i listan. `nil` medan anonymiseringen räknas fram, så att
     /// originaltexten aldrig blinkar förbi.
     private func displaySegments(_ segments: [TranscriptSegment]) -> [DisplaySegment]? {
-        guard anonymizationOptions != nil, !isEditing else {
+        guard anonymizationOptions != nil else {
             return segments.map { DisplaySegment(segment: $0, text: $0.text, speaker: $0.speaker) }
         }
-        guard let result = currentAnonymization(for: segments) else { return nil }
+        // Medan man rättar räknas anonymiseringen om efter varje sparning. Då behålls det förra
+        // resultatet, så att fälten inte försvinner och layouten inte hoppar.
+        let stale = isEditing ? anonymized?.result : nil
+        guard let result = currentAnonymization(for: segments) ?? stale, result.segments.count == segments.count else { return nil }
         return zip(segments, result.segments).map { segment, data in
-            DisplaySegment(segment: segment, text: data.text, speaker: data.speaker)
+            DisplaySegment(segment: segment, text: data.text, speaker: data.speaker, isAnonymized: true)
         }
     }
 
@@ -929,6 +931,8 @@ struct DisplaySegment: Identifiable {
     let segment: TranscriptSegment
     let text: String
     let speaker: String?
+    /// Texten är anonymiserad (platshållare i stället för de dolda uppgifterna).
+    var isAnonymized = false
 
     var id: PersistentIdentifier { segment.persistentModelID }
 }

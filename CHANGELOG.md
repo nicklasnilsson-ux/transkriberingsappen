@@ -8,7 +8,8 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ### Ändrat
 - Texten hoppar inte längre när du slår på redigeringsläget. Rutan med instruktionen ovanför texten är borttagen, och texten har samma mått och radavstånd i visnings- och redigeringsläget.
-- Det syns tydligare att du redigerar: varje stycke får en fältyta med kant, titelraden visar "Redigerar" (med "originaltexten" när anonymisering är på), och knappen heter "Klar". Esc stänger redigeringsläget, och ändringarna sparas.
+- Det syns tydligare att du redigerar: varje stycke får en fältyta med kant, titelraden visar vilken text du rättar ("Redigerar anonymiserad text" eller "Redigerar originaltexten"), och knappen heter "Klar". Esc stänger redigeringsläget, och ändringarna sparas.
+- Du rättar nu den text som visas. Med anonymisering på rättar du den anonymiserade texten, och ändringen förs tillbaka till originalet utan att de dolda uppgifterna skrivs över. Rör du själv en platshållare som [PERSON 1] ersätts den dolda uppgiften med det du skrev. Ett stycke som inte går att koppla tillbaka till originalet kan inte rättas med anonymiseringen på.
 - Tidskoden för stycken och rader visar en play-ikon och en mjuk bakgrund när du pekar på den, så att det syns att den går att klicka på. Träffytan är lika stor i stycken och rader.
 
 ## [0.7.6] – 2026-11-01

@@ -12,6 +12,8 @@ struct SegmentRow: View {
     let isActive: Bool
     let currentTime: Double?
     let isEditing: Bool
+    /// Texten som visas är anonymiserad; då rättas den visade texten och ändringen förs tillbaka till originalet.
+    var isAnonymized = false
     let onSeek: () -> Void
 
     @AppStorage(SettingsKey.readingTextSize) private var readingSize = ReadingTextSize.standard
@@ -31,7 +33,8 @@ struct SegmentRow: View {
                 }
 
                 if isEditing {
-                    SegmentEditor(segment: segment, lineSpacing: 3)
+                    SegmentEditor(segment: segment, displayText: displayText, isAnonymized: isAnonymized, lineSpacing: 3)
+                        .id(isAnonymized)
                 } else {
                     // Ordtidsstämplarna hör till originaltexten.
                     let showsOriginal = displayText == segment.text
@@ -61,38 +64,80 @@ struct SegmentRow: View {
 }
 
 /// Textfält för att rätta ett segment. Ändringen sparas när fältet lämnas.
+/// Med anonymisering på rättas den anonymiserade texten och ändringen förs tillbaka till
+/// originalet (se `AnonymizedEditing`), så att de dolda uppgifterna aldrig skrivs över.
 struct SegmentEditor: View {
     @Bindable var segment: TranscriptSegment
+    /// Texten som visas i fältet: anonymiserad eller original.
+    let displayText: String
+    let isAnonymized: Bool
     /// Samma radavstånd som i visningsläget, så att texten inte byter höjd.
     var lineSpacing: CGFloat = 4
 
     @State private var draft = ""
+    /// Det fältet utgår från: originalet och hur det visades. Uppdateras efter varje sparning.
+    @State private var baseOriginal = ""
+    @State private var baseShown = ""
+    @State private var mapping: AnonymizedEditing?
+    @State private var started = false
     @FocusState private var isFocused: Bool
     @AppStorage(SettingsKey.readingTextSize) private var readingSize = ReadingTextSize.standard
 
+    /// Falskt om den anonymiserade texten inte går att föra tillbaka till originalet.
+    private var isEditable: Bool { !isAnonymized || !started || mapping != nil }
+
     var body: some View {
-        TextField("Text", text: $draft, axis: .vertical)
-            .textFieldStyle(.plain)
-            .font(.system(size: ReadingTextSize.clamped(readingSize)))
-            .lineSpacing(lineSpacing)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .modifier(EditSurface(isEditing: true, focused: isFocused))
-            .focused($isFocused)
-            .onAppear { draft = segment.text }
-            .onSubmit(commit)
-            .onChange(of: isFocused) { _, focused in
-                if !focused { commit() }
+        Group {
+            if isEditable {
+                TextField("Text", text: $draft, axis: .vertical)
+                    .textFieldStyle(.plain)
+                    .focused($isFocused)
+                    .onSubmit(commit)
+                    .onChange(of: isFocused) { _, focused in
+                        if !focused { commit() }
+                    }
+            } else {
+                Text(displayText)
+                    .help("Det här stycket kan inte rättas med anonymiseringen på. Slå av anonymiseringen för att rätta det.")
             }
-            .onDisappear(perform: commit)
+        }
+        .font(.system(size: ReadingTextSize.clamped(readingSize)))
+        .lineSpacing(lineSpacing)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .modifier(EditSurface(isEditing: isEditable, focused: isFocused))
+        .onAppear(perform: start)
+        .onDisappear(perform: commit)
+    }
+
+    private func start() {
+        guard !started else { return }
+        started = true
+        draft = displayText
+        baseOriginal = segment.text
+        baseShown = displayText
+        mapping = isAnonymized ? AnonymizedEditing(original: baseOriginal, shown: baseShown) : nil
     }
 
     private func commit() {
+        guard started, isEditable else { return }
         let trimmed = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
-            draft = segment.text
+            draft = baseShown
             return
         }
-        segment.updateText(trimmed)
+        guard trimmed != baseShown else { return }
+        if isAnonymized, let mapping {
+            let newOriginal = mapping.originalText(applying: trimmed)
+            segment.updateText(newOriginal)
+            // Nästa sparning utgår från det som nu är sparat.
+            baseOriginal = newOriginal
+            baseShown = trimmed
+            self.mapping = AnonymizedEditing(original: newOriginal, shown: trimmed)
+        } else {
+            segment.updateText(trimmed)
+            baseOriginal = trimmed
+            baseShown = trimmed
+        }
     }
 }
 

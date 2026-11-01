@@ -77,7 +77,8 @@ struct ParagraphRow: View {
             // Varje segment rättas för sig, så att tidskoderna stämmer.
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(rows) { row in
-                    SegmentEditor(segment: row.segment, lineSpacing: 4)
+                    SegmentEditor(segment: row.segment, displayText: row.text, isAnonymized: row.isAnonymized, lineSpacing: 4)
+                        .id(row.isAnonymized)
                 }
             }
             .frame(maxWidth: textWidth, alignment: .leading)

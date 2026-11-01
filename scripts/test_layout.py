@@ -61,7 +61,7 @@ class EditModeTests(unittest.TestCase):
         for name in ("ParagraphRow.swift", "SegmentRow.swift"):
             self.assertIn("EditSurface(isEditing: false)", (self.DETAIL / name).read_text(encoding="utf-8"), name)
         row = (self.DETAIL / "SegmentRow.swift").read_text(encoding="utf-8")
-        self.assertIn("EditSurface(isEditing: true", row)
+        self.assertIn("EditSurface(isEditing: isEditable", row)
         self.assertIn(".lineSpacing(lineSpacing)", row, "Fältet ska ha samma radavstånd som visningen")
 
     def test_edit_mode_is_labelled_and_closes_with_escape(self):
