@@ -15,10 +15,6 @@ struct SidebarView: View {
     @State private var transcriptToDelete: Transcript?
     @State private var transcriptToRetranscribe: Transcript?
     @State private var showsNextSettings = false
-    /// Vad som var valt när musknappen trycktes ned, så att klick på den valda raden kan avmarkera den.
-    @State private var selectionAtMouseDown: Set<Transcript> = []
-    @State private var mouseMonitor: Any?
-
     /// Listans val som mängd: en eller flera. Flera ligger i `multiSelection`, en i `selection`.
     private var listSelection: Binding<Set<Transcript>> {
         Binding(
@@ -33,14 +29,6 @@ struct SidebarView: View {
                 }
             }
         )
-    }
-
-    private func toggleOff(_ transcript: Transcript) {
-        // Vanligt klick (utan ⌘ eller ⇧) på den som redan var vald avmarkerar den.
-        guard NSEvent.modifierFlags.intersection([.command, .shift]).isEmpty,
-              selectionAtMouseDown == [transcript], listSelection.wrappedValue == [transcript] else { return }
-        selection = nil
-        multiSelection = []
     }
 
     private var filtered: [Transcript] {
@@ -64,8 +52,7 @@ struct SidebarView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            settingsButton
-            dropArea
+            newTranscriptionGroup
             listHeader
             list
         }
@@ -110,16 +97,29 @@ struct SidebarView: View {
                 transcriptToDelete = selection
             }
         }
-        .onAppear {
-            mouseMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { event in
-                selectionAtMouseDown = listSelection.wrappedValue
-                return event
-            }
+    }
+
+    /// Inställningarna och släppytan hör ihop (båda gäller nästa transkribering), så de ligger i samma ruta.
+    private var newTranscriptionGroup: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Ny transkribering")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .padding(.leading, 2)
+            settingsButton
+            dropArea
         }
-        .onDisappear {
-            if let mouseMonitor { NSEvent.removeMonitor(mouseMonitor) }
-            mouseMonitor = nil
-        }
+        .padding(10)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(.quaternary.opacity(0.35))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 1)
+        )
+        .padding(.horizontal, 12)
+        .padding(.top, 10)
     }
 
     /// Högst upp: modell och språk för nästa transkribering. Knappen öppnar inställningarna.
@@ -143,8 +143,6 @@ struct SidebarView: View {
             .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
         .buttonStyle(.plain)
-        .padding(.horizontal, 12)
-        .padding(.top, 10)
         .help("Inställningar för nästa transkribering: modell, språk, antal talare och ordlista")
         .popover(isPresented: $showsNextSettings, arrowEdge: .trailing) {
             NextTranscriptionSettingsForm()
@@ -172,8 +170,6 @@ struct SidebarView: View {
                     style: StrokeStyle(lineWidth: appState.isDropTargeted ? 2 : 1, dash: appState.isDropTargeted ? [] : [6, 4])
                 )
         }
-        .padding(.horizontal, 12)
-        .padding(.top, 10)
     }
 
     private var listHeader: some View {
@@ -214,7 +210,6 @@ struct SidebarView: View {
                     ForEach(group.items) { transcript in
                         SidebarRow(transcript: transcript, isCurrent: queue.currentTranscriptID == transcript.id)
                             .tag(transcript)
-                            .simultaneousGesture(TapGesture().onEnded { toggleOff(transcript) })
                             .contextMenu { menu(for: transcript) }
                     }
                 }

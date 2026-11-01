@@ -6,6 +6,15 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.7.4] – 2026-11-01
+
+### Ändrat
+- Inställningarna för nästa transkribering och släppytan ligger nu i samma ruta, "Ny transkribering", överst i sidopanelen.
+- Val i sidopanelen följer macOS: ett klick väljer raden, ⌘-klick lägger till eller tar bort en rad, ⇧-klick väljer en följd, och Esc avmarkerar allt så att vyn blir tom. Ett vanligt klick på en vald rad avmarkerar inte längre.
+
+### Rättat
+- Att välja i sidopanelen svarar direkt igen, var du än klickar på raden. I 0.7.3 svarade bara texten och klicken kändes sega.
+
 ## [0.7.3] – 2026-11-01
 
 ### Nytt

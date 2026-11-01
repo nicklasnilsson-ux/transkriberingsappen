@@ -13,12 +13,23 @@ body = sidebar[sidebar.index("var body: some View"):sidebar.index(".navigationSp
 
 class SidebarOrderTests(unittest.TestCase):
     def test_order_settings_dropzone_heading_search_list(self):
-        order = [body.index(x) for x in ("settingsButton", "dropArea", "listHeader", "list")]
+        order = [body.index(x) for x in ("newTranscriptionGroup", "listHeader", "list")]
         self.assertEqual(order, sorted(order))
+
+    def test_settings_and_dropzone_are_grouped(self):
+        group = sidebar[sidebar.index("private var newTranscriptionGroup"):sidebar.index("private var settingsButton")]
+        self.assertLess(group.index("settingsButton"), group.index("dropArea"))
+        self.assertIn("RoundedRectangle", group)
 
     def test_dropzone_has_choose_files_and_highlight(self):
         self.assertIn('Button("Välj filer…")', sidebar)
         self.assertIn("isDropTargeted", sidebar)
+
+    def test_title_search_still_filters_the_list(self):
+        # PR #72 tog av misstag bort sökfiltret när kod raderades i ett svep (bygget föll).
+        self.assertIn("private var filtered: [Transcript]", sidebar)
+        self.assertIn("TextSearch.matches($0.title, query: filter)", sidebar)
+        self.assertIn("filtered.filter", sidebar)
 
     def test_search_is_under_the_heading(self):
         header = sidebar[sidebar.index("var listHeader"):]
@@ -76,10 +87,20 @@ class RerunButtonTests(unittest.TestCase):
 
 
 class MultiSelectTests(unittest.TestCase):
-    def test_list_supports_multiple_selection_and_click_to_deselect(self):
+    def test_list_supports_multiple_selection_with_macos_standard_deselect(self):
         self.assertIn("List(selection: listSelection)", sidebar)
-        self.assertIn("toggleOff(", sidebar)
-        self.assertIn("leftMouseDown", sidebar)  # vad som var valt innan klicket
+        # macOS-standard (Nicklas 2026-11-01): ⌘-klick och Esc avmarkerar, inte ett vanligt klick.
+        content = (V / "Views/ContentView.swift").read_text(encoding="utf-8")
+        self.assertIn(".onExitCommand { appState.clearSelection() }", content)
+        for banned in ("addLocalMonitorForEvents", "pendingDeselectRow", "leftMouseUp"):
+            self.assertNotIn(banned, sidebar)
+
+    def test_rows_have_no_own_click_handler(self):
+        # 0.7.3: en egen klickhanterare på raderna slogs med listans val (segt, bara texten svarade).
+        list_code = sidebar[sidebar.index("private var list: some View"):]
+        list_code = list_code[:list_code.index("private func menu(")]
+        for banned in ("TapGesture", "onTapGesture", "simultaneousGesture", "highPriorityGesture"):
+            self.assertNotIn(banned, list_code)
 
     def test_detail_shows_multi_selection_view(self):
         content = (V / "Views/ContentView.swift").read_text(encoding="utf-8")
