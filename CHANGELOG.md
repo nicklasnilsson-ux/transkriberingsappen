@@ -6,6 +6,8 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.7.0] – 2026-11-01
+
 ### Ändrat
 - Inställningarna under Transkribering ligger i ny ordning: Språk, Talare, Ordlista, Ordträff, Tidsstämplar, Mötesinspelning och Experiment sist. Samma val som förut.
 - Mötesinspelning har ett statuskort överst (röd tid och "Spelar in" under inspelning, knappen Stoppa och transkribera) och en högerpanel med "Spela även in min mikrofon" och inställningarna som inspelningen transkriberas med. Texten skapas som förut när du stoppar.
