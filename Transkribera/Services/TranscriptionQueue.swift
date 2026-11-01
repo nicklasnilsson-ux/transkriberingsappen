@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import SwiftData
+import TranskriberaCore
 
 /// Tar emot filer, sparar dem som `Transcript` och transkriberar dem en i taget.
 @MainActor
@@ -127,7 +128,9 @@ final class TranscriptionQueue {
         startWorkerIfNeeded()
     }
 
-    func retranscribe(_ transcript: Transcript) {
+    /// Kräver en bekräftelse (`RetranscribeConfirmation`), eftersom omtagningen ersätter
+    /// rättningar och talarnamn. Det går inte att anropa utan.
+    func retranscribe(_ transcript: Transcript, confirmation: RetranscribeConfirmation) {
         enqueue(transcript)
     }
 

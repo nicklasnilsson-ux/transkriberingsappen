@@ -31,87 +31,227 @@ struct TranscriptDetailView: View {
     @AppStorage(SettingsKey.anonymizeNeverHide) private var neverHide = ""
     @State private var anonymized: AnonymizedState?
 
+    @State private var showSearch = false
+    @FocusState private var searchFocused: Bool
+    @State private var isCollapsed = false
+    @State private var confirmRetranscribe = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private static let scrollSpace = "detailScroll"
+    private static let topID = "detailTop"
+
     var body: some View {
-        VStack(spacing: 0) {
-            header
-            rolesBanner
-            anonymizationBanner
-            Group {
-                if let player {
-                    PlayerView(player: player.player, isVideo: transcript.isVideo)
-                } else {
-                    Color.black.opacity(0.05)
+        ScrollViewReader { proxy in
+            ZStack(alignment: .top) {
+                mainScroll(proxy: proxy)
+                if isCollapsed {
+                    collapsedBar(proxy: proxy)
+                        .transition(reduceMotion ? .identity : .move(edge: .top).combined(with: .opacity))
                 }
             }
-            .frame(height: transcript.isVideo ? 300 : 56)
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .padding(.horizontal)
-            .padding(.bottom, 8)
-            if isEditing {
-                Label("Klicka i texten för att rätta den. Ändringarna sparas automatiskt.", systemImage: "pencil")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal)
-                    .padding(.bottom, 8)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            Divider()
-            content
         }
+        // Fönstrets titel behålls för Fönster-menyn; macOS 14 kan inte dölja den (kräver macOS 15).
         .navigationTitle(transcript.title)
-        .navigationSubtitle(subtitle)
-        .searchable(text: $query, placement: .toolbar, prompt: "Sök i transkriberingen")
-        .toolbar { toolbarContent }
-        .onAppear {
-            if player == nil { player = PlayerController(url: transcript.mediaURL) }
-        }
-        .onDisappear {
-            player?.invalidate()
-            player = nil
-        }
-        .task(id: anonymizationInput(transcript.sortedSegments)) {
-            await refreshAnonymization()
-        }
-        .alert("Byt namn på talare", isPresented: Binding(
-            get: { speakerToRename != nil },
-            set: { if !$0 { speakerToRename = nil } }
-        )) {
-            TextField("Namn", text: $newSpeakerName)
-            Button("Spara") {
-                if let old = speakerToRename {
-                    transcript.renameSpeaker(old, to: newSpeakerName)
-                }
-                speakerToRename = nil
+        .modifier(DetailLifecycle(
+            transcript: transcript,
+            player: $player,
+            anonymizationKey: anonymizationInput(transcript.sortedSegments),
+            refresh: refreshAnonymization
+        ))
+        .modifier(DetailDialogs(
+            confirmRetranscribe: $confirmRetranscribe,
+            speakerToRename: $speakerToRename,
+            newSpeakerName: $newSpeakerName,
+            transcript: transcript,
+            onRetranscribe: { retranscribe() }
+        ))
+    }
+
+    private func mainScroll(proxy: ScrollViewProxy) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                scrollOffsetProbe
+                chipsRow
+                titleCard
+                playerCard
+                noticeCard
+                textArea(proxy: proxy)
             }
-            Button("Avbryt", role: .cancel) { speakerToRename = nil }
-        } message: {
-            Text("Det nya namnet används överallt där \(speakerToRename ?? "") pratar.")
+            .frame(maxWidth: 820)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 14)
+        }
+        .coordinateSpace(name: Self.scrollSpace)
+        .onPreferenceChange(ScrollOffsetKey.self) { updateCollapse(offset: $0) }
+    }
+
+    private var scrollOffsetProbe: some View {
+        Color.clear.frame(height: 0).id(Self.topID)
+            .background(GeometryReader { geo in
+                Color.clear.preference(
+                    key: ScrollOffsetKey.self,
+                    value: -geo.frame(in: .named(Self.scrollSpace)).minY
+                )
+            })
+    }
+
+    private func updateCollapse(offset: Double) {
+        let next = TitleCardCollapse.isCollapsed(offset: offset, wasCollapsed: isCollapsed)
+        guard next != isCollapsed else { return }
+        if reduceMotion {
+            isCollapsed = next
+        } else {
+            withAnimation(.easeInOut(duration: 0.15)) { isCollapsed = next }
         }
     }
 
-    // MARK: - Delar
+    // MARK: - Kort
 
-    private var subtitle: String {
-        var parts = [TimeFormatting.duration(transcript.duration)]
-        if let language = transcript.language {
-            parts.append(Language.displayName(for: language))
-        }
-        parts.append(transcript.modelName)
-        return parts.joined(separator: " · ")
+    private var hasText: Bool { !transcript.segments.isEmpty }
+    private var isWorking: Bool { transcript.status == .queued || transcript.status == .transcribing }
+
+    private var cardShape: RoundedRectangle { RoundedRectangle(cornerRadius: 12, style: .continuous) }
+
+    private func card<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        content()
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(cardShape.fill(Color(nsColor: .controlBackgroundColor)))
+            .overlay(cardShape.strokeBorder(Color(nsColor: .separatorColor), lineWidth: 1))
     }
 
-    private var header: some View {
-        HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 2) {
-                TextField("Titel", text: $transcript.title)
-                    .textFieldStyle(.plain)
-                    .font(.title2.weight(.semibold))
-                    .help("Klicka för att byta namn")
-                Text(transcript.createdAt.formatted(date: .long, time: .shortened))
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
+    /// 1. Modell, språk och antal talare som transkriberingen gjordes med, och Transkribera igen.
+    private var chipsRow: some View {
+        HStack(spacing: 8) {
+            infoChip(transcript.modelName, help: "Modellen som transkriberingen gjordes med")
+            if let language = transcript.language {
+                infoChip(Language.displayName(for: language), help: "Språket som transkriberingen gjordes med")
+            }
+            if !transcript.speakers.isEmpty {
+                let n = transcript.speakers.count
+                infoChip(n == 1 ? "1 talare" : "\(n) talare", help: "Antal talare i transkriberingen")
             }
             Spacer()
+            Button {
+                if hasText {
+                    confirmRetranscribe = true
+                } else {
+                    retranscribe(confirmed: false)
+                }
+            } label: {
+                Label("Transkribera igen", systemImage: "arrow.clockwise")
+            }
+            .disabled(isWorking)
+            .help("Transkribera filen igen med nuvarande inställningar. Rättningar och talarnamn ersätts.")
+        }
+    }
+
+    private func infoChip(_ text: String, help: String) -> some View {
+        Text(text)
+            .font(.callout)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+            .background(.quaternary.opacity(0.5), in: Capsule())
+            .help(help)
+    }
+
+    private var statusText: String {
+        switch transcript.status {
+        case .completed: "Klar"
+        case .transcribing: "Transkriberar"
+        case .queued: "I kö"
+        case .failed: "Misslyckades"
+        }
+    }
+
+    /// 3. Titelkortet: status, titel, intervjuare, sök och export, och verktygen.
+    private var titleCard: some View {
+        card {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 6) {
+                    Text(statusText)
+                        .foregroundStyle(transcript.status == .failed ? AnyShapeStyle(Color.warning) : AnyShapeStyle(.secondary))
+                    Text("·").foregroundStyle(.secondary)
+                    Text(transcript.createdAt.formatted(date: .long, time: .shortened))
+                    Text("·").foregroundStyle(.secondary)
+                    Text(TimeFormatting.duration(transcript.duration)).monospacedDigit()
+                }
+                .font(.callout)
+                .foregroundStyle(.secondary)
+
+                HStack(alignment: .center, spacing: 10) {
+                    TextField("Titel", text: $transcript.title)
+                        .textFieldStyle(.plain)
+                        .font(.title2.weight(.semibold))
+                        .help("Klicka för att byta namn")
+                    interviewerPill
+                    Spacer(minLength: 8)
+                    Button {
+                        openSearch()
+                    } label: {
+                        Label("Sök i texten", systemImage: "magnifyingglass")
+                    }
+                    .keyboardShortcut("f")
+                    .disabled(!hasText)
+                    .help("Sök i transkriberingen (⌘F)")
+                    exportMenu()
+                }
+
+                if showSearch { searchRow }
+
+                Divider()
+                HStack(spacing: 8) {
+                    toolButtons(iconsOnly: false)
+                    Spacer()
+                    if hasText {
+                        Picker("Visning", selection: $layout) {
+                            ForEach(TranscriptLayout.allCases) { layout in
+                                Text(layout.displayName).tag(layout)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .labelsHidden()
+                        .fixedSize()
+                        .help("Stycken: löpande text per talare med en tidskod per stycke. Rader: varje segment med egen tidskod.")
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var interviewerPill: some View {
+        let speakers = transcript.speakers
+        if !speakers.isEmpty {
+            let current = speakers.filter(SpeakerRoles.isInterviewer)
+            Menu {
+                ForEach(speakers, id: \.self) { speaker in
+                    Toggle(speaker, isOn: Binding(
+                        get: { SpeakerRoles.isInterviewer(speaker) },
+                        set: { transcript.setInterviewer(speaker, to: $0) }
+                    ))
+                }
+            } label: {
+                Text(current.isEmpty ? "Välj intervjuare" : "Intervjuare: \(current.joined(separator: ", "))")
+                    .font(.callout)
+            }
+            .menuStyle(.borderlessButton)
+            .fixedSize()
+            .padding(.horizontal, 8)
+            .padding(.vertical, 2)
+            .background(.quaternary.opacity(0.5), in: Capsule())
+            .help("Byt intervjuare. Övriga talare blir Kund 1, Kund 2 …")
+        }
+    }
+
+    private var searchRow: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+            TextField("Sök i transkriberingen", text: $query)
+                .textFieldStyle(.plain)
+                .focused($searchFocused)
+                .onSubmit {}
             if !query.isEmpty {
                 let count = TextSearch.countMatches(of: query, in: (displaySegments(transcript.sortedSegments) ?? []).map(\.text))
                 Text(count == 1 ? "1 träff" : "\(count) träffar")
@@ -121,137 +261,335 @@ struct TranscriptDetailView: View {
                     .toggleStyle(.checkbox)
                     .help("Dölj stycken som inte innehåller sökordet")
             }
-            if !transcript.segments.isEmpty {
-                Picker("Visning", selection: $layout) {
-                    ForEach(TranscriptLayout.allCases) { layout in
-                        Text(layout.displayName).tag(layout)
+            Button("Stäng") {
+                query = ""
+                showSearch = false
+            }
+            .buttonStyle(.link)
+        }
+        .padding(8)
+        .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+
+    private func openSearch() {
+        showSearch = true
+        // Fältet finns inte i vyn förrän nästa varv.
+        Task { @MainActor in searchFocused = true }
+    }
+
+    /// Redigera, Anonymisera, Talare och Kopiera text. Med text i titelkortet, bara ikoner i den hopfällda raden.
+    @ViewBuilder
+    private func toolButtons(iconsOnly: Bool) -> some View {
+        Toggle(isOn: $isEditing) {
+            toolLabel("Redigera", "pencil", iconsOnly: iconsOnly)
+        }
+        .toggleStyle(.button)
+        .help("Rätta texten direkt i transkriberingen")
+        .disabled(!hasText)
+
+        Toggle(isOn: $anonymize) {
+            toolLabel("Anonymisera", anonymize ? "eye.slash" : "eye", iconsOnly: iconsOnly)
+        }
+        .toggleStyle(.button)
+        .help(anonymize
+              ? "Namn och känsliga uppgifter är dolda. Klicka för att visa originalet."
+              : "Dölj namn, personnummer och andra känsliga uppgifter")
+
+        if !transcript.speakers.isEmpty {
+            Menu {
+                ForEach(transcript.speakers, id: \.self) { speaker in
+                    Button("Byt namn på \(speaker)…") { beginRename(speaker) }
+                }
+                Divider()
+                Section("Intervjuare") {
+                    ForEach(transcript.speakers, id: \.self) { speaker in
+                        Toggle(speaker, isOn: Binding(
+                            get: { SpeakerRoles.isInterviewer(speaker) },
+                            set: { transcript.setInterviewer(speaker, to: $0) }
+                        ))
                     }
                 }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .fixedSize()
-                .help("Stycken: löpande text per talare med en tidskod per stycke. Rader: varje segment med egen tidskod.")
+                Divider()
+                Button("Visa talarturer i Finder (för felsökning)") {
+                    NSWorkspace.shared.open(AppPaths.speakerTurnsDirectory)
+                }
+            } label: {
+                toolLabel("Talare", "person.2", iconsOnly: iconsOnly)
             }
+            .fixedSize()
+            .help("Ge talarna riktiga namn")
         }
-        .padding()
+
+        Button {
+            copyToPasteboard(TranscriptExporter.fullText(outputSegments))
+            copied = true
+            Task {
+                try? await Task.sleep(for: .seconds(1.5))
+                copied = false
+            }
+        } label: {
+            toolLabel(copied ? "Kopierat!" : "Kopiera text", copied ? "checkmark" : "doc.on.doc", iconsOnly: iconsOnly)
+        }
+        .help("Kopiera hela transkriberingen till urklipp")
+        .disabled(!hasText)
     }
 
     @ViewBuilder
-    private var content: some View {
+    private func toolLabel(_ title: String, _ symbol: String, iconsOnly: Bool) -> some View {
+        if iconsOnly {
+            Image(systemName: symbol).accessibilityLabel(title)
+        } else {
+            Label(title, systemImage: symbol)
+        }
+    }
+
+    private func exportMenu() -> some View {
+        Menu {
+            ForEach(ExportFormat.allCases) { format in
+                Button(format.displayName) { export(as: format) }
+            }
+            Divider()
+            Button("Exportera för analys…") { appState.isAnalysisExportPresented = true }
+                .help("En Markdown-fil per session, anpassad för analys i t.ex. Claude")
+            Divider()
+            Toggle("Ta med tidsstämplar (.txt och .md)", isOn: $exportTimestamps)
+        } label: {
+            Label("Exportera", systemImage: "square.and.arrow.up")
+        }
+        .menuStyle(.button)
+        .buttonStyle(.borderedProminent)
+        .fixedSize()
+        .help("Spara som text, Markdown, undertexter eller JSON")
+        .disabled(!hasText)
+    }
+
+    /// 4. Spelaren i ett eget kort, med Följ uppspelning.
+    @ViewBuilder
+    private var playerCard: some View {
+        if hasText {
+            card {
+                VStack(alignment: .leading, spacing: 8) {
+                    Group {
+                        if let player {
+                            PlayerView(player: player.player, isVideo: transcript.isVideo)
+                        } else {
+                            Color.black.opacity(0.05)
+                        }
+                    }
+                    .frame(height: transcript.isVideo ? 300 : 44)
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    Toggle(isOn: $followPlayback) {
+                        Label("Följ uppspelning", systemImage: "text.line.first.and.arrowtriangle.forward")
+                    }
+                    .toggleStyle(.checkbox)
+                    .help("Håll stycket som spelas upp i bild")
+                }
+            }
+        }
+    }
+
+    private var showsRolesBanner: Bool {
+        !rolesDismissed && !isEditing && hasText && SpeakerRoles.needsRoles(transcript.speakers)
+    }
+
+    private var showsAnonymizationBanner: Bool { anonymizationOptions != nil && hasText }
+
+    /// 5. Notiser samlade i ett kort.
+    @ViewBuilder
+    private var noticeCard: some View {
+        if showsRolesBanner || showsAnonymizationBanner || isEditing {
+            card {
+                VStack(alignment: .leading, spacing: 8) {
+                    if isEditing {
+                        Label("Klicka i texten för att rätta den. Ändringarna sparas automatiskt.", systemImage: "pencil")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                    }
+                    rolesBanner
+                    anonymizationBanner
+                }
+            }
+        }
+    }
+
+    /// 7. Den hopfällda raden som ligger kvar överst som ett overlay, så att texten inte hoppar.
+    private func collapsedBar(proxy: ScrollViewProxy) -> some View {
+        HStack(spacing: 10) {
+            if let player {
+                Button { player.togglePlayPause() } label: {
+                    Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
+                }
+                .help(player.isPlaying ? "Pausa" : "Spela")
+                Text(TimeFormatting.short(player.currentTime))
+                    .font(.system(.callout, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                Slider(
+                    value: Binding(
+                        get: { player.currentTime },
+                        set: { player.seek(to: $0, play: player.isPlaying) }
+                    ),
+                    in: 0...max(transcript.duration, 1)
+                )
+                .frame(minWidth: 80, maxWidth: 200)
+                .help("Hoppa i inspelningen")
+            }
+            Button {
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
+                    proxy.scrollTo(Self.topID, anchor: .top)
+                }
+            } label: {
+                Text(transcript.title).font(.headline).lineLimit(1)
+            }
+            .buttonStyle(.plain)
+            .help("Till början")
+            Spacer(minLength: 8)
+            toolButtons(iconsOnly: true)
+            Button {
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
+                    proxy.scrollTo(Self.topID, anchor: .top)
+                }
+                openSearch()
+            } label: {
+                Image(systemName: "magnifyingglass").accessibilityLabel("Sök i texten")
+            }
+            .disabled(!hasText)
+            .help("Sök i texten (⌘F)")
+            exportMenu()
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(.regularMaterial, in: cardShape)
+        .overlay(cardShape.strokeBorder(Color(nsColor: .separatorColor), lineWidth: 1))
+        .padding(.horizontal, 20)
+        .padding(.top, 8)
+        .frame(maxWidth: 860)
+    }
+
+    private func retranscribe(confirmed: Bool = true) {
+        guard let confirmation = RetranscribeConfirmation(replacingText: hasText, confirmed: confirmed) else { return }
+        queue.retranscribe(transcript, confirmation: confirmation)
+    }
+
+    // MARK: - Text
+
+    /// 6. Texten, eller förloppet, eller felet.
+    @ViewBuilder
+    private func textArea(proxy: ScrollViewProxy) -> some View {
         switch transcript.status {
         case .queued, .transcribing:
-            TranscriptionProgressView(transcript: transcript)
+            card { TranscriptionProgressView(transcript: transcript) }
         case .failed where transcript.segments.isEmpty:
-            ContentUnavailableView {
-                Label("Transkriberingen misslyckades", systemImage: "exclamationmark.triangle")
-            } description: {
-                Text(transcript.errorMessage ?? "Okänt fel.")
-            } actions: {
-                Button("Försök igen") { queue.retranscribe(transcript) }
-                    .help("Transkribera filen igen med nuvarande inställningar")
-                    .buttonStyle(.borderedProminent)
+            card {
+                ContentUnavailableView {
+                    Label("Transkriberingen misslyckades", systemImage: "exclamationmark.triangle")
+                } description: {
+                    Text(transcript.errorMessage ?? "Okänt fel.")
+                } actions: {
+                    Button("Försök igen") { retranscribe(confirmed: false) }
+                        .help("Transkribera filen igen med nuvarande inställningar")
+                        .buttonStyle(.borderedProminent)
+                }
             }
         default:
-            segmentList
+            textRows(proxy: proxy)
         }
     }
 
     @ViewBuilder
-    private var segmentList: some View {
+    private func textRows(proxy: ScrollViewProxy) -> some View {
         let segments = transcript.sortedSegments
         if let rows = displaySegments(segments) {
+            let currentTime = player?.currentTime ?? 0
+            let activeID = Self.activeSegment(in: segments, at: currentTime)?.persistentModelID
             switch layout {
-            case .paragraphs: paragraphScroll(segments: segments, rows: rows)
-            case .segments: segmentScroll(segments: segments, rows: rows)
+            case .paragraphs:
+                paragraphRows(rows: rows, currentTime: currentTime, activeID: activeID, proxy: proxy)
+            case .segments:
+                segmentRows(rows: rows, currentTime: currentTime, activeID: activeID, proxy: proxy)
             }
         } else {
             ProgressView("Anonymiserar…")
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(maxWidth: .infinity, minHeight: 120)
         }
     }
 
-    private func segmentScroll(segments: [TranscriptSegment], rows: [DisplaySegment]) -> some View {
+    private func follow(_ id: some Hashable, proxy: ScrollViewProxy) {
+        guard followPlayback, player?.isPlaying == true, !isEditing else { return }
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
+            proxy.scrollTo(id, anchor: .center)
+        }
+    }
+
+    private func segmentRows(rows: [DisplaySegment], currentTime: Double, activeID: PersistentIdentifier?, proxy: ScrollViewProxy) -> some View {
         let visible = (query.isEmpty || !showOnlyMatches)
             ? rows
             : rows.filter { TextSearch.matches($0.text, query: query) }
-        let currentTime = player?.currentTime ?? 0
-        let activeID = Self.activeSegment(in: segments, at: currentTime)?.persistentModelID
 
-        return ScrollViewReader { proxy in
-            ScrollView {
-                if visible.isEmpty {
-                    ContentUnavailableView.search(text: query)
-                        .padding(.top, 40)
-                }
-                LazyVStack(alignment: .leading, spacing: 2) {
-                    ForEach(visible) { row in
-                        let segment = row.segment
-                        SegmentRow(
-                            segment: segment,
-                            displayText: row.text,
-                            displaySpeaker: row.speaker,
-                            query: query,
-                            isActive: segment.persistentModelID == activeID,
-                            currentTime: currentTime,
-                            isEditing: isEditing,
-                            onSeek: { player?.seek(to: segment.start) }
-                        )
-                        .id(segment.persistentModelID)
-                        .contextMenu { segmentMenu(row) }
-                    }
-                }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 12)
+        return VStack(alignment: .leading, spacing: 0) {
+            if visible.isEmpty {
+                ContentUnavailableView.search(text: query)
+                    .padding(.top, 40)
             }
-            .onChange(of: activeID) { _, newValue in
-                guard followPlayback, player?.isPlaying == true, !isEditing, let newValue else { return }
-                withAnimation(.easeInOut(duration: 0.25)) {
-                    proxy.scrollTo(newValue, anchor: .center)
+            LazyVStack(alignment: .leading, spacing: 0) {
+                ForEach(visible) { row in
+                    let segment = row.segment
+                    SegmentRow(
+                        segment: segment,
+                        displayText: row.text,
+                        displaySpeaker: row.speaker,
+                        query: query,
+                        isActive: segment.persistentModelID == activeID,
+                        currentTime: currentTime,
+                        isEditing: isEditing,
+                        onSeek: { player?.seek(to: segment.start) }
+                    )
+                    .id(segment.persistentModelID)
+                    .contextMenu { segmentMenu(row) }
+                    Divider()
                 }
             }
         }
+        .onChange(of: activeID) { _, newValue in
+            if let newValue { follow(newValue, proxy: proxy) }
+        }
     }
 
-    private func paragraphScroll(segments: [TranscriptSegment], rows: [DisplaySegment]) -> some View {
+    private func paragraphRows(rows: [DisplaySegment], currentTime: Double, activeID: PersistentIdentifier?, proxy: ScrollViewProxy) -> some View {
         let paragraphs = Self.paragraphs(rows)
         let visible = (query.isEmpty || !showOnlyMatches)
             ? paragraphs
             : paragraphs.filter { paragraph in paragraph.contains { TextSearch.matches($0.text, query: query) } }
-        let currentTime = player?.currentTime ?? 0
-        let activeID = Self.activeSegment(in: segments, at: currentTime)?.persistentModelID
         let activeParagraphID = paragraphs.first { paragraph in paragraph.contains { $0.id == activeID } }?.first?.id
 
-        return ScrollViewReader { proxy in
-            ScrollView {
-                if visible.isEmpty {
-                    ContentUnavailableView.search(text: query)
-                        .padding(.top, 40)
-                }
-                LazyVStack(alignment: .leading, spacing: 6) {
-                    ForEach(visible, id: \.first?.id) { paragraph in
-                        ParagraphRow(
-                            rows: paragraph,
-                            query: query,
-                            activeID: activeID,
-                            currentTime: currentTime,
-                            isEditing: isEditing,
-                            onSeek: { player?.seek(to: $0) }
-                        )
-                        .id(paragraph.first?.id)
-                        .contextMenu { paragraphMenu(paragraph) }
-                    }
-                }
-                .frame(maxWidth: 760, alignment: .leading)
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 12)
+        return VStack(alignment: .leading, spacing: 0) {
+            if visible.isEmpty {
+                ContentUnavailableView.search(text: query)
+                    .padding(.top, 40)
             }
-            .onChange(of: activeParagraphID) { _, newValue in
-                guard followPlayback, player?.isPlaying == true, !isEditing, let newValue else { return }
-                withAnimation(.easeInOut(duration: 0.25)) {
-                    proxy.scrollTo(newValue, anchor: .center)
+            LazyVStack(alignment: .leading, spacing: 0) {
+                ForEach(visible, id: \.first?.id) { paragraph in
+                    ParagraphRow(
+                        rows: paragraph,
+                        query: query,
+                        activeID: activeID,
+                        currentTime: currentTime,
+                        isEditing: isEditing,
+                        onSeek: { player?.seek(to: $0) },
+                        speakerMenu: { speaker in
+                            AnyView(Group {
+                                Button("Byt namn på \(speaker)…") { beginRename(speaker) }
+                                interviewerButton(speaker)
+                            })
+                        }
+                    )
+                    .id(paragraph.first?.id)
+                    .contextMenu { paragraphMenu(paragraph) }
+                    Divider()
                 }
             }
+        }
+        .onChange(of: activeParagraphID) { _, newValue in
+            if let newValue { follow(newValue, proxy: proxy) }
         }
     }
 
@@ -297,83 +635,6 @@ struct TranscriptDetailView: View {
         }
     }
 
-    // MARK: - Verktygsfält
-
-    @ToolbarContentBuilder
-    private var toolbarContent: some ToolbarContent {
-        ToolbarItemGroup(placement: .primaryAction) {
-            Toggle(isOn: $isEditing) {
-                Label("Redigera", systemImage: "pencil")
-            }
-            .help("Rätta texten direkt i transkriberingen")
-            .disabled(transcript.segments.isEmpty)
-
-            Toggle(isOn: $anonymize) {
-                Label("Anonymisera", systemImage: anonymize ? "eye.slash" : "eye")
-            }
-            .help(anonymize
-                  ? "Namn och känsliga uppgifter är dolda. Klicka för att visa originalet."
-                  : "Dölj namn, personnummer och andra känsliga uppgifter")
-
-            Toggle(isOn: $followPlayback) {
-                Label("Följ uppspelning", systemImage: "text.line.first.and.arrowtriangle.forward")
-            }
-            .help("Håll stycket som spelas upp i bild")
-
-            if !transcript.speakers.isEmpty {
-                Menu {
-                    ForEach(transcript.speakers, id: \.self) { speaker in
-                        Button("Byt namn på \(speaker)…") { beginRename(speaker) }
-                    }
-                    Divider()
-                    Section("Intervjuare") {
-                        ForEach(transcript.speakers, id: \.self) { speaker in
-                            Toggle(speaker, isOn: Binding(
-                                get: { SpeakerRoles.isInterviewer(speaker) },
-                                set: { transcript.setInterviewer(speaker, to: $0) }
-                            ))
-                        }
-                    }
-                    Divider()
-                    Button("Visa talarturer i Finder (för felsökning)") {
-                        NSWorkspace.shared.open(AppPaths.speakerTurnsDirectory)
-                    }
-                } label: {
-                    Label("Talare", systemImage: "person.2")
-                }
-                .help("Ge talarna riktiga namn")
-            }
-
-            Button {
-                copyToPasteboard(TranscriptExporter.fullText(outputSegments))
-                copied = true
-                Task {
-                    try? await Task.sleep(for: .seconds(1.5))
-                    copied = false
-                }
-            } label: {
-                Label(copied ? "Kopierat!" : "Kopiera text", systemImage: copied ? "checkmark" : "doc.on.doc")
-            }
-            .help("Kopiera hela transkriberingen till urklipp")
-            .disabled(transcript.segments.isEmpty)
-
-            Menu {
-                ForEach(ExportFormat.allCases) { format in
-                    Button(format.displayName) { export(as: format) }
-                }
-                Divider()
-                Button("Exportera för analys…") { appState.isAnalysisExportPresented = true }
-                    .help("En Markdown-fil per session, anpassad för analys i t.ex. Claude")
-                Divider()
-                Toggle("Ta med tidsstämplar (.txt och .md)", isOn: $exportTimestamps)
-            } label: {
-                Label("Exportera", systemImage: "square.and.arrow.up")
-            }
-            .help("Spara som text, Markdown, undertexter eller JSON")
-            .disabled(transcript.segments.isEmpty)
-        }
-    }
-
     // MARK: - Roller
 
     /// Frågar vem som är intervjuaren när talarna bara heter "Talare 1", "Talare 2" …
@@ -406,8 +667,6 @@ struct TranscriptDetailView: View {
                     .buttonStyle(.link)
             }
             .font(.callout)
-            .padding(.horizontal)
-            .padding(.bottom, 8)
         }
     }
 
@@ -444,8 +703,6 @@ struct TranscriptDetailView: View {
                     .help("Stäng av anonymiseringen. Slå på den igen med ögat i verktygsfältet.")
             }
             .font(.callout)
-            .padding(.horizontal)
-            .padding(.bottom, 8)
         }
     }
 
@@ -565,7 +822,7 @@ struct TranscriptDetailView: View {
 }
 
 /// Indata till anonymiseringen. När något ändras räknas resultatet om.
-private struct AnonymizationInput: Equatable {
+struct AnonymizationInput: Equatable {
     var texts: [String]
     var speakers: [String?]
     var options: AnonymizationOptions?
@@ -583,4 +840,64 @@ struct DisplaySegment: Identifiable {
     let speaker: String?
 
     var id: PersistentIdentifier { segment.persistentModelID }
+}
+
+/// Hur långt texten har skrollats förbi toppen, för det hopfällda titelkortet
+/// (i macOS 14 finns inget färdigt API för skrollposition).
+private struct ScrollOffsetKey: PreferenceKey {
+    static let defaultValue: Double = 0
+    static func reduce(value: inout Double, nextValue: () -> Double) { value = nextValue() }
+}
+
+/// Spelaren startas när vyn visas och stängs när den försvinner; anonymiseringen räknas om vid ändring.
+private struct DetailLifecycle: ViewModifier {
+    let transcript: Transcript
+    @Binding var player: PlayerController?
+    let anonymizationKey: AnonymizationInput
+    let refresh: () async -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear {
+                if player == nil { player = PlayerController(url: transcript.mediaURL) }
+            }
+            .onDisappear {
+                player?.invalidate()
+                player = nil
+            }
+            .task(id: anonymizationKey) { await refresh() }
+    }
+}
+
+/// Dialogerna: bekräftelse för Transkribera igen och Byt namn på talare.
+private struct DetailDialogs: ViewModifier {
+    @Binding var confirmRetranscribe: Bool
+    @Binding var speakerToRename: String?
+    @Binding var newSpeakerName: String
+    let transcript: Transcript
+    let onRetranscribe: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .confirmationDialog("Transkribera igen?", isPresented: $confirmRetranscribe, titleVisibility: .visible) {
+                Button("Transkribera igen", role: .destructive, action: onRetranscribe)
+            } message: {
+                Text(RetranscribeConfirmation.dialogMessage)
+            }
+            .alert("Byt namn på talare", isPresented: Binding(
+                get: { speakerToRename != nil },
+                set: { if !$0 { speakerToRename = nil } }
+            )) {
+                TextField("Namn", text: $newSpeakerName)
+                Button("Spara") {
+                    if let old = speakerToRename {
+                        transcript.renameSpeaker(old, to: newSpeakerName)
+                    }
+                    speakerToRename = nil
+                }
+                Button("Avbryt", role: .cancel) { speakerToRename = nil }
+            } message: {
+                Text("Det nya namnet används överallt där \(speakerToRename ?? "") pratar.")
+            }
+    }
 }
