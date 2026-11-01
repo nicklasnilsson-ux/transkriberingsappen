@@ -7,6 +7,8 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 ## [Kommande]
 
 ### Ändrat
+- Nytt fönster: en växlare överst mellan **Fil** och **Mötesinspelning** (en röd prick syns på Mötesinspelning medan det spelas in). Sidopanelen har "Välj filer…", antalet transkriberingar, sök, listan med längd, datum och status (Klar, Transkriberar, I kö, Misslyckades) och längst ner modell och språk. Du kan släppa filer var som helst i fönstret.
+- Utan vald transkribering visar Fil-läget chips för nästa transkribering (Modell, Språk, Talare, Ordlista) som öppnar sina val.
 - Ny accentfärg (indigo) och en egen varningsfärg som är lättare att läsa, i ljust och mörkt läge och med Öka kontrast. Förut hade accentfärgen för låg kontrast mot vitt och varningar var orange.
 - Talare visas med en liten färgprick och namnet i vanlig textfärg, så att färgen inte ensam bär informationen.
 - Texten du läser är 15 punkter som standard. Under Visa kan du välja Större text (⌘+), Mindre text (⌘−) och Normal storlek (⌘0).

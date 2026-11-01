@@ -37,7 +37,10 @@ struct TranskriberaApp: App {
                 CheckForUpdatesButton(updater: updater)
             }
             CommandGroup(replacing: .newItem) {
-                Button("Ny transkribering") { appState.selection = nil }
+                Button("Ny transkribering") {
+                    appState.mode = .file
+                    appState.selection = nil
+                }
                     .keyboardShortcut("n")
                 Button("Öppna filer…") { appState.isImporterPresented = true }
                     .keyboardShortcut("o")
