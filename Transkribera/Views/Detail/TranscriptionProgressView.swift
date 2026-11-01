@@ -61,7 +61,7 @@ struct TranscriptionProgressView: View {
             .controlSize(.large)
         }
         .padding(40)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity, minHeight: 320)
         .animation(.default, value: queue.transcriber.liveText)
     }
 }

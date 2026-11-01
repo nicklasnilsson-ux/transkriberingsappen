@@ -12,6 +12,7 @@ struct SidebarView: View {
     @Query(sort: \Transcript.createdAt, order: .reverse) private var transcripts: [Transcript]
     @State private var filter = ""
     @State private var transcriptToDelete: Transcript?
+    @State private var transcriptToRetranscribe: Transcript?
 
     private var filtered: [Transcript] {
         guard !filter.isEmpty else { return transcripts }
@@ -88,6 +89,21 @@ struct SidebarView: View {
                  ? "Texten och inspelningen raderas. Det går inte att ångra."
                  : "Texten och appens kopia av filen raderas. Originalfilen påverkas inte. Det går inte att ångra.")
         }
+        .confirmationDialog(
+            "Transkribera ”\(transcriptToRetranscribe?.title ?? "")” igen?",
+            isPresented: Binding(get: { transcriptToRetranscribe != nil }, set: { if !$0 { transcriptToRetranscribe = nil } }),
+            titleVisibility: .visible
+        ) {
+            Button("Transkribera igen", role: .destructive) {
+                if let transcript = transcriptToRetranscribe,
+                   let confirmation = RetranscribeConfirmation(replacingText: !transcript.segments.isEmpty, confirmed: true) {
+                    queue.retranscribe(transcript, confirmation: confirmation)
+                }
+                transcriptToRetranscribe = nil
+            }
+        } message: {
+            Text(RetranscribeConfirmation.dialogMessage)
+        }
         .onDeleteCommand {
             if let selection { transcriptToDelete = selection }
         }
@@ -113,7 +129,7 @@ struct SidebarView: View {
 
     @ViewBuilder
     private func menu(for transcript: Transcript) -> some View {
-        Button("Transkribera igen med nuvarande inställningar") { queue.retranscribe(transcript) }
+        Button("Transkribera igen med nuvarande inställningar…") { transcriptToRetranscribe = transcript }
             .disabled(transcript.status == .transcribing || transcript.status == .queued)
         Button("Visa ljud-/videofilen i Finder") {
             NSWorkspace.shared.activateFileViewerSelecting([transcript.mediaURL])
