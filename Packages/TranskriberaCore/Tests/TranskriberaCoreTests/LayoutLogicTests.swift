@@ -47,4 +47,19 @@ final class LayoutLogicTests: XCTestCase {
         XCTAssertEqual(MiniPlayerSize.resolved("skräp"), .small)
         XCTAssertEqual(MiniPlayerSize.resolved("large"), .large)
     }
+
+    func testDeleteNeedsConfirmationAndSomethingToDelete() {
+        XCTAssertNil(DeleteConfirmation(count: 3, confirmed: false))
+        XCTAssertNil(DeleteConfirmation(count: 0, confirmed: true))
+        XCTAssertNotNil(DeleteConfirmation(count: 3, confirmed: true))
+    }
+
+    func testBulkDialogsNameHowManyAreAffected() {
+        XCTAssertTrue(DeleteConfirmation.title(count: 4).contains("4"))
+        XCTAssertTrue(DeleteConfirmation.message(count: 4).contains("4"))
+        XCTAssertTrue(BulkRetranscribe.title(count: 4).contains("4"))
+        XCTAssertTrue(BulkRetranscribe.message(count: 4).contains("4"))
+        XCTAssertTrue(BulkRetranscribe.message(count: 4).contains("Rättningar"))
+        XCTAssertEqual(DeleteConfirmation.title(count: 1), "Radera 1 transkribering?")
+    }
 }

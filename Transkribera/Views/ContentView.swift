@@ -8,12 +8,26 @@ final class AppState {
     var isImporterPresented = false
     var isAnalysisExportPresented = false
     var selection: Transcript?
+    /// Två eller fler valda i sidopanelen (⌘- eller ⇧-klick). Tom när högst en är vald.
+    var multiSelection: [Transcript] = []
+    /// Delete-tangenten eller knappen Radera N: visa bekräftelsen i flervalsvyn.
+    var requestBulkDelete = false
     /// En fil dras över fönstret (för att markera släppytan i sidopanelen).
     var isDropTargeted = false
     /// Fil eller Mötesinspelning. Gäller när ingen transkribering är vald.
     var mode: AppMode = .file
     /// Visas vid start om databasen inte kunde öppnas (se `Database`).
     var databaseProblem: String?
+
+    /// Allt som är valt, en eller flera.
+    var selectedTranscripts: [Transcript] {
+        multiSelection.isEmpty ? (selection.map { [$0] } ?? []) : multiSelection
+    }
+
+    func clearSelection() {
+        selection = nil
+        multiSelection = []
+    }
 }
 
 enum AppMode: String, CaseIterable, Identifiable {
@@ -32,9 +46,11 @@ struct ContentView: View {
         @Bindable var appState = appState
 
         NavigationSplitView {
-            SidebarView(selection: $appState.selection)
+            SidebarView(selection: $appState.selection, multiSelection: $appState.multiSelection)
         } detail: {
-            if let transcript = appState.selection {
+            if appState.multiSelection.count > 1 {
+                MultiSelectionView(transcripts: appState.multiSelection)
+            } else if let transcript = appState.selection {
                 TranscriptDetailView(transcript: transcript)
                     .id(transcript.id)
             } else if appState.mode == .meeting {
@@ -48,7 +64,7 @@ struct ContentView: View {
             ToolbarItem(placement: .principal) {
                 Picker("Läge", selection: Binding(
                     get: { appState.mode },
-                    set: { appState.mode = $0; appState.selection = nil }
+                    set: { appState.mode = $0; appState.clearSelection() }
                 )) {
                     Text("Fil").tag(AppMode.file)
                     Label("Mötesinspelning", systemImage: "circle")
@@ -79,7 +95,7 @@ struct ContentView: View {
             }
         }
         .sheet(isPresented: $appState.isAnalysisExportPresented) {
-            AnalysisExportSheet(preselected: appState.selection)
+            AnalysisExportSheet(preselected: appState.selectedTranscripts)
         }
         .fileImporter(
             isPresented: $appState.isImporterPresented,

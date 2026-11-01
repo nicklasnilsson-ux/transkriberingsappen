@@ -39,7 +39,7 @@ struct TranskriberaApp: App {
             CommandGroup(replacing: .newItem) {
                 Button("Ny transkribering") {
                     appState.mode = .file
-                    appState.selection = nil
+                    appState.clearSelection()
                 }
                     .keyboardShortcut("n")
                 Button("Öppna filer…") { appState.isImporterPresented = true }

@@ -5,6 +5,7 @@ import TranskriberaCore
 
 struct SidebarView: View {
     @Binding var selection: Transcript?
+    @Binding var multiSelection: [Transcript]
     @Environment(TranscriptionQueue.self) private var queue
     @Environment(AppState.self) private var appState
     @AppStorage(SettingsKey.model) private var modelRaw = WhisperModel.default.rawValue
@@ -14,6 +15,33 @@ struct SidebarView: View {
     @State private var transcriptToDelete: Transcript?
     @State private var transcriptToRetranscribe: Transcript?
     @State private var showsNextSettings = false
+    /// Vad som var valt när musknappen trycktes ned, så att klick på den valda raden kan avmarkera den.
+    @State private var selectionAtMouseDown: Set<Transcript> = []
+    @State private var mouseMonitor: Any?
+
+    /// Listans val som mängd: en eller flera. Flera ligger i `multiSelection`, en i `selection`.
+    private var listSelection: Binding<Set<Transcript>> {
+        Binding(
+            get: { multiSelection.count > 1 ? Set(multiSelection) : (selection.map { [$0] } ?? []) },
+            set: { newValue in
+                if newValue.count > 1 {
+                    multiSelection = Array(newValue)
+                    selection = nil
+                } else {
+                    multiSelection = []
+                    selection = newValue.first
+                }
+            }
+        )
+    }
+
+    private func toggleOff(_ transcript: Transcript) {
+        // Vanligt klick (utan ⌘ eller ⇧) på den som redan var vald avmarkerar den.
+        guard NSEvent.modifierFlags.intersection([.command, .shift]).isEmpty,
+              selectionAtMouseDown == [transcript], listSelection.wrappedValue == [transcript] else { return }
+        selection = nil
+        multiSelection = []
+    }
 
     private var filtered: [Transcript] {
         guard !filter.isEmpty else { return transcripts }
@@ -50,6 +78,7 @@ struct SidebarView: View {
             Button("Radera", role: .destructive) {
                 if let transcript = transcriptToDelete {
                     if selection == transcript { selection = nil }
+                    multiSelection.removeAll { $0 == transcript }
                     queue.delete(transcript)
                 }
                 transcriptToDelete = nil
@@ -75,7 +104,21 @@ struct SidebarView: View {
             Text(RetranscribeConfirmation.dialogMessage)
         }
         .onDeleteCommand {
-            if let selection { transcriptToDelete = selection }
+            if multiSelection.count > 1 {
+                appState.requestBulkDelete = true
+            } else if let selection {
+                transcriptToDelete = selection
+            }
+        }
+        .onAppear {
+            mouseMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { event in
+                selectionAtMouseDown = listSelection.wrappedValue
+                return event
+            }
+        }
+        .onDisappear {
+            if let mouseMonitor { NSEvent.removeMonitor(mouseMonitor) }
+            mouseMonitor = nil
         }
     }
 
@@ -158,7 +201,7 @@ struct SidebarView: View {
     }
 
     private var list: some View {
-        List(selection: $selection) {
+        List(selection: listSelection) {
             if transcripts.isEmpty {
                 Text("Inga transkriberingar än. Släpp en fil eller spela in ett möte så hamnar resultatet här.")
                     .font(.callout)
@@ -171,6 +214,7 @@ struct SidebarView: View {
                     ForEach(group.items) { transcript in
                         SidebarRow(transcript: transcript, isCurrent: queue.currentTranscriptID == transcript.id)
                             .tag(transcript)
+                            .simultaneousGesture(TapGesture().onEnded { toggleOff(transcript) })
                             .contextMenu { menu(for: transcript) }
                     }
                 }

@@ -12,8 +12,8 @@ struct AnalysisExportSheet: View {
     @State private var selected: Set<UUID>
     @AppStorage("analysisExportGuide") private var includeGuide = true
 
-    init(preselected: Transcript?) {
-        _selected = State(initialValue: preselected.map { [$0.id] } ?? [])
+    init(preselected: [Transcript]) {
+        _selected = State(initialValue: Set(preselected.map(\.id)))
     }
 
     private var exportable: [Transcript] {
