@@ -60,6 +60,8 @@ struct ContentView: View {
             }
         }
         .frame(minWidth: 820, minHeight: 540)
+        // macOS-standard: ⌘-klick avmarkerar en rad i listan, Esc avmarkerar allt och tömmer vyn.
+        .onExitCommand { appState.clearSelection() }
         .toolbar {
             ToolbarItem(placement: .principal) {
                 Picker("Läge", selection: Binding(

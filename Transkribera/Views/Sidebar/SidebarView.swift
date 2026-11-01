@@ -15,11 +15,6 @@ struct SidebarView: View {
     @State private var transcriptToDelete: Transcript?
     @State private var transcriptToRetranscribe: Transcript?
     @State private var showsNextSettings = false
-    /// Raden som var den enda valda när musknappen trycktes ned. Släpps knappen på samma rad utan
-    /// att valet ändrats (vanligt klick på den valda raden) avmarkeras den.
-    @State private var pendingDeselectRow: Int?
-    @State private var mouseMonitor: Any?
-
     /// Listans val som mängd: en eller flera. Flera ligger i `multiSelection`, en i `selection`.
     private var listSelection: Binding<Set<Transcript>> {
         Binding(
@@ -34,40 +29,6 @@ struct SidebarView: View {
                 }
             }
         )
-    }
-
-    private func tableView(under event: NSEvent) -> NSTableView? {
-        var view = event.window?.contentView?.hitTest(event.locationInWindow)
-        while let current = view {
-            if let table = current as? NSTableView { return table }
-            view = current.superview
-        }
-        return nil
-    }
-
-    /// Lyssnar på musen utan att lägga något på raderna, så listans egen markering (och ⌘/⇧) förblir orörd.
-    private func handleMouse(_ event: NSEvent) {
-        guard let table = tableView(under: event) else {
-            if event.type == .leftMouseDown { pendingDeselectRow = nil }
-            return
-        }
-        let row = table.row(at: table.convert(event.locationInWindow, from: nil))
-        switch event.type {
-        case .leftMouseDown:
-            let plain = event.modifierFlags.intersection([.command, .shift]).isEmpty
-            let onlySelected = row >= 0 && table.selectedRowIndexes == IndexSet(integer: row)
-            pendingDeselectRow = (plain && onlySelected) ? row : nil
-        case .leftMouseUp:
-            defer { pendingDeselectRow = nil }
-            guard let pending = pendingDeselectRow, pending == row, event.clickCount == 1,
-                  table.selectedRowIndexes == IndexSet(integer: row) else { return }
-            DispatchQueue.main.async {
-                selection = nil
-                multiSelection = []
-            }
-        default:
-            break
-        }
     }
 
     private struct TranscriptGroup: Identifiable {
@@ -86,8 +47,7 @@ struct SidebarView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            settingsButton
-            dropArea
+            newTranscriptionGroup
             listHeader
             list
         }
@@ -132,17 +92,29 @@ struct SidebarView: View {
                 transcriptToDelete = selection
             }
         }
-        .onAppear {
-            guard mouseMonitor == nil else { return }
-            mouseMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .leftMouseUp]) { event in
-                handleMouse(event)
-                return event
-            }
+    }
+
+    /// Inställningarna och släppytan hör ihop (båda gäller nästa transkribering), så de ligger i samma ruta.
+    private var newTranscriptionGroup: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Ny transkribering")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .padding(.leading, 2)
+            settingsButton
+            dropArea
         }
-        .onDisappear {
-            if let mouseMonitor { NSEvent.removeMonitor(mouseMonitor) }
-            mouseMonitor = nil
-        }
+        .padding(10)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(.quaternary.opacity(0.35))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 1)
+        )
+        .padding(.horizontal, 12)
+        .padding(.top, 10)
     }
 
     /// Högst upp: modell och språk för nästa transkribering. Knappen öppnar inställningarna.
@@ -166,8 +138,6 @@ struct SidebarView: View {
             .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
         .buttonStyle(.plain)
-        .padding(.horizontal, 12)
-        .padding(.top, 10)
         .help("Inställningar för nästa transkribering: modell, språk, antal talare och ordlista")
         .popover(isPresented: $showsNextSettings, arrowEdge: .trailing) {
             NextTranscriptionSettingsForm()
@@ -195,8 +165,6 @@ struct SidebarView: View {
                     style: StrokeStyle(lineWidth: appState.isDropTargeted ? 2 : 1, dash: appState.isDropTargeted ? [] : [6, 4])
                 )
         }
-        .padding(.horizontal, 12)
-        .padding(.top, 10)
     }
 
     private var listHeader: some View {
