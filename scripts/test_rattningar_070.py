@@ -69,6 +69,12 @@ class CollapseAndPlayerTests(unittest.TestCase):
         self.assertIn("MiniPlayerSize.allCases", detail)
 
 
+class RerunButtonTests(unittest.TestCase):
+    def test_button_is_emphasized_only_when_settings_changed(self):
+        self.assertIn("RerunButtonStyle(isEmphasized: rerunSettingsChanged)", detail)
+        self.assertIn("RerunChange.isChanged(", detail)
+
+
 class MultiSelectTests(unittest.TestCase):
     def test_list_supports_multiple_selection_and_click_to_deselect(self):
         self.assertIn("List(selection: listSelection)", sidebar)

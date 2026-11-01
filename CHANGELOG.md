@@ -10,6 +10,7 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 - Du kan välja flera transkriberingar i sidopanelen med ⌘-klick (enstaka) eller ⇧-klick (följd). Huvudytan visar de valda med knapparna **Transkribera N igen**, **Exportera för analys…** och **Radera N…**. Både omtagning och radering frågar först och säger hur många som berörs.
 
 ### Rättat
+- **Transkribera igen** är grå så länge valen är samma som filen transkriberades med, och blir blå när du ändrar modell, språk eller talare.
 - Ett klick på den transkribering som redan är vald avmarkerar den, och vyn blir tom.
 
 ## [0.7.2] – 2026-11-01
