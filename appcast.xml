@@ -6,6 +6,22 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.7.5</title>
+      <pubDate>Sun, 01 Nov 2026 22:09:10 GMT</pubDate>
+      <sparkle:version>26</sparkle:version>
+      <sparkle:shortVersionString>0.7.5</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.7.5</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Rättat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Inställningsrutan för en utförd transkribering visar nu modell, språk och talarval som filen har, inte dina standardinställningar. Tidigare kunde chipsen visa KB Large medan rutan visade Pianissimo.&lt;/li&gt;
+&lt;li&gt;&amp;quot;Transkribera igen&amp;quot; använder det chipsen visar. Ändrar du inget görs omtagningen med samma modell och språk som filen, inte med dina standardinställningar.&lt;/li&gt;
+&lt;li&gt;Modellchipen visar bara modellens namn, utan tillägg som &amp;quot;(Nemotron 3)&amp;quot; som egentligen gäller talarigenkänningen.&lt;/li&gt;
+&lt;li&gt;Länken i rutan heter nu &amp;quot;Återställ till det filen har&amp;quot;.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.7.5/Transkribera-v0.7.5.zip" length="14222212" type="application/octet-stream" sparkle:edSignature="TsjPF0LcQj0r5Gspr8iqjIxQnyJ/D9VJltY9KpL58xZ2Sut8hSoZ6ZH473i0IY1JIEOlo1vnRt0w/IvKh8LCBQ==" />
+    </item>
+    <item>
       <title>Version 0.7.4</title>
       <pubDate>Sun, 01 Nov 2026 21:16:55 GMT</pubDate>
       <sparkle:version>25</sparkle:version>
