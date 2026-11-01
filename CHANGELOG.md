@@ -6,6 +6,8 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.7.7] – 2026-11-02
+
 ### Ändrat
 - Texten hoppar inte längre när du slår på redigeringsläget. Rutan med instruktionen ovanför texten är borttagen, och texten har samma mått och radavstånd i visnings- och redigeringsläget.
 - Det syns tydligare att du redigerar: varje stycke får en fältyta med kant, titelraden visar vilken text du rättar ("Redigerar anonymiserad text" eller "Redigerar originaltexten"), och knappen heter "Klar". Esc stänger redigeringsläget, och ändringarna sparas.
