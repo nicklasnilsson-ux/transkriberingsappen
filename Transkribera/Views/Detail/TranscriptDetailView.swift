@@ -95,6 +95,15 @@ struct TranscriptDetailView: View {
         }
         .coordinateSpace(name: Self.scrollSpace)
         .onPreferenceChange(ScrollOffsetKey.self) { updateCollapse(offset: $0) }
+        // Esc stänger redigeringsläget. Fälten sparar när de tappar fokus.
+        .onExitCommand { if isEditing { isEditing = false } }
+        .background {
+            if isEditing {
+                Button("Klar") { isEditing = false }
+                    .keyboardShortcut(.escape, modifiers: [])
+                    .hidden()
+            }
+        }
     }
 
     private func updateCollapse(offset: Double) {
@@ -233,6 +242,7 @@ struct TranscriptDetailView: View {
                         .font(.title2.weight(.semibold))
                         .help("Klicka för att byta namn")
                     interviewerPill
+                    if isEditing { editingPill }
                     Spacer(minLength: 8)
                     Button {
                         openSearch()
@@ -265,6 +275,17 @@ struct TranscriptDetailView: View {
                 }
             }
         }
+    }
+
+    /// Visar att man är i redigeringsläget. Ligger på titelraden, så att ingenting flyttar sig.
+    private var editingPill: some View {
+        Label(anonymizationOptions != nil ? "Redigerar originaltexten" : "Redigerar", systemImage: "pencil")
+            .font(.callout.weight(.semibold))
+            .foregroundStyle(Color.accentColor)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 2)
+            .background(Color.accentColor.opacity(0.12), in: Capsule())
+            .accessibilityElement(children: .combine)
     }
 
     @ViewBuilder
@@ -328,10 +349,13 @@ struct TranscriptDetailView: View {
     @ViewBuilder
     private func toolButtons(iconsOnly: Bool) -> some View {
         Toggle(isOn: $isEditing) {
-            toolLabel("Redigera", "pencil", iconsOnly: iconsOnly)
+            toolLabel(isEditing ? "Klar" : "Redigera", isEditing ? "checkmark" : "pencil", iconsOnly: iconsOnly)
         }
         .toggleStyle(.button)
-        .help("Rätta texten direkt i transkriberingen")
+        .tint(isEditing ? Color.accentColor : nil)
+        .help(isEditing
+              ? "Stäng redigeringsläget. Ändringarna sparas automatiskt (Esc)"
+              : "Rätta texten direkt i transkriberingen")
         .disabled(!hasText)
 
         Toggle(isOn: $anonymize) {
@@ -436,7 +460,7 @@ struct TranscriptDetailView: View {
     }
 
     private var showsRolesBanner: Bool {
-        !rolesDismissed && !isEditing && hasText && SpeakerRoles.needsRoles(transcript.speakers)
+        !rolesDismissed && hasText && SpeakerRoles.needsRoles(transcript.speakers)
     }
 
     private var showsAnonymizationBanner: Bool { anonymizationOptions != nil && hasText }
@@ -444,14 +468,9 @@ struct TranscriptDetailView: View {
     /// 5. Notiser samlade i ett kort.
     @ViewBuilder
     private var noticeCard: some View {
-        if showsRolesBanner || showsAnonymizationBanner || isEditing {
+        if showsRolesBanner || showsAnonymizationBanner {
             card {
                 VStack(alignment: .leading, spacing: 8) {
-                    if isEditing {
-                        Label("Klicka i texten för att rätta den. Ändringarna sparas automatiskt.", systemImage: "pencil")
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
-                    }
                     rolesBanner
                     anonymizationBanner
                 }

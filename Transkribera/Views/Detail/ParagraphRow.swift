@@ -23,7 +23,7 @@ struct ParagraphRow: View {
     private var textWidth: CGFloat { ReadingTextSize.clamped(readingSize) * 40 }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 3) {
             headerLine
             paragraphText
         }
@@ -67,14 +67,7 @@ struct ParagraphRow: View {
     }
 
     private var timeButton: some View {
-        let color: AnyShapeStyle = isActive ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.secondary)
-        return Button { onSeek(start) } label: {
-            Text(TimeFormatting.short(start))
-                .font(.system(.callout, design: .monospaced))
-                .foregroundStyle(color)
-        }
-        .buttonStyle(.plain)
-        .help("Spela upp från \(TimeFormatting.short(start))")
+        TimecodeButton(time: start, isActive: isActive) { onSeek(start) }
     }
 
     @ViewBuilder
@@ -82,9 +75,9 @@ struct ParagraphRow: View {
         let size = ReadingTextSize.clamped(readingSize)
         if isEditing {
             // Varje segment rättas för sig, så att tidskoderna stämmer.
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 0) {
                 ForEach(rows) { row in
-                    SegmentEditor(segment: row.segment)
+                    SegmentEditor(segment: row.segment, lineSpacing: 4)
                 }
             }
             .frame(maxWidth: textWidth, alignment: .leading)
@@ -94,6 +87,7 @@ struct ParagraphRow: View {
                 .lineSpacing(4)
                 .textSelection(.enabled)
                 .frame(maxWidth: textWidth, alignment: .leading)
+                .modifier(EditSurface(isEditing: false))
         }
     }
 
