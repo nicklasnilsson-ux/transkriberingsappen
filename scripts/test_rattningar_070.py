@@ -60,6 +60,10 @@ class FinishedTranscriptionSettingsTests(unittest.TestCase):
         self.assertIn("file.modelRaw", popover)
         self.assertIn("file: fileBaseline", detail)
 
+    def test_model_chip_hides_experiment_labels(self):
+        # "(Nemotron 3)", "(jämnad volym)" osv. hör till jämförelsen, inte till modellvalet.
+        self.assertIn("RerunChange.baseModelName(transcript.modelName)", detail)
+
     def test_rerun_does_what_the_chips_show(self):
         # Ändrar man inget ska omtagningen ändå göras med filens modell, språk och talarval.
         self.assertIn("overrides.filled(with: fileBaseline)", detail)

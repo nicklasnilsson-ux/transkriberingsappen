@@ -11,6 +11,7 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 ### Rättat
 - Inställningsrutan för en utförd transkribering visar nu modell, språk och talarval som filen har, inte dina standardinställningar. Tidigare kunde chipsen visa KB Large medan rutan visade Pianissimo.
 - "Transkribera igen" använder det chipsen visar. Ändrar du inget görs omtagningen med samma modell och språk som filen, inte med dina standardinställningar.
+- Modellchipen visar bara modellens namn, utan tillägg som "(Nemotron 3)" som egentligen gäller talarigenkänningen.
 - Länken i rutan heter nu "Återställ till det filen har".
 
 ## [0.7.4] – 2026-11-01

@@ -168,7 +168,7 @@ struct TranscriptDetailView: View {
     }
 
     private var modelChipText: String {
-        overrides.modelRaw.map { WhisperModel.resolved($0).displayName } ?? transcript.modelName
+        overrides.modelRaw.map { WhisperModel.resolved($0).displayName } ?? RerunChange.baseModelName(transcript.modelName)
     }
 
     private var languageChipText: String {
