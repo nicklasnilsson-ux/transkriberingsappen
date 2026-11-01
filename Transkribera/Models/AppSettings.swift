@@ -107,6 +107,23 @@ enum AnonymizationSettings {
     }
 }
 
+/// Vad filen transkriberades med. Det är utgångsläget i filens inställningsruta, inte
+/// standardinställningarna för nästa transkribering.
+struct FileBaseline: Equatable {
+    var modelRaw: String
+    var language: String
+    var identifySpeakers: Bool
+
+    init(modelName: String, language: String?, hasSpeakers: Bool) {
+        let base = RerunChange.baseModelName(modelName)
+        let model = WhisperModel.allCases.first { $0.displayName == base }
+        // En modell som inte längre visas i väljaren ersätts av standardmodellen, som annars.
+        modelRaw = WhisperModel.resolved(model?.rawValue).rawValue
+        self.language = language ?? "auto"
+        identifySpeakers = hasSpeakers
+    }
+}
+
 /// Val som bara gäller en omtagning av en fil (modell, språk, talare). De ändrar inte
 /// standardinställningarna för nästa transkribering.
 struct TranscriptionOverrides: Equatable {
@@ -117,6 +134,17 @@ struct TranscriptionOverrides: Equatable {
     var speakerCount: SpeakerCount?
 
     var isEmpty: Bool { self == TranscriptionOverrides() }
+
+    /// Fyller i det som inte ändrats med det filen har, så att "Transkribera igen" gör
+    /// det chipsen visar och inte tyst byter till standardinställningarna.
+    func filled(with file: FileBaseline) -> TranscriptionOverrides {
+        var o = self
+        o.modelRaw = o.modelRaw ?? file.modelRaw
+        o.language = o.language ?? file.language
+        o.identifySpeakers = o.identifySpeakers ?? file.identifySpeakers
+        if o.identifySpeakers == true { o.speakerCount = o.speakerCount ?? .automatic }
+        return o
+    }
 
     func applied(to options: TranscriptionOptions) -> TranscriptionOptions {
         var o = options

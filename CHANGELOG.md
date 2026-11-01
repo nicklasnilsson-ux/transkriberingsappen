@@ -6,6 +6,13 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.7.5] – 2026-11-01
+
+### Rättat
+- Inställningsrutan för en utförd transkribering visar nu modell, språk och talarval som filen har, inte dina standardinställningar. Tidigare kunde chipsen visa KB Large medan rutan visade Pianissimo.
+- "Transkribera igen" använder det chipsen visar. Ändrar du inget görs omtagningen med samma modell och språk som filen, inte med dina standardinställningar.
+- Länken i rutan heter nu "Återställ till det filen har".
+
 ## [0.7.4] – 2026-11-01
 
 ### Ändrat

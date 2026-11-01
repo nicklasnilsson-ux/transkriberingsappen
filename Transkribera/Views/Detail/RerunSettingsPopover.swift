@@ -5,10 +5,8 @@ import TranskriberaCore
 /// standardinställningarna för nästa transkribering.
 struct RerunSettingsPopover: View {
     @Binding var overrides: TranscriptionOverrides
-    @AppStorage(SettingsKey.model) private var defaultModel = WhisperModel.default.rawValue
-    @AppStorage(SettingsKey.language) private var defaultLanguage = "sv"
-    @AppStorage(SettingsKey.identifySpeakers) private var defaultIdentify = false
-    @AppStorage(SettingsKey.speakers) private var defaultSpeakers = SpeakerCount.automatic.rawValue
+    /// Utgångsläget är det filen har, inte dina standardinställningar.
+    let file: FileBaseline
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -19,29 +17,29 @@ struct RerunSettingsPopover: View {
                 .fixedSize(horizontal: false, vertical: true)
             LabeledContent("Modell") {
                 ModelPicker(selection: Binding(
-                    get: { overrides.modelRaw ?? defaultModel },
+                    get: { overrides.modelRaw ?? file.modelRaw },
                     set: { overrides.modelRaw = $0 }
                 ))
                 .frame(width: 240)
             }
             Picker("Språk", selection: Binding(
-                get: { overrides.language ?? defaultLanguage },
+                get: { overrides.language ?? file.language },
                 set: { overrides.language = $0 }
             )) {
                 ForEach(Language.all) { Text($0.name).tag($0.id) }
             }
             Toggle("Skilj på vem som pratar", isOn: Binding(
-                get: { overrides.identifySpeakers ?? defaultIdentify },
+                get: { overrides.identifySpeakers ?? file.identifySpeakers },
                 set: { overrides.identifySpeakers = $0 }
             ))
-            if overrides.identifySpeakers ?? defaultIdentify {
+            if overrides.identifySpeakers ?? file.identifySpeakers {
                 SpeakerCountPicker(selection: Binding(
-                    get: { overrides.speakerCount?.rawValue ?? defaultSpeakers },
+                    get: { overrides.speakerCount?.rawValue ?? SpeakerCount.automatic.rawValue },
                     set: { overrides.speakerCount = SpeakerCount(rawValue: $0) }
                 ))
             }
             if !overrides.isEmpty {
-                Button("Återställ till vanliga inställningar") { overrides = TranscriptionOverrides() }
+                Button("Återställ till det filen har") { overrides = TranscriptionOverrides() }
                     .buttonStyle(.link)
             }
         }
