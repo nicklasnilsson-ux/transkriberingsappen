@@ -124,6 +124,9 @@ jobs:
       - name: Tester för releaseskripten
         run: $PYTHON -m unittest discover -s scripts
 
+      - name: Färgerna är läsbara (kontrast) och ingen orange text
+        run: python3 scripts/check_colors.py
+
       - name: Släppta versioner i CHANGELOG är orörda
         run: |
           git fetch --quiet --depth=1 origin '+refs/tags/v*:refs/tags/v*'

@@ -6,6 +6,12 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+### Ändrat
+- Ny accentfärg (indigo) och en egen varningsfärg som är lättare att läsa, i ljust och mörkt läge och med Öka kontrast. Förut hade accentfärgen för låg kontrast mot vitt och varningar var orange.
+- Talare visas med en liten färgprick och namnet i vanlig textfärg, så att färgen inte ensam bär informationen.
+- Texten du läser är 15 punkter som standard. Under Visa kan du välja Större text (⌘+), Mindre text (⌘−) och Normal storlek (⌘0).
+- Stycket som spelas just nu får en accentlinje till vänster och tydligare bakgrund.
+
 ## [0.6.3] – 2026-10-31
 
 ### Ändrat

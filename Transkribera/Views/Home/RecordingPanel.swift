@@ -52,7 +52,7 @@ struct RecordingPanel: View {
             if let error = recorder.errorMessage {
                 Label(error, systemImage: "exclamationmark.triangle.fill")
                     .font(.callout)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(Color.warning)
                     .fixedSize(horizontal: false, vertical: true)
                 if error == RecordingError.permissionDenied.errorDescription {
                     Button("Öppna Systeminställningar") {

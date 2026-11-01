@@ -118,7 +118,7 @@ private struct StatusLabel: View {
                 .foregroundStyle(.green)
         case .failed(let error):
             Label("Fel", systemImage: "exclamationmark.triangle.fill")
-                .foregroundStyle(.orange)
+                .foregroundStyle(Color.warning)
                 .help(error)
         case .cancelled:
             Text("Avbruten").foregroundStyle(.secondary)

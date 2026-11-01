@@ -29,6 +29,8 @@ enum SettingsKey {
     static let pianissimoCarefulSeams = "pianissimoCarefulSeams"
     static let levelVolume = "levelVolume"
     static let sortformerDiarization = "sortformerDiarization"
+    /// Textstorlek på läsytan i punkter, ett av `ReadingTextSize.steps`.
+    static let readingTextSize = "readingTextSize"
 }
 
 enum SpeakerCountSetting {

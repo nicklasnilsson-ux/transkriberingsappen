@@ -1,5 +1,6 @@
 import SwiftData
 import SwiftUI
+import TranskriberaCore
 
 @main
 struct TranskriberaApp: App {
@@ -9,6 +10,7 @@ struct TranskriberaApp: App {
     @State private var recorder = MeetingRecorder()
     @State private var lab = TestLab()
     @StateObject private var updater = AppUpdater()
+    @AppStorage(SettingsKey.readingTextSize) private var readingSize = ReadingTextSize.standard
 
     init() {
         SpeakerCountSetting.migrate()
@@ -43,6 +45,17 @@ struct TranskriberaApp: App {
             CommandGroup(after: .importExport) {
                 Button("Exportera för analys…") { appState.isAnalysisExportPresented = true }
                     .keyboardShortcut("e", modifiers: [.command, .shift])
+            }
+            CommandGroup(after: .toolbar) {
+                Divider()
+                Button("Större text") { readingSize = ReadingTextSize.larger(than: readingSize) }
+                    .keyboardShortcut("+")
+                    .disabled(ReadingTextSize.clamped(readingSize) == ReadingTextSize.steps.last)
+                Button("Mindre text") { readingSize = ReadingTextSize.smaller(than: readingSize) }
+                    .keyboardShortcut("-")
+                    .disabled(ReadingTextSize.clamped(readingSize) == ReadingTextSize.steps.first)
+                Button("Normal storlek") { readingSize = ReadingTextSize.standard }
+                    .keyboardShortcut("0")
             }
             CommandGroup(after: .help) {
                 TestLabMenuButton()

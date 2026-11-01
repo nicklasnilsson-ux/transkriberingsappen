@@ -109,7 +109,7 @@ struct QuickSettingsView: View {
                              : "\(model.summary) · Laddas ner automatiskt första gången")
                         if model.isSwedishOnly && language != "sv" {
                             Label("KB-modellerna är tränade för svenska. Välj en OpenAI-modell för andra språk.", systemImage: "exclamationmark.triangle")
-                                .foregroundStyle(.orange)
+                                .foregroundStyle(Color.warning)
                         }
                     }
                     .font(.caption)
