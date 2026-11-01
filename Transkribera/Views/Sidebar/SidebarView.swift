@@ -15,8 +15,9 @@ struct SidebarView: View {
     @State private var transcriptToDelete: Transcript?
     @State private var transcriptToRetranscribe: Transcript?
     @State private var showsNextSettings = false
-    /// Vad som var valt när musknappen trycktes ned, så att klick på den valda raden kan avmarkera den.
-    @State private var selectionAtMouseDown: Set<Transcript> = []
+    /// Raden som var den enda valda när musknappen trycktes ned. Släpps knappen på samma rad utan
+    /// att valet ändrats (vanligt klick på den valda raden) avmarkeras den.
+    @State private var pendingDeselectRow: Int?
     @State private var mouseMonitor: Any?
 
     /// Listans val som mängd: en eller flera. Flera ligger i `multiSelection`, en i `selection`.
@@ -35,17 +36,38 @@ struct SidebarView: View {
         )
     }
 
-    private func toggleOff(_ transcript: Transcript) {
-        // Vanligt klick (utan ⌘ eller ⇧) på den som redan var vald avmarkerar den.
-        guard NSEvent.modifierFlags.intersection([.command, .shift]).isEmpty,
-              selectionAtMouseDown == [transcript], listSelection.wrappedValue == [transcript] else { return }
-        selection = nil
-        multiSelection = []
+    private func tableView(under event: NSEvent) -> NSTableView? {
+        var view = event.window?.contentView?.hitTest(event.locationInWindow)
+        while let current = view {
+            if let table = current as? NSTableView { return table }
+            view = current.superview
+        }
+        return nil
     }
 
-    private var filtered: [Transcript] {
-        guard !filter.isEmpty else { return transcripts }
-        return transcripts.filter { TextSearch.matches($0.title, query: filter) }
+    /// Lyssnar på musen utan att lägga något på raderna, så listans egen markering (och ⌘/⇧) förblir orörd.
+    private func handleMouse(_ event: NSEvent) {
+        guard let table = tableView(under: event) else {
+            if event.type == .leftMouseDown { pendingDeselectRow = nil }
+            return
+        }
+        let row = table.row(at: table.convert(event.locationInWindow, from: nil))
+        switch event.type {
+        case .leftMouseDown:
+            let plain = event.modifierFlags.intersection([.command, .shift]).isEmpty
+            let onlySelected = row >= 0 && table.selectedRowIndexes == IndexSet(integer: row)
+            pendingDeselectRow = (plain && onlySelected) ? row : nil
+        case .leftMouseUp:
+            defer { pendingDeselectRow = nil }
+            guard let pending = pendingDeselectRow, pending == row, event.clickCount == 1,
+                  table.selectedRowIndexes == IndexSet(integer: row) else { return }
+            DispatchQueue.main.async {
+                selection = nil
+                multiSelection = []
+            }
+        default:
+            break
+        }
     }
 
     private struct TranscriptGroup: Identifiable {
@@ -111,8 +133,9 @@ struct SidebarView: View {
             }
         }
         .onAppear {
-            mouseMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { event in
-                selectionAtMouseDown = listSelection.wrappedValue
+            guard mouseMonitor == nil else { return }
+            mouseMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .leftMouseUp]) { event in
+                handleMouse(event)
                 return event
             }
         }
@@ -214,7 +237,6 @@ struct SidebarView: View {
                     ForEach(group.items) { transcript in
                         SidebarRow(transcript: transcript, isCurrent: queue.currentTranscriptID == transcript.id)
                             .tag(transcript)
-                            .simultaneousGesture(TapGesture().onEnded { toggleOff(transcript) })
                             .contextMenu { menu(for: transcript) }
                     }
                 }

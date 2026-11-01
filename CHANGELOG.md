@@ -6,6 +6,9 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+### Rättat
+- Att välja och avmarkera i sidopanelen svarar direkt igen, var du än klickar på raden. I 0.7.3 svarade bara texten och klicken kändes sega.
+
 ## [0.7.3] – 2026-11-01
 
 ### Nytt

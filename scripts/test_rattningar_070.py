@@ -78,8 +78,16 @@ class RerunButtonTests(unittest.TestCase):
 class MultiSelectTests(unittest.TestCase):
     def test_list_supports_multiple_selection_and_click_to_deselect(self):
         self.assertIn("List(selection: listSelection)", sidebar)
-        self.assertIn("toggleOff(", sidebar)
-        self.assertIn("leftMouseDown", sidebar)  # vad som var valt innan klicket
+        self.assertIn("leftMouseDown", sidebar)
+        self.assertIn("leftMouseUp", sidebar)
+        self.assertIn("pendingDeselectRow", sidebar)
+
+    def test_rows_have_no_own_click_handler(self):
+        # 0.7.3: en egen klickhanterare på raderna slogs med listans val (segt, bara texten svarade).
+        list_code = sidebar[sidebar.index("private var list: some View"):]
+        list_code = list_code[:list_code.index("private func menu(")]
+        for banned in ("TapGesture", "onTapGesture", "simultaneousGesture", "highPriorityGesture"):
+            self.assertNotIn(banned, list_code)
 
     def test_detail_shows_multi_selection_view(self):
         content = (V / "Views/ContentView.swift").read_text(encoding="utf-8")
