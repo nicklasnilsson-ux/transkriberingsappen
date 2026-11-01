@@ -85,6 +85,7 @@ struct TranscriptDetailView: View {
             .padding(.horizontal, 20)
             .padding(.vertical, 14)
             // Hela innehållet mäts, så att skrollpositionen alltid rapporteras.
+            .background(ScrollOffsetObserver { updateCollapse(offset: $0) })
             .background(GeometryReader { geo in
                 Color.clear.preference(
                     key: ScrollOffsetKey.self,

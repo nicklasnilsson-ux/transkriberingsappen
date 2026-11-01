@@ -9,13 +9,17 @@ struct FileModeEmptyView: View {
             NextTranscriptionChips()
                 .padding(.horizontal, 20)
                 .padding(.vertical, 12)
+                .fixedSize(horizontal: false, vertical: true)
             Divider()
             ContentUnavailableView {
                 Label("Ingen transkribering vald", systemImage: "waveform")
             } description: {
                 Text("Släpp ljud- eller videofiler i fönstret, eller välj Välj filer… i sidopanelen. Allt transkriberas lokalt, inget lämnar din Mac.")
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        // Raden med inställningar sitter kloss i toppen, resten av ytan är den tomma vyn.
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .navigationTitle("Ny transkribering")
     }
 }
