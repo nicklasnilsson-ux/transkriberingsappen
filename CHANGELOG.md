@@ -6,6 +6,8 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.7.1] – 2026-11-01
+
 ### Rättat
 - Sidopanelen har nu en synlig släppyta med "Välj filer…" (den markeras när du drar en fil över fönstret). Sökfältet ligger under rubriken Transkriberingar.
 - Modell och språk för nästa transkribering ligger högst upp i sidopanelen i stället för längst ner. Knappen öppnar inställningarna (modell, språk, talare, ordlista); den startar ingenting.
