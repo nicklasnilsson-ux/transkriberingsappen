@@ -13,6 +13,7 @@ struct SidebarView: View {
     @State private var filter = ""
     @State private var transcriptToDelete: Transcript?
     @State private var transcriptToRetranscribe: Transcript?
+    @State private var showsNextSettings = false
 
     private var filtered: [Transcript] {
         guard !filter.isEmpty else { return transcripts }
@@ -34,43 +35,12 @@ struct SidebarView: View {
     }
 
     var body: some View {
-        List(selection: $selection) {
-            Button {
-                appState.isImporterPresented = true
-            } label: {
-                Label("Välj filer…", systemImage: "square.and.arrow.down")
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 6)
-            }
-            .buttonStyle(.bordered)
-            .help("Välj ljud- eller videofiler att transkribera (⌘O). Du kan också släppa dem var som helst i fönstret.")
-            .listRowSeparator(.hidden)
-
-            Text("Transkriberingar (\(transcripts.count))")
-                .font(.headline)
-                .padding(.top, 6)
-                .selectionDisabled()
-
-            if transcripts.isEmpty {
-                Text("Inga transkriberingar än. Släpp en fil eller spela in ett möte så hamnar resultatet här.")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 8)
-            }
-
-            ForEach(groups) { group in
-                Section(group.group.rawValue) {
-                    ForEach(group.items) { transcript in
-                        SidebarRow(transcript: transcript, isCurrent: queue.currentTranscriptID == transcript.id)
-                            .tag(transcript)
-                            .contextMenu { menu(for: transcript) }
-                    }
-                }
-            }
+        VStack(spacing: 0) {
+            settingsButton
+            dropArea
+            listHeader
+            list
         }
-        .listStyle(.sidebar)
-        .searchable(text: $filter, placement: .sidebar, prompt: "Sök på titel")
-        .safeAreaInset(edge: .bottom, spacing: 0) { modelFooter }
         .navigationSplitViewColumnWidth(min: 220, ideal: 260, max: 360)
         .confirmationDialog(
             "Radera ”\(transcriptToDelete?.title ?? "")”?",
@@ -109,22 +79,104 @@ struct SidebarView: View {
         }
     }
 
-    /// Längst ner: modellen och språket som nästa transkribering använder.
-    private var modelFooter: some View {
+    /// Högst upp: modell och språk för nästa transkribering. Knappen öppnar inställningarna.
+    private var settingsButton: some View {
         let model = WhisperModel.resolved(modelRaw)
-        return VStack(alignment: .leading, spacing: 2) {
-            Divider()
-            Text("\(model.displayName) · \(Language.displayName(for: language))")
-                .font(.callout.weight(.medium))
-                .padding(.top, 6)
-            Text(queue.transcriber.isDownloaded(model) ? "Finns på datorn" : "Laddas ner automatiskt första gången")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+        return Button { showsNextSettings.toggle() } label: {
+            HStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(model.displayName) · \(Language.displayName(for: language))")
+                        .font(.callout.weight(.medium))
+                        .lineLimit(1)
+                    Text(queue.transcriber.isDownloaded(model) ? "Finns på datorn" : "Laddas ner automatiskt första gången")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 4)
+                Image(systemName: "slider.horizontal.3").foregroundStyle(.secondary)
+            }
+            .padding(10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 12)
+        .padding(.top, 10)
+        .help("Inställningar för nästa transkribering: modell, språk, antal talare och ordlista")
+        .popover(isPresented: $showsNextSettings, arrowEdge: .trailing) {
+            NextTranscriptionSettingsForm()
+        }
+    }
+
+    /// Släppyta med knappen Välj filer…. Hela fönstret tar emot filer; den här visar var.
+    private var dropArea: some View {
+        VStack(spacing: 8) {
+            Image(systemName: appState.isDropTargeted ? "arrow.down.circle.fill" : "square.and.arrow.down")
+                .font(.system(size: 22, weight: .light))
+                .foregroundStyle(appState.isDropTargeted ? Color.accentColor : Color.secondary)
+            Text("Släpp ljud- eller videofiler här")
+                .font(.callout)
+                .multilineTextAlignment(.center)
+            Button("Välj filer…") { appState.isImporterPresented = true }
+                .help("Välj ljud- eller videofiler att transkribera (⌘O)")
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity)
+        .overlay {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(
+                    appState.isDropTargeted ? Color.accentColor : Color.secondary.opacity(0.5),
+                    style: StrokeStyle(lineWidth: appState.isDropTargeted ? 2 : 1, dash: appState.isDropTargeted ? [] : [6, 4])
+                )
         }
         .padding(.horizontal, 12)
-        .padding(.bottom, 8)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .help("Modell och språk för nästa transkribering. Ändras under Nästa transkribering eller i Inställningar.")
+        .padding(.top, 10)
+    }
+
+    private var listHeader: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Transkriberingar (\(transcripts.count))")
+                .font(.headline)
+            HStack(spacing: 6) {
+                Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+                TextField("Sök på titel", text: $filter)
+                    .textFieldStyle(.plain)
+                if !filter.isEmpty {
+                    Button { filter = "" } label: { Image(systemName: "xmark.circle.fill") }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(.secondary)
+                        .help("Rensa sökningen")
+                }
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        }
+        .padding(.horizontal, 14)
+        .padding(.top, 14)
+        .padding(.bottom, 6)
+    }
+
+    private var list: some View {
+        List(selection: $selection) {
+            if transcripts.isEmpty {
+                Text("Inga transkriberingar än. Släpp en fil eller spela in ett möte så hamnar resultatet här.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 8)
+            }
+
+            ForEach(groups) { group in
+                Section(group.group.rawValue) {
+                    ForEach(group.items) { transcript in
+                        SidebarRow(transcript: transcript, isCurrent: queue.currentTranscriptID == transcript.id)
+                            .tag(transcript)
+                            .contextMenu { menu(for: transcript) }
+                    }
+                }
+            }
+        }
+        .listStyle(.sidebar)
     }
 
     @ViewBuilder

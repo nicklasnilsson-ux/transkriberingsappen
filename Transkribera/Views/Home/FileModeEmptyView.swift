@@ -96,6 +96,44 @@ private struct ChipButton<Content: View>: View {
     }
 }
 
+/// Inställningarna för nästa transkribering som ett formulär, för popovern i sidopanelen.
+struct NextTranscriptionSettingsForm: View {
+    @AppStorage(SettingsKey.model) private var modelRaw = WhisperModel.default.rawValue
+    @AppStorage(SettingsKey.language) private var language = "sv"
+    @AppStorage(SettingsKey.identifySpeakers) private var identifySpeakers = false
+    @AppStorage(SettingsKey.speakers) private var speakers = SpeakerCount.automatic.rawValue
+    @AppStorage(SettingsKey.vocabulary) private var vocabulary = ""
+    @Environment(TranscriptionQueue.self) private var queue
+
+    var body: some View {
+        let model = WhisperModel.resolved(modelRaw)
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Nästa transkribering").font(.headline)
+            LabeledContent("Modell") { ModelPicker(selection: $modelRaw).frame(width: 240) }
+            Text(queue.transcriber.isDownloaded(model) ? "Finns på datorn" : "Laddas ner automatiskt första gången")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Picker("Språk", selection: $language) {
+                ForEach(Language.all) { Text($0.name).tag($0.id) }
+            }
+            .help("Språket som talas. Ett angivet språk ger oftast säkrare resultat än automatiskt.")
+            Toggle("Skilj på vem som pratar", isOn: $identifySpeakers)
+                .help("Märker texten med Talare 1, Talare 2 … som du sedan kan byta namn på. Tar lite längre tid.")
+            if identifySpeakers {
+                SpeakerCountPicker(selection: $speakers)
+            }
+            TextField("Ordlista", text: $vocabulary, prompt: Text("Namn och fackord, t.ex. TG, Fortnox"))
+                .help("Ord som förekommer i inspelningen, med komma emellan. Hjälper modellen att stava dem rätt.")
+            Divider()
+            SettingsLink { Text("Fler inställningar…") }
+                .buttonStyle(.link)
+                .help("Öppna alla inställningar, t.ex. översättning och nedladdade modeller")
+        }
+        .frame(width: 340)
+        .padding(16)
+    }
+}
+
 /// Mötesinspelning-läget: kort för status, och en högerpanel med inställningarna.
 struct MeetingModeView: View {
     var onCreated: (Transcript) -> Void

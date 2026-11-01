@@ -16,6 +16,8 @@ final class TranscriptionQueue {
     var importError: String?
 
     @ObservationIgnored private var pending: [Transcript] = []
+    /// Val som bara gäller en omtagning (se `TranscriptionOverrides`).
+    @ObservationIgnored private var overridesByID: [UUID: TranscriptionOverrides] = [:]
     @ObservationIgnored private var worker: Task<Void, Never>?
     @ObservationIgnored private var currentJob: Task<TranscriptionOutput, Error>?
 
@@ -130,7 +132,16 @@ final class TranscriptionQueue {
 
     /// Kräver en bekräftelse (`RetranscribeConfirmation`), eftersom omtagningen ersätter
     /// rättningar och talarnamn. Det går inte att anropa utan.
-    func retranscribe(_ transcript: Transcript, confirmation: RetranscribeConfirmation) {
+    func retranscribe(
+        _ transcript: Transcript,
+        confirmation: RetranscribeConfirmation,
+        overrides: TranscriptionOverrides = TranscriptionOverrides()
+    ) {
+        if overrides.isEmpty {
+            overridesByID[transcript.id] = nil
+        } else {
+            overridesByID[transcript.id] = overrides
+        }
         enqueue(transcript)
     }
 
@@ -165,7 +176,8 @@ final class TranscriptionQueue {
     }
 
     private func process(_ transcript: Transcript) async {
-        let options = TranscriptionOptions.fromDefaults()
+        let options = (overridesByID.removeValue(forKey: transcript.id) ?? TranscriptionOverrides())
+            .applied(to: TranscriptionOptions.fromDefaults())
         currentTranscriptID = transcript.id
         transcript.status = .transcribing
         transcript.modelName = options.modelLabel

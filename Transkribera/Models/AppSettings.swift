@@ -107,6 +107,27 @@ enum AnonymizationSettings {
     }
 }
 
+/// Val som bara gäller en omtagning av en fil (modell, språk, talare). De ändrar inte
+/// standardinställningarna för nästa transkribering.
+struct TranscriptionOverrides: Equatable {
+    var modelRaw: String?
+    /// "auto" = automatisk språkidentifiering.
+    var language: String?
+    var identifySpeakers: Bool?
+    var speakerCount: SpeakerCount?
+
+    var isEmpty: Bool { self == TranscriptionOverrides() }
+
+    func applied(to options: TranscriptionOptions) -> TranscriptionOptions {
+        var o = options
+        if let modelRaw { o.model = WhisperModel.resolved(modelRaw) }
+        if let language { o.languageCode = language == "auto" ? nil : language }
+        if let identifySpeakers { o.identifySpeakers = identifySpeakers }
+        if let speakerCount { o.speakerCount = speakerCount }
+        return o
+    }
+}
+
 /// Inställningar som skickas med varje transkribering.
 struct TranscriptionOptions {
     var model: WhisperModel
