@@ -6,6 +6,8 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.7.3] – 2026-11-01
+
 ### Nytt
 - Du kan välja flera transkriberingar i sidopanelen med ⌘-klick (enstaka) eller ⇧-klick (följd). Huvudytan visar de valda med knapparna **Transkribera N igen**, **Exportera för analys…** och **Radera N…**. Både omtagning och radering frågar först och säger hur många som berörs.
 
