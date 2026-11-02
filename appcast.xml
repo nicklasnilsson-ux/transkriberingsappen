@@ -6,6 +6,20 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.7.8</title>
+      <pubDate>Mon, 02 Nov 2026 07:38:40 GMT</pubDate>
+      <sparkle:version>29</sparkle:version>
+      <sparkle:shortVersionString>0.7.8</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.7.8</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Rättat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Texten hoppar inte längre när du växlar mellan visning och redigering. Fältytan ritas nu runt hela stycket eller raden utan att ta plats, så varje textrad behåller sin höjd.&lt;/li&gt;
+&lt;li&gt;Texten &amp;quot;Rättar anonymiserad text&amp;quot; (eller &amp;quot;Rättar originaltexten&amp;quot;) ligger nu precis vid knappen Redigera/Klar i stället för som en stor etikett på titelraden. Knappen Redigera/Klar sitter bredvid valet Stycken/Rader.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.7.8/Transkribera-v0.7.8.zip" length="14258798" type="application/octet-stream" sparkle:edSignature="ny7XdRIJgoc3hA5zjkcJLd5ws5BVni+Kn2YeUyOnnhnzd0UlTGVd4uwn+EL4QShEW4A2alT0jBKVYbV4fcmtBQ==" />
+    </item>
+    <item>
       <title>Version 0.7.7</title>
       <pubDate>Sun, 01 Nov 2026 23:33:55 GMT</pubDate>
       <sparkle:version>28</sparkle:version>
