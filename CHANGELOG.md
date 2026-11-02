@@ -6,8 +6,10 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.7.9] – 2026-11-02
+
 ### Rättat
-- Texten hoppar inte längre när du växlar mellan visning och redigering i styckelayouten. Ett helt stycke redigeras nu i ett enda fält med samma radbrytning som när du läser, och ändringen sparas på rätt ställe i transkriberingen. Stycket du läser står dessutom kvar på samma plats i fönstret när du växlar läge.
+- Texten hoppar inte längre när du växlar mellan visning och redigering. Fältet har samma radavstånd som texten du läser, både i stycken och rader. Ett helt stycke redigeras i ett enda fält med samma radbrytning som när du läser, och ändringen sparas på rätt ställe i transkriberingen. Stycket du läser står kvar på samma plats i fönstret när du växlar läge.
 
 ## [0.7.8] – 2026-11-02
 
