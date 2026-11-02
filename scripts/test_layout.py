@@ -224,3 +224,22 @@ class RetranscribeTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DropDuringRecordingTests(unittest.TestCase):
+    """Filer som släpps under en mötesinspelning ska vänta i kön och inte byta vy
+    (annars försvinner Stoppa-knappen). Logiken testas i Core (QueueHoldsTests);
+    här kontrolleras att den är inkopplad."""
+
+    def test_content_view_asks_the_tested_rule_before_navigating(self):
+        text = (VIEWS / "ContentView.swift").read_text(encoding="utf-8")
+        self.assertIn("ImportNavigation.shouldNavigate(recordingBusy: recorder.isBusy)", text)
+        self.assertEqual(text.count("queue.importFiles("), 1, "Släpp och Öppna filer ska dela importvägen")
+
+    def test_recorder_busy_state_reaches_the_queue(self):
+        app = (ROOT / "Transkribera" / "App" / "TranskriberaApp.swift").read_text(encoding="utf-8")
+        self.assertIn("setRecordingBusy(", app)
+        recorder = (ROOT / "Transkribera" / "Services" / "MeetingRecorder.swift").read_text(encoding="utf-8")
+        self.assertNotIn("        state = .", recorder, "Tillståndet ska bytas via setState så att kön får veta")
+        queue = (ROOT / "Transkribera" / "Services" / "TranscriptionQueue.swift").read_text(encoding="utf-8")
+        self.assertIn("!self.isHeld", queue, "Arbetstråden ska stanna när kön hålls")
