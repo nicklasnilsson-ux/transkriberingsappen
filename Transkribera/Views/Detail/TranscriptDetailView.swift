@@ -518,8 +518,18 @@ struct TranscriptDetailView: View {
 
     /// 7. Den hopfällda raden som ligger kvar överst som ett overlay, så att texten inte hoppar.
     private func collapsedBar(proxy: ScrollViewProxy) -> some View {
-        HStack(alignment: .center, spacing: 14) {
-            // Vänster: titeln och samma Sök/Redigera-rad som i titelkortet.
+        let size = MiniPlayerSize.resolved(miniSizeRaw)
+        let video = transcript.isVideo ? player : nil
+        // Med mellanstor och stor bild hamnar spelkontrollerna längst ned under knapparna.
+        let controlsUnderTitle = video != nil && size != .small
+        return HStack(alignment: controlsUnderTitle ? .top : .center, spacing: 16) {
+            // Ljud och video längst till vänster (Nicklas skiss 2026-11-02).
+            if let video {
+                miniPlayer(video)
+            }
+            if let player, !controlsUnderTitle {
+                playbackRow(player, withSizeMenu: video != nil)
+            }
             VStack(alignment: .leading, spacing: 6) {
                 Button {
                     withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
@@ -531,30 +541,13 @@ struct TranscriptDetailView: View {
                 .buttonStyle(.plain)
                 .help("Till början")
                 searchAndEditRow(scrollProxy: proxy)
-            }
-            Spacer(minLength: 12)
-            // Höger: videobilden (bara för video) och spelaren.
-            if transcript.isVideo, let player {
-                miniPlayer(player)
-            }
-            if let player {
-                Button { player.togglePlayPause() } label: {
-                    Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
+                if controlsUnderTitle, let player {
+                    Spacer(minLength: 8)
+                    playbackRow(player, withSizeMenu: true)
                 }
-                .help(player.isPlaying ? "Pausa" : "Spela")
-                Text(TimeFormatting.short(player.currentTime))
-                    .font(.system(.callout, design: .monospaced))
-                    .foregroundStyle(.secondary)
-                Slider(
-                    value: Binding(
-                        get: { player.currentTime },
-                        set: { player.seek(to: $0, play: player.isPlaying) }
-                    ),
-                    in: 0...max(transcript.duration, 1)
-                )
-                .frame(minWidth: 80, maxWidth: 200)
-                .help("Hoppa i inspelningen")
             }
+            .frame(height: controlsUnderTitle ? size.height : nil)
+            Spacer(minLength: 0)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
@@ -568,21 +561,43 @@ struct TranscriptDetailView: View {
     /// Videobilden i den hopfällda raden. Liten som standard; Bildstorlek väljer mellan tre.
     private func miniPlayer(_ player: PlayerController) -> some View {
         let size = MiniPlayerSize.resolved(miniSizeRaw)
-        return HStack(spacing: 6) {
-            PlayerView(player: player.player, isVideo: true, compact: true)
-                .frame(width: size.width, height: size.height)
-                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-            Menu {
-                Picker("Bildstorlek", selection: $miniSizeRaw) {
-                    ForEach(MiniPlayerSize.allCases, id: \.rawValue) { Text($0.label).tag($0.rawValue) }
+        return PlayerView(player: player.player, isVideo: true, compact: true)
+            .frame(width: size.width, height: size.height)
+            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+    }
+
+    /// Bildstorlek (bara video), spela/pausa, tid och reglage.
+    private func playbackRow(_ player: PlayerController, withSizeMenu: Bool) -> some View {
+        HStack(spacing: 10) {
+            if withSizeMenu {
+                Menu {
+                    Picker("Bildstorlek", selection: $miniSizeRaw) {
+                        ForEach(MiniPlayerSize.allCases, id: \.rawValue) { Text($0.label).tag($0.rawValue) }
+                    }
+                    .pickerStyle(.inline)
+                } label: {
+                    Image(systemName: "arrow.up.left.and.arrow.down.right").accessibilityLabel("Bildstorlek")
                 }
-                .pickerStyle(.inline)
-            } label: {
-                Image(systemName: "arrow.up.left.and.arrow.down.right").accessibilityLabel("Bildstorlek")
+                .menuStyle(.borderlessButton)
+                .fixedSize()
+                .help("Bildstorlek: liten, mellan eller stor")
             }
-            .menuStyle(.borderlessButton)
-            .fixedSize()
-            .help("Bildstorlek: liten, mellan eller stor")
+            Button { player.togglePlayPause() } label: {
+                Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
+            }
+            .help(player.isPlaying ? "Pausa" : "Spela")
+            Text(TimeFormatting.short(player.currentTime))
+                .font(.system(.callout, design: .monospaced))
+                .foregroundStyle(.secondary)
+            Slider(
+                value: Binding(
+                    get: { player.currentTime },
+                    set: { player.seek(to: $0, play: player.isPlaying) }
+                ),
+                in: 0...max(transcript.duration, 1)
+            )
+            .frame(minWidth: 80, maxWidth: 200)
+            .help("Hoppa i inspelningen")
         }
     }
 
