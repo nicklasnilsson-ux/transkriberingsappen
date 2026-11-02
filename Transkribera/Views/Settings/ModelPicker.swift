@@ -86,7 +86,7 @@ struct ModelInfoRow: View {
             HStack(spacing: 6) {
                 Text(model.displayName).font(.body.weight(.medium))
                 if model.isRecommended { Badge(text: "Rekommenderad", color: .accentColor) }
-                Badge(text: model.languageNote, color: model.isSwedishOnly ? .blue : .gray)
+                Badge(text: model.languageNote, color: model.isSwedishOnly ? Color.accentColor : .gray)
                 Spacer(minLength: 4)
                 Text(model.downloadSize)
                     .font(.callout.monospacedDigit())

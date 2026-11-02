@@ -1,4 +1,5 @@
 import AppKit
+import SwiftData
 import SwiftUI
 import TranskriberaCore
 
@@ -8,6 +9,7 @@ struct RecordingPanel: View {
 
     @Environment(MeetingRecorder.self) private var recorder
     @Environment(TranscriptionQueue.self) private var queue
+    @Query private var allTranscripts: [Transcript]
     @AppStorage(SettingsKey.recordMicrophone) private var recordMicrophone = true
 
     var body: some View {
@@ -16,6 +18,9 @@ struct RecordingPanel: View {
             statusCard
         }
     }
+
+    /// Filer som släppts under inspelningen och väntar i kön.
+    private var waitingCount: Int { allTranscripts.filter { $0.status == .queued }.count }
 
     private var cardShape: RoundedRectangle { RoundedRectangle(cornerRadius: 12, style: .continuous) }
 
@@ -78,6 +83,13 @@ struct RecordingPanel: View {
                 Text("Texten skapas när du stoppar inspelningen.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
+                if recorder.isBusy, waitingCount > 0 {
+                    Text(waitingCount == 1
+                         ? "1 fil väntar och transkriberas när inspelningen är sparad."
+                         : "\(waitingCount) filer väntar och transkriberas när inspelningen är sparad.")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
 
                 if let error = recorder.errorMessage {
                     Label(error, systemImage: "exclamationmark.triangle.fill")

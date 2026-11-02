@@ -78,3 +78,4 @@ först när alla kontroller är gröna på exakt de filer som laddades upp.
   ett Developer ID; då kräver röktestet att Gatekeeper godkänner appen.
 - **Mikrofon, datorljud och riktiga möten.** Behörighetsdialoger och inspelning går inte att
   testa på CI-maskinerna. Det ingår i checklistan i [RELEASE.md](RELEASE.md).
+| En fil som släpptes under en mötesinspelning började transkribera direkt och bytte vy, så Stoppa-knappen försvann och inspelningen kunde störas | – | Enhetstester: kön hålls av Testlabbet eller en pågående inspelning (släpps ett skäl hålls kön om det andra finns kvar) och importen byter inte vy under inspelning. Skriptkontroll att regeln är inkopplad (ContentView, inspelarens tillstånd, arbetstråden) | `QueueHoldsTests`, `scripts/test_layout.py` |

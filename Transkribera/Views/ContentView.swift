@@ -1,5 +1,6 @@
 import SwiftData
 import SwiftUI
+import TranskriberaCore
 
 /// Delat UI-tillstånd som menykommandon behöver kunna påverka.
 @MainActor
@@ -42,6 +43,16 @@ struct ContentView: View {
     @Environment(MeetingRecorder.self) private var recorder
     @State private var isTargeted = false
 
+    /// Importerar och visar den första nya filen. Under en mötesinspelning visas ingenting nytt
+    /// (Stoppa-knappen finns i mötesläget) och filerna väntar i kön tills inspelningen är sparad.
+    private func importAndShow(_ urls: [URL]) async {
+        let navigate = ImportNavigation.shouldNavigate(recordingBusy: recorder.isBusy)
+        guard let transcript = await queue.importFiles(urls), navigate,
+              ImportNavigation.shouldNavigate(recordingBusy: recorder.isBusy) else { return }
+        appState.mode = .file
+        appState.selection = transcript
+    }
+
     var body: some View {
         @Bindable var appState = appState
 
@@ -80,12 +91,7 @@ struct ContentView: View {
         }
         // Hela fönstret tar emot släppta filer.
         .dropDestination(for: URL.self) { urls, _ in
-            Task {
-                if let transcript = await queue.importFiles(urls) {
-                    appState.mode = .file
-                    appState.selection = transcript
-                }
-            }
+            Task { await importAndShow(urls) }
             return true
         } isTargeted: { isTargeted = $0; appState.isDropTargeted = $0 }
         .overlay {
@@ -105,11 +111,7 @@ struct ContentView: View {
             allowsMultipleSelection: true
         ) { result in
             guard case .success(let urls) = result else { return }
-            Task {
-                if let transcript = await queue.importFiles(urls) {
-                    appState.selection = transcript
-                }
-            }
+            Task { await importAndShow(urls) }
         }
         .alert(
             "Några filer kunde inte läggas till",

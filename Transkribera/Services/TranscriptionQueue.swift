@@ -29,17 +29,25 @@ final class TranscriptionQueue {
 
     var queuedCount: Int { pending.count }
 
-    /// Testlabbet använder transkriberaren. Nya filer köas men väntar tills det är klart.
-    private(set) var isHeld = false
+    /// Skäl till att kön väntar (Testlabbet använder transkriberaren, eller en mötesinspelning
+    /// pågår). Nya filer köas men startar först när inget håller kvar kön.
+    private(set) var holds = QueueHolds()
+    var isHeld: Bool { holds.isHeld }
 
     /// Sant när inget transkriberas och kön är tom, så att Testlabbet kan ta över.
     var isIdle: Bool { currentTranscriptID == nil && pending.isEmpty && worker == nil }
 
-    func hold() { isHeld = true }
+    func hold() { holds.testLab = true }
 
     func release() {
-        isHeld = false
+        holds.testLab = false
         startWorkerIfNeeded()
+    }
+
+    /// Anropas av mötesinspelaren när den börjar och slutar vara upptagen.
+    func setRecordingBusy(_ busy: Bool) {
+        holds.recording = busy
+        if !busy { startWorkerIfNeeded() }
     }
 
     // MARK: - Import
@@ -179,7 +187,7 @@ final class TranscriptionQueue {
     private func startWorkerIfNeeded() {
         guard worker == nil, !isHeld else { return }
         worker = Task { [weak self] in
-            while let self, !self.pending.isEmpty {
+            while let self, !self.pending.isEmpty, !self.isHeld {
                 let next = self.pending.removeFirst()
                 await self.process(next)
             }
