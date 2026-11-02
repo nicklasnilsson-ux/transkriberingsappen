@@ -27,6 +27,7 @@ final class VersionTests: XCTestCase {
     private func transcript() -> Transcript {
         let t = Transcript(title: "Prov", mediaFileName: "x.m4a", originalFileName: "x.m4a", isVideo: false, duration: 2, modelName: "M0")
         context.insert(t)
+        t.status = .completed // som när en körning är klar; versionsbyte kräver en färdig text
         t.addNewVersion(output("första"), previousModelName: "", in: context, now: Date(timeIntervalSince1970: 1_000))
         return t
     }
