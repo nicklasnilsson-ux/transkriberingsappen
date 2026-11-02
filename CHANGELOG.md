@@ -7,6 +7,8 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 ## [Kommande]
 
 ### Ändrat
+- Ny appikon: en ljudvåg som blir textrader, på enfärgad indigo.
+- Appens indigo används nu genom hela appen (knappar, markeringar, aktiv text), i både ljust och mörkt läge. Tidigare visades systemets blå eftersom accentfärgen inte var kopplad. Märket för svenska modeller följer samma färg.
 - Testlabbet finns inte längre i Hjälp-menyn, eftersom det är ett verktyg för utveckling och inte för vanlig användning. Det öppnas fortfarande med genvägen ⌥⇧⌘T. Inget annat påverkas.
 
 ### Rättat
