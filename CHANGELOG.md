@@ -6,6 +6,12 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+### Ändrat
+- Titelkortet har fått en ny uppställning. Titeln står till vänster och status, datum och längd till höger. Under den ligger Talare, Anonymisera och Stycken/Rader, och till höger Kopiera text och Exportera. Under avdelaren ligger Sök i texten och Redigera.
+- När titelkortet är hopfällt visas titeln med Sök i texten och Redigera till vänster och spelaren till höger. Anonymisera, Talare, Kopiera och Exportera finns bara i det utfällda titelkortet.
+- Anonymisera och Klar är fyllda med accentfärgen när de är på, så att det syns vilket läge du är i. Texten "Rättar anonymiserad text" står direkt efter Klar.
+- Märket med intervjuaren efter titeln är borttaget. Intervjuaren väljs under Talare.
+
 ## [0.7.9] – 2026-11-02
 
 ### Rättat

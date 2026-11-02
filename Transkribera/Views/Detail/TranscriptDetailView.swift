@@ -227,65 +227,120 @@ struct TranscriptDetailView: View {
         }
     }
 
-    /// 3. Titelkortet: status, titel, intervjuare, sök och export, och verktygen.
+    /// 3. Titelkortet: titel och metadata, verktygen för hela texten, och under avdelaren Sök och
+    /// Redigera, som ligger på samma plats i den hopfällda raden.
     private var titleCard: some View {
         card {
             VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 6) {
-                    Text(statusText)
-                        .foregroundStyle(transcript.status == .failed ? AnyShapeStyle(Color.warning) : AnyShapeStyle(.secondary))
-                    Text("·").foregroundStyle(.secondary)
-                    Text(transcript.createdAt.formatted(date: .long, time: .shortened))
-                    Text("·").foregroundStyle(.secondary)
-                    Text(TimeFormatting.duration(transcript.duration)).monospacedDigit()
-                }
-                .font(.callout)
-                .foregroundStyle(.secondary)
+                titleRow
 
-                HStack(alignment: .center, spacing: 10) {
-                    TextField("Titel", text: $transcript.title)
-                        .textFieldStyle(.plain)
-                        .font(.title2.weight(.semibold))
-                        .help("Klicka för att byta namn")
-                    interviewerPill
+                HStack(spacing: 8) {
+                    speakersMenu
+                    anonymizeToggle
+                    if hasText { layoutPicker }
                     Spacer(minLength: 8)
-                    Button {
-                        openSearch()
-                    } label: {
-                        Label("Sök i texten", systemImage: "magnifyingglass")
-                    }
-                    .keyboardShortcut("f")
-                    .disabled(!hasText)
-                    .help("Sök i transkriberingen (⌘F)")
+                    copyButton
                     exportMenu()
                 }
 
-                if showSearch { searchRow }
-
                 Divider()
-                HStack(spacing: 8) {
-                    toolButtons(iconsOnly: false)
-                    Spacer(minLength: 8)
-                    editStateLabel
-                    editToggle(iconsOnly: false)
-                    if hasText {
-                        Picker("Visning", selection: $layout) {
-                            ForEach(TranscriptLayout.allCases) { layout in
-                                Text(layout.displayName).tag(layout)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                        .labelsHidden()
-                        .fixedSize()
-                        .help("Stycken: löpande text per talare med en tidskod per stycke. Rader: varje segment med egen tidskod.")
-                    }
-                }
+                searchAndEditRow(scrollProxy: nil)
+
+                if showSearch { searchRow }
             }
         }
     }
 
-    /// Säger vilken text som rättas. Ligger vid knappen Redigera/Klar, i mellanrummet som redan finns
-    /// före knappen, så att ingenting flyttar sig när den visas.
+    /// Titeln till vänster och metadatan till höger. Får titeln inte plats på samma rad hamnar
+    /// metadatan under den, och titeln får brytas.
+    private var titleRow: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Text(transcript.title.isEmpty ? "Titel" : transcript.title)
+                    .font(.title2.weight(.semibold))
+                    .lineLimit(1)
+                    .fixedSize()
+                    .hidden()
+                    .overlay(alignment: .leading) { titleField(lines: 1) }
+                Spacer(minLength: 16)
+                metaLine.fixedSize()
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                titleField(lines: 3)
+                metaLine
+            }
+        }
+    }
+
+    private func titleField(lines: Int) -> some View {
+        TextField("Titel", text: $transcript.title, axis: .vertical)
+            .lineLimit(1...lines)
+            .textFieldStyle(.plain)
+            .font(.title2.weight(.semibold))
+            .help("Klicka för att byta namn")
+    }
+
+    /// Status · datum · längd.
+    private var metaLine: some View {
+        HStack(spacing: 6) {
+            Text(statusText)
+                .foregroundStyle(transcript.status == .failed ? AnyShapeStyle(Color.warning) : AnyShapeStyle(.secondary))
+            Text("·")
+            Text(transcript.createdAt.formatted(date: .long, time: .shortened))
+            Text("·")
+            Text(TimeFormatting.duration(transcript.duration)).monospacedDigit()
+        }
+        .font(.callout)
+        .foregroundStyle(.secondary)
+        .lineLimit(1)
+    }
+
+    private var layoutPicker: some View {
+        Picker("Visning", selection: $layout) {
+            ForEach(TranscriptLayout.allCases) { layout in
+                Text(layout.displayName).tag(layout)
+            }
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .fixedSize()
+        .help("Stycken: löpande text per talare med en tidskod per stycke. Rader: varje segment med egen tidskod.")
+    }
+
+    /// Sök i texten, Redigera/Klar och vilken text som rättas. Samma rad i titelkortet och i den
+    /// hopfällda raden. Texten om redigeringen kommer sist, så att ingenting annat flyttar sig.
+    private func searchAndEditRow(scrollProxy: ScrollViewProxy?) -> some View {
+        HStack(spacing: 8) {
+            searchButton(scrollProxy: scrollProxy)
+            editToggle
+            editStateLabel
+        }
+    }
+
+    @ViewBuilder
+    private func searchButton(scrollProxy: ScrollViewProxy?) -> some View {
+        let button = Button {
+            if let scrollProxy {
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
+                    scrollProxy.scrollTo(Self.topID, anchor: .top)
+                }
+            }
+            openSearch()
+        } label: {
+            Label("Sök i texten", systemImage: "magnifyingglass")
+        }
+        .disabled(!hasText)
+        .help("Sök i transkriberingen (⌘F)")
+        // Kortkommandot finns bara en gång; titelkortet finns kvar i vyn när det är hopfällt.
+        if scrollProxy != nil {
+            button
+        } else {
+            button.keyboardShortcut("f")
+        }
+    }
+
+    /// Säger vilken text som rättas. Ligger sist på raden efter Klar, så att ingenting flyttar sig
+    /// när den visas.
     @ViewBuilder
     private var editStateLabel: some View {
         if isEditing {
@@ -294,31 +349,6 @@ struct TranscriptDetailView: View {
                 .foregroundStyle(Color.accentColor)
                 .lineLimit(1)
                 .truncationMode(.tail)
-        }
-    }
-
-    @ViewBuilder
-    private var interviewerPill: some View {
-        let speakers = transcript.speakers
-        if !speakers.isEmpty {
-            let current = speakers.filter(SpeakerRoles.isInterviewer)
-            Menu {
-                ForEach(speakers, id: \.self) { speaker in
-                    Toggle(speaker, isOn: Binding(
-                        get: { SpeakerRoles.isInterviewer(speaker) },
-                        set: { transcript.setInterviewer(speaker, to: $0) }
-                    ))
-                }
-            } label: {
-                Text(current.isEmpty ? "Välj intervjuare" : "Intervjuare: \(current.joined(separator: ", "))")
-                    .font(.callout)
-            }
-            .menuStyle(.borderlessButton)
-            .fixedSize()
-            .padding(.horizontal, 8)
-            .padding(.vertical, 2)
-            .background(.quaternary.opacity(0.5), in: Capsule())
-            .help("Byt intervjuare. Övriga talare blir Kund 1, Kund 2 …")
         }
     }
 
@@ -354,31 +384,33 @@ struct TranscriptDetailView: View {
         Task { @MainActor in searchFocused = true }
     }
 
-    /// Redigera/Klar. Med text i titelkortet, bara ikon i den hopfällda raden.
-    @ViewBuilder
-    private func editToggle(iconsOnly: Bool) -> some View {
+    /// Redigera/Klar. Fylld med accentfärgen när redigeringsläget är på.
+    private var editToggle: some View {
         Toggle(isOn: $isEditing) {
-            toolLabel(isEditing ? "Klar" : "Redigera", isEditing ? "checkmark" : "pencil", iconsOnly: iconsOnly)
+            Label(isEditing ? "Klar" : "Redigera", systemImage: isEditing ? "checkmark" : "pencil")
         }
         .toggleStyle(.button)
-        .tint(isEditing ? Color.accentColor : nil)
+        .modifier(OnStateButtonStyle(isOn: isEditing))
         .help(isEditing
               ? "Stäng redigeringsläget. Ändringarna sparas automatiskt (Esc)"
               : "Rätta texten direkt i transkriberingen")
         .disabled(!hasText)
     }
 
-    /// Anonymisera, Talare och Kopiera text. Med text i titelkortet, bara ikoner i den hopfällda raden.
-    @ViewBuilder
-    private func toolButtons(iconsOnly: Bool) -> some View {
+    /// Anonymisera. Fylld med accentfärgen när anonymiseringen är på.
+    private var anonymizeToggle: some View {
         Toggle(isOn: $anonymize) {
-            toolLabel("Anonymisera", anonymize ? "eye.slash" : "eye", iconsOnly: iconsOnly)
+            Label("Anonymisera", systemImage: anonymize ? "eye.slash" : "eye")
         }
         .toggleStyle(.button)
+        .modifier(OnStateButtonStyle(isOn: anonymize))
         .help(anonymize
               ? "Namn och känsliga uppgifter är dolda. Klicka för att visa originalet."
               : "Dölj namn, personnummer och andra känsliga uppgifter")
+    }
 
+    @ViewBuilder
+    private var speakersMenu: some View {
         if !transcript.speakers.isEmpty {
             Menu {
                 ForEach(transcript.speakers, id: \.self) { speaker in
@@ -398,12 +430,15 @@ struct TranscriptDetailView: View {
                     NSWorkspace.shared.open(AppPaths.speakerTurnsDirectory)
                 }
             } label: {
-                toolLabel("Talare", "person.2", iconsOnly: iconsOnly)
+                Label("Talare", systemImage: "person.2")
             }
+            .menuStyle(.button)
             .fixedSize()
             .help("Ge talarna riktiga namn")
         }
+    }
 
+    private var copyButton: some View {
         Button {
             copyToPasteboard(TranscriptExporter.fullText(outputSegments))
             copied = true
@@ -412,19 +447,10 @@ struct TranscriptDetailView: View {
                 copied = false
             }
         } label: {
-            toolLabel(copied ? "Kopierat!" : "Kopiera text", copied ? "checkmark" : "doc.on.doc", iconsOnly: iconsOnly)
+            Label(copied ? "Kopierat!" : "Kopiera text", systemImage: copied ? "checkmark" : "doc.on.doc")
         }
         .help("Kopiera hela transkriberingen till urklipp")
         .disabled(!hasText)
-    }
-
-    @ViewBuilder
-    private func toolLabel(_ title: String, _ symbol: String, iconsOnly: Bool) -> some View {
-        if iconsOnly {
-            Image(systemName: symbol).accessibilityLabel(title)
-        } else {
-            Label(title, systemImage: symbol)
-        }
     }
 
     private func exportMenu() -> some View {
@@ -441,7 +467,6 @@ struct TranscriptDetailView: View {
             Label("Exportera", systemImage: "square.and.arrow.up")
         }
         .menuStyle(.button)
-        .buttonStyle(.borderedProminent)
         .fixedSize()
         .help("Spara som text, Markdown, undertexter eller JSON")
         .disabled(!hasText)
@@ -493,7 +518,22 @@ struct TranscriptDetailView: View {
 
     /// 7. Den hopfällda raden som ligger kvar överst som ett overlay, så att texten inte hoppar.
     private func collapsedBar(proxy: ScrollViewProxy) -> some View {
-        HStack(spacing: 10) {
+        HStack(alignment: .center, spacing: 14) {
+            // Vänster: titeln och samma Sök/Redigera-rad som i titelkortet.
+            VStack(alignment: .leading, spacing: 6) {
+                Button {
+                    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
+                        proxy.scrollTo(Self.topID, anchor: .top)
+                    }
+                } label: {
+                    Text(transcript.title).font(.headline).lineLimit(1)
+                }
+                .buttonStyle(.plain)
+                .help("Till början")
+                searchAndEditRow(scrollProxy: proxy)
+            }
+            Spacer(minLength: 12)
+            // Höger: videobilden (bara för video) och spelaren.
             if transcript.isVideo, let player {
                 miniPlayer(player)
             }
@@ -515,32 +555,9 @@ struct TranscriptDetailView: View {
                 .frame(minWidth: 80, maxWidth: 200)
                 .help("Hoppa i inspelningen")
             }
-            Button {
-                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
-                    proxy.scrollTo(Self.topID, anchor: .top)
-                }
-            } label: {
-                Text(transcript.title).font(.headline).lineLimit(1)
-            }
-            .buttonStyle(.plain)
-            .help("Till början")
-            Spacer(minLength: 8)
-            editToggle(iconsOnly: true)
-            toolButtons(iconsOnly: true)
-            Button {
-                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
-                    proxy.scrollTo(Self.topID, anchor: .top)
-                }
-                openSearch()
-            } label: {
-                Image(systemName: "magnifyingglass").accessibilityLabel("Sök i texten")
-            }
-            .disabled(!hasText)
-            .help("Sök i texten (⌘F)")
-            exportMenu()
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 8)
+        .padding(.vertical, 10)
         .background(.regularMaterial, in: cardShape)
         .overlay(cardShape.strokeBorder(Color(nsColor: .separatorColor), lineWidth: 1))
         .padding(.horizontal, 20)
@@ -1029,5 +1046,19 @@ private struct RerunButtonStyle: ButtonStyle {
                     .fill(isEmphasized ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.quaternary.opacity(0.6)))
             )
             .opacity(isEnabled ? (configuration.isPressed ? 0.8 : 1) : 0.5)
+    }
+}
+
+/// Fylld knapp med accentfärgen när läget är på, vanlig knapp när det är av. Samma storlek i
+/// båda lägena, så att ingenting flyttar sig.
+struct OnStateButtonStyle: ViewModifier {
+    let isOn: Bool
+
+    func body(content: Content) -> some View {
+        if isOn {
+            content.buttonStyle(.borderedProminent)
+        } else {
+            content.buttonStyle(.bordered)
+        }
     }
 }
