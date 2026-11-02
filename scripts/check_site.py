@@ -7,7 +7,8 @@ Fångar det som annars syns först när sidan är ute:
 - skript, typsnitt eller stilmallar från andra tjänster (sidan lovar att inte ha det),
 - länkar till fel repo, t.ex. efter ett namnbyte (jämförs med SUFeedURL i project.yml),
 - bilder utan alt-text, saknat lang="sv",
-- andra filtyper än de som hör till en statisk sida (så att inget annat råkar publiceras).
+- andra filtyper än de som hör till en statisk sida (så att inget annat råkar publiceras),
+- ikon och favicon som inte är exakt appens ikon (byts appikonen ska sidan följa med).
 
 Kör: python3 scripts/check_site.py
 """
@@ -24,6 +25,23 @@ ALLOWED_SUFFIXES = {".html", ".png", ".svg", ".ico", ".jpg", ".jpeg", ".webp", "
 ALLOWED_FILES_WITHOUT_SUFFIX = {".nojekyll"}
 # Den enda externa adress som skriptet får fråga (senaste release).
 ALLOWED_FETCH = "https://api.github.com/repos/"
+
+
+ICONSET = ROOT / "Transkribera" / "Resources" / "Assets.xcassets" / "AppIcon.appiconset"
+SITE_ICONS = {"icon-512.png": "icon_256x256@2x.png", "favicon.png": "icon_32x32@2x.png"}
+
+
+def check_icons() -> list[str]:
+    errors: list[str] = []
+    for site_name, app_name in SITE_ICONS.items():
+        site_file, app_file = SITE / site_name, ICONSET / app_name
+        if not site_file.exists():
+            errors.append(f"site/{site_name} saknas")
+        elif not app_file.exists():
+            errors.append(f"appens ikon {app_file.relative_to(ROOT)} saknas")
+        elif site_file.read_bytes() != app_file.read_bytes():
+            errors.append(f"site/{site_name} är inte appens nuvarande ikon (kopiera {app_name} från {ICONSET.relative_to(ROOT)})")
+    return errors
 
 
 def repo_slug() -> str:
@@ -133,6 +151,7 @@ def main() -> int:
             errors.append(f"{path.relative_to(ROOT)}: filtypen hör inte hemma på landningssidan")
         if path.is_file() and path.suffix == "" and path.name not in ALLOWED_FILES_WITHOUT_SUFFIX:
             errors.append(f"{path.relative_to(ROOT)}: okänd fil")
+    errors.extend(check_icons())
     for page in pages:
         errors.extend(check_page(page, slug))
     for e in errors:
