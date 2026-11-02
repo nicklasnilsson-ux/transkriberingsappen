@@ -6,6 +6,11 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.7.14] – 2026-11-02
+
+### Rättat
+- Filer du släpper eller öppnar medan en mötesinspelning pågår läggs i kön och transkriberas först när inspelningen är sparad, så att inspelningen inte störs. Vyn byter inte längre till filen, så knappen Stoppa och transkribera finns kvar. På inspelningssidan står hur många filer som väntar.
+
 ## [0.7.13] – 2026-11-02
 
 ### Ändrat

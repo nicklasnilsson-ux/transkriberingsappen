@@ -35,6 +35,9 @@ final class MeetingRecorder: NSObject {
     private(set) var state: State = .idle
     var errorMessage: String?
 
+    /// Anropas när inspelaren blir upptagen eller ledig, så att transkriberingskön kan vänta.
+    @ObservationIgnored var onBusyChange: ((Bool) -> Void)?
+
     @ObservationIgnored private var stream: SCStream?
     @ObservationIgnored private var output: CaptureOutput?
 
@@ -44,6 +47,12 @@ final class MeetingRecorder: NSObject {
     }
 
     var isBusy: Bool { state != .idle }
+
+    private func setState(_ new: State) {
+        let wasBusy = isBusy
+        state = new
+        if wasBusy != isBusy { onBusyChange?(isBusy) }
+    }
 
     /// Mikrofoninspelning via ScreenCaptureKit kräver macOS 15.
     static var supportsMicrophone: Bool {
@@ -55,7 +64,7 @@ final class MeetingRecorder: NSObject {
 
     func start(includeMicrophone: Bool) async {
         guard state == .idle else { return }
-        state = .starting
+        setState(.starting)
         errorMessage = nil
 
         do {
@@ -106,10 +115,10 @@ final class MeetingRecorder: NSObject {
             try await stream.startCapture()
             self.stream = stream
             self.output = output
-            state = .recording(since: Date())
+            setState(.recording(since: Date()))
         } catch {
             errorMessage = error.localizedDescription
-            state = .idle
+            setState(.idle)
             stream = nil
             output = nil
         }
@@ -120,12 +129,12 @@ final class MeetingRecorder: NSObject {
     /// Stoppar inspelningen och returnerar URL till den färdiga ljudfilen.
     func stop() async -> URL? {
         guard isRecording, let stream, let output else { return nil }
-        state = .finishing
+        setState(.finishing)
         try? await stream.stopCapture()
         self.stream = nil
         self.output = nil
 
-        defer { state = .idle }
+        defer { setState(.idle) }
         do {
             let files = await output.finish()
             guard !files.isEmpty else { throw RecordingError.nothingRecorded }
@@ -177,7 +186,7 @@ extension MeetingRecorder: SCStreamDelegate {
             self.errorMessage = "Inspelningen avbröts: \(error.localizedDescription)"
             self.stream = nil
             self.output = nil
-            self.state = .idle
+            self.setState(.idle)
         }
     }
 }

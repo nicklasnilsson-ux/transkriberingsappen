@@ -7,7 +7,7 @@ struct TranskriberaApp: App {
     private let container: ModelContainer
     @State private var appState: AppState
     @State private var queue: TranscriptionQueue
-    @State private var recorder = MeetingRecorder()
+    @State private var recorder: MeetingRecorder
     @State private var lab = TestLab()
     @StateObject private var updater = AppUpdater()
     @AppStorage(SettingsKey.readingTextSize) private var readingSize = ReadingTextSize.standard
@@ -22,6 +22,10 @@ struct TranskriberaApp: App {
         _appState = State(initialValue: appState)
         let queue = TranscriptionQueue(transcriber: TranscriberService(), context: container.mainContext)
         _queue = State(initialValue: queue)
+        // Filer som släpps under en mötesinspelning väntar tills inspelningen är sparad.
+        let recorder = MeetingRecorder()
+        recorder.onBusyChange = { [weak queue] busy in queue?.setRecordingBusy(busy) }
+        _recorder = State(initialValue: recorder)
     }
 
     var body: some Scene {
