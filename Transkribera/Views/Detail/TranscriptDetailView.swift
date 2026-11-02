@@ -244,9 +244,9 @@ struct TranscriptDetailView: View {
                 }
 
                 Divider()
-                searchAndEditRow(scrollProxy: nil)
+                searchAndEditRow(inCollapsedBar: false)
 
-                if showSearch { searchRow }
+                if showSearch && !isCollapsed { searchRow }
             }
         }
     }
@@ -309,22 +309,18 @@ struct TranscriptDetailView: View {
 
     /// Sök i texten, Redigera/Klar och vilken text som rättas. Samma rad i titelkortet och i den
     /// hopfällda raden. Texten om redigeringen kommer sist, så att ingenting annat flyttar sig.
-    private func searchAndEditRow(scrollProxy: ScrollViewProxy?) -> some View {
+    private func searchAndEditRow(inCollapsedBar: Bool) -> some View {
         HStack(spacing: 8) {
-            searchButton(scrollProxy: scrollProxy)
+            searchButton(inCollapsedBar: inCollapsedBar)
             editToggle
             editStateLabel
         }
     }
 
     @ViewBuilder
-    private func searchButton(scrollProxy: ScrollViewProxy?) -> some View {
+    private func searchButton(inCollapsedBar: Bool) -> some View {
+        // Sökfältet öppnas där man är: i titelkortet eller i den hopfällda raden.
         let button = Button {
-            if let scrollProxy {
-                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
-                    scrollProxy.scrollTo(Self.topID, anchor: .top)
-                }
-            }
             openSearch()
         } label: {
             Label("Sök i texten", systemImage: "magnifyingglass")
@@ -332,7 +328,7 @@ struct TranscriptDetailView: View {
         .disabled(!hasText)
         .help("Sök i transkriberingen (⌘F)")
         // Kortkommandot finns bara en gång; titelkortet finns kvar i vyn när det är hopfällt.
-        if scrollProxy != nil {
+        if inCollapsedBar {
             button
         } else {
             button.keyboardShortcut("f")
@@ -344,11 +340,13 @@ struct TranscriptDetailView: View {
     @ViewBuilder
     private var editStateLabel: some View {
         if isEditing {
-            Text(anonymizationOptions != nil ? "Rättar anonymiserad text" : "Rättar originaltexten")
+            Text(anonymizationOptions != nil ? "Redigerar anonymiserad text" : "Redigerar originaltexten")
                 .font(.callout.weight(.semibold))
                 .foregroundStyle(Color.accentColor)
                 .lineLimit(1)
                 .truncationMode(.tail)
+                // Titeln får hellre kortas än den här texten.
+                .layoutPriority(1)
         }
     }
 
@@ -521,33 +519,41 @@ struct TranscriptDetailView: View {
         let size = MiniPlayerSize.resolved(miniSizeRaw)
         let video = transcript.isVideo ? player : nil
         // Med mellanstor och stor bild hamnar spelkontrollerna längst ned under knapparna.
+        // Annars staplas de i en smal kolumn bredvid bilden, så att raden med Sök och
+        // Redigera får plats för texten om redigeringen (Nicklas skiss 2026-11-02, v4).
         let controlsUnderTitle = video != nil && size != .small
-        return HStack(alignment: controlsUnderTitle ? .top : .center, spacing: 16) {
-            // Ljud och video längst till vänster (Nicklas skiss 2026-11-02).
-            if let video {
-                miniPlayer(video)
-            }
-            if let player, !controlsUnderTitle {
-                playbackRow(player, withSizeMenu: video != nil)
-            }
-            VStack(alignment: .leading, spacing: 6) {
-                Button {
-                    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
-                        proxy.scrollTo(Self.topID, anchor: .top)
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: controlsUnderTitle ? .top : .center, spacing: 16) {
+                // Ljud och video längst till vänster.
+                if let video {
+                    miniPlayer(video)
+                }
+                if let player, !controlsUnderTitle {
+                    playbackColumn(player, withSizeMenu: video != nil)
+                        .frame(height: video != nil ? size.height : nil)
+                }
+                VStack(alignment: .leading, spacing: 6) {
+                    Button {
+                        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
+                            proxy.scrollTo(Self.topID, anchor: .top)
+                        }
+                    } label: {
+                        Text(transcript.title).font(.headline).lineLimit(1)
                     }
-                } label: {
-                    Text(transcript.title).font(.headline).lineLimit(1)
+                    .buttonStyle(.plain)
+                    .help("Till början")
+                    searchAndEditRow(inCollapsedBar: true)
+                    if controlsUnderTitle, let player {
+                        Spacer(minLength: 8)
+                        playbackRow(player, withSizeMenu: true)
+                    }
                 }
-                .buttonStyle(.plain)
-                .help("Till början")
-                searchAndEditRow(scrollProxy: proxy)
-                if controlsUnderTitle, let player {
-                    Spacer(minLength: 8)
-                    playbackRow(player, withSizeMenu: true)
-                }
+                .frame(height: controlsUnderTitle ? size.height : nil)
+                .layoutPriority(1)
+                Spacer(minLength: 0)
             }
-            .frame(height: controlsUnderTitle ? size.height : nil)
-            Spacer(minLength: 0)
+            // Sökfältet följer med när titelkortet är hopfällt.
+            if showSearch { searchRow }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
@@ -566,22 +572,45 @@ struct TranscriptDetailView: View {
             .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
     }
 
-    /// Bildstorlek (bara video), spela/pausa, tid och reglage.
+    /// Bildstorlek (bara video), spela/pausa, tid och reglage på en rad (mellanstor och stor bild).
     private func playbackRow(_ player: PlayerController, withSizeMenu: Bool) -> some View {
         HStack(spacing: 10) {
+            if withSizeMenu { sizeMenu }
+            playPauseAndTime(player)
+            positionSlider(player)
+        }
+    }
+
+    /// Samma kontroller staplade: bildstorlek överst, spela och tid, reglaget nederst.
+    private func playbackColumn(_ player: PlayerController, withSizeMenu: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
             if withSizeMenu {
-                Menu {
-                    Picker("Bildstorlek", selection: $miniSizeRaw) {
-                        ForEach(MiniPlayerSize.allCases, id: \.rawValue) { Text($0.label).tag($0.rawValue) }
-                    }
-                    .pickerStyle(.inline)
-                } label: {
-                    Image(systemName: "arrow.up.left.and.arrow.down.right").accessibilityLabel("Bildstorlek")
-                }
-                .menuStyle(.borderlessButton)
-                .fixedSize()
-                .help("Bildstorlek: liten, mellan eller stor")
+                sizeMenu
+                Spacer(minLength: 0)
             }
+            playPauseAndTime(player)
+            if withSizeMenu { Spacer(minLength: 0) }
+            positionSlider(player)
+        }
+        .frame(width: 150, alignment: .leading)
+    }
+
+    private var sizeMenu: some View {
+        Menu {
+            Picker("Bildstorlek", selection: $miniSizeRaw) {
+                ForEach(MiniPlayerSize.allCases, id: \.rawValue) { Text($0.label).tag($0.rawValue) }
+            }
+            .pickerStyle(.inline)
+        } label: {
+            Image(systemName: "arrow.up.left.and.arrow.down.right").accessibilityLabel("Bildstorlek")
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+        .help("Bildstorlek: liten, mellan eller stor")
+    }
+
+    private func playPauseAndTime(_ player: PlayerController) -> some View {
+        HStack(spacing: 10) {
             Button { player.togglePlayPause() } label: {
                 Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
             }
@@ -589,16 +618,19 @@ struct TranscriptDetailView: View {
             Text(TimeFormatting.short(player.currentTime))
                 .font(.system(.callout, design: .monospaced))
                 .foregroundStyle(.secondary)
-            Slider(
-                value: Binding(
-                    get: { player.currentTime },
-                    set: { player.seek(to: $0, play: player.isPlaying) }
-                ),
-                in: 0...max(transcript.duration, 1)
-            )
-            .frame(minWidth: 80, maxWidth: 200)
-            .help("Hoppa i inspelningen")
         }
+    }
+
+    private func positionSlider(_ player: PlayerController) -> some View {
+        Slider(
+            value: Binding(
+                get: { player.currentTime },
+                set: { player.seek(to: $0, play: player.isPlaying) }
+            ),
+            in: 0...max(transcript.duration, 1)
+        )
+        .frame(minWidth: 80, maxWidth: 200)
+        .help("Hoppa i inspelningen")
     }
 
     private func retranscribe(confirmed: Bool = true) {
