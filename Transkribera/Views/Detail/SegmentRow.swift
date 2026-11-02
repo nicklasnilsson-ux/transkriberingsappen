@@ -80,7 +80,6 @@ struct SegmentEditor: View {
     @State private var baseOriginal: String
     @State private var baseShown: String
     @State private var mapping: AnonymizedEditing?
-    @FocusState private var isFocused: Bool
     @AppStorage(SettingsKey.readingTextSize) private var readingSize = ReadingTextSize.standard
 
     init(segment: TranscriptSegment, displayText: String, isAnonymized: Bool, lineSpacing: CGFloat = 4) {
@@ -102,7 +101,6 @@ struct SegmentEditor: View {
             text: $draft,
             isEditable: isEditable,
             lineSpacing: lineSpacing,
-            isFocused: $isFocused,
             commit: commit
         )
         .onDisappear(perform: commit)
@@ -140,7 +138,6 @@ struct ParagraphEditor: View {
     @State private var draft: String
     /// Hur segmenten visades och vad som var sparat när fältet senast sparades.
     @State private var baseShown: [String]
-    @FocusState private var isFocused: Bool
 
     init(rows: [DisplaySegment], lineSpacing: CGFloat = 4) {
         self.rows = rows
@@ -162,7 +159,6 @@ struct ParagraphEditor: View {
             text: $draft,
             isEditable: isEditable,
             lineSpacing: lineSpacing,
-            isFocused: $isFocused,
             commit: commit
         )
         .onDisappear(perform: commit)
@@ -190,34 +186,153 @@ struct ParagraphEditor: View {
 
 /// Textfältet som både styckes- och radredigeringen använder. Samma typsnitt och radavstånd
 /// som visningen, ingen padding. Fokus syns som en tonad bakgrund som inte tar plats.
+///
+/// SwiftUI:s `TextField` bryr sig inte om `.lineSpacing`, så fältet blev lägre än texten i
+/// visningen och allt hoppade (mätt av `EditModeHeightTests`). Därför används macOS egen
+/// textvy (`ReadingTextView`) med samma radavstånd.
 struct EditableText: View {
     @Binding var text: String
     let isEditable: Bool
     let lineSpacing: CGFloat
-    var isFocused: FocusState<Bool>.Binding
     let commit: () -> Void
 
+    @State private var isFocused = false
     @AppStorage(SettingsKey.readingTextSize) private var readingSize = ReadingTextSize.standard
 
     var body: some View {
+        let size = ReadingTextSize.clamped(readingSize)
         Group {
             if isEditable {
-                TextField("Text", text: $text, axis: .vertical)
-                    .textFieldStyle(.plain)
-                    .focused(isFocused)
-                    .onSubmit(commit)
-                    .onChange(of: isFocused.wrappedValue) { _, focused in
-                        if !focused { commit() }
-                    }
+                ReadingTextView(
+                    text: $text,
+                    fontSize: size,
+                    lineSpacing: lineSpacing,
+                    isFocused: $isFocused,
+                    commit: commit
+                )
             } else {
                 Text(text)
+                    .font(.system(size: size))
+                    .lineSpacing(lineSpacing)
                     .help("Det här stycket kan inte rättas med anonymiseringen på. Slå av anonymiseringen för att rätta det.")
             }
         }
-        .font(.system(size: ReadingTextSize.clamped(readingSize)))
-        .lineSpacing(lineSpacing)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(isFocused.wrappedValue ? Color.accentColor.opacity(0.12) : Color.clear)
+        .background(isFocused ? Color.accentColor.opacity(0.12) : Color.clear)
+    }
+}
+
+/// Redigerbar text i macOS egen textvy, med samma typsnitt, radhöjd och radavstånd som
+/// SwiftUI:s `Text` i visningsläget. Höjden räknas som rader × radhöjd + radavstånd mellan
+/// raderna, precis som `Text` gör. Retur och Esc sparar; Esc stänger sedan redigeringsläget.
+struct ReadingTextView: NSViewRepresentable {
+    @Binding var text: String
+    let fontSize: Double
+    let lineSpacing: CGFloat
+    @Binding var isFocused: Bool
+    let commit: () -> Void
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    func makeNSView(context: Context) -> NSTextView {
+        // TextKit 1, så att raderna går att räkna med layoutManager.
+        let view = NSTextView(usingTextLayoutManager: false)
+        view.delegate = context.coordinator
+        view.isRichText = false
+        view.importsGraphics = false
+        view.allowsUndo = true
+        view.drawsBackground = false
+        view.isVerticallyResizable = false
+        view.isHorizontallyResizable = false
+        view.textContainerInset = .zero
+        view.textContainer?.lineFragmentPadding = 0
+        view.textContainer?.widthTracksTextView = true
+        view.isAutomaticQuoteSubstitutionEnabled = false
+        view.isAutomaticDashSubstitutionEnabled = false
+        view.isAutomaticTextReplacementEnabled = false
+        view.isAutomaticSpellingCorrectionEnabled = false
+        view.setAccessibilityLabel("Text")
+        apply(to: view)
+        view.string = text
+        return view
+    }
+
+    func updateNSView(_ view: NSTextView, context: Context) {
+        context.coordinator.parent = self
+        if view.string != text { view.string = text }
+        apply(to: view)
+    }
+
+    func sizeThatFits(_ proposal: ProposedViewSize, nsView view: NSTextView, context: Context) -> CGSize? {
+        let width = proposal.width ?? 400
+        return CGSize(width: width, height: Self.height(of: view, width: width, lineSpacing: lineSpacing))
+    }
+
+    private var font: NSFont { NSFont.systemFont(ofSize: fontSize) }
+
+    private var attributes: [NSAttributedString.Key: Any] {
+        let style = NSMutableParagraphStyle()
+        style.lineSpacing = lineSpacing
+        return [.font: font, .foregroundColor: NSColor.labelColor, .paragraphStyle: style]
+    }
+
+    private func apply(to view: NSTextView) {
+        view.font = font
+        view.typingAttributes = attributes
+        if let storage = view.textStorage, storage.length > 0 {
+            storage.setAttributes(attributes, range: NSRange(location: 0, length: storage.length))
+        }
+    }
+
+    /// Rader × radhöjd + radavstånd mellan raderna (inte efter sista), som SwiftUI:s `Text`.
+    static func height(of view: NSTextView, width: CGFloat, lineSpacing: CGFloat) -> CGFloat {
+        guard let layout = view.layoutManager, let container = view.textContainer else { return 0 }
+        container.size = NSSize(width: width, height: .greatestFiniteMagnitude)
+        layout.ensureLayout(for: container)
+        var lines = 0
+        let glyphs = layout.glyphRange(for: container)
+        layout.enumerateLineFragments(forGlyphRange: glyphs) { _, _, _, _, _ in lines += 1 }
+        if layout.extraLineFragmentTextContainer != nil { lines += 1 }
+        lines = max(lines, 1)
+        let lineHeight = layout.defaultLineHeight(for: view.font ?? NSFont.systemFont(ofSize: NSFont.systemFontSize))
+        return ceil(CGFloat(lines) * lineHeight + CGFloat(lines - 1) * lineSpacing)
+    }
+
+    final class Coordinator: NSObject, NSTextViewDelegate {
+        var parent: ReadingTextView
+
+        init(_ parent: ReadingTextView) { self.parent = parent }
+
+        func textDidBeginEditing(_ notification: Notification) { parent.isFocused = true }
+
+        func textDidChange(_ notification: Notification) {
+            guard let view = notification.object as? NSTextView else { return }
+            parent.text = view.string
+        }
+
+        func textDidEndEditing(_ notification: Notification) {
+            parent.isFocused = false
+            parent.commit()
+        }
+
+        func textView(_ view: NSTextView, doCommandBy selector: Selector) -> Bool {
+            switch selector {
+            case #selector(NSResponder.insertNewline(_:)):
+                // Retur sparar och lämnar fältet, som i den tidigare versionen.
+                view.window?.makeFirstResponder(nil)
+                return true
+            case #selector(NSResponder.cancelOperation(_:)):
+                // Esc sparar och lämnar fältet, och går sedan vidare så att redigeringsläget stängs.
+                let window = view.window
+                window?.makeFirstResponder(nil)
+                if let responder = window?.firstResponder {
+                    responder.tryToPerform(#selector(NSResponder.cancelOperation(_:)), with: nil)
+                }
+                return true
+            default:
+                return false
+            }
+        }
     }
 }
 

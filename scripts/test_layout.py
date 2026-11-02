@@ -103,6 +103,11 @@ class EditModeTests(unittest.TestCase):
         self.assertNotIn("ForEach", editing)
         row = (self.DETAIL / "SegmentRow.swift").read_text(encoding="utf-8")
         self.assertIn("ParagraphEditing.split", row, "Ändringen förs tillbaka till segmenten med den testade funktionen")
+        # SwiftUI:s TextField ignorerar .lineSpacing: fältet blev lägre än visningen (mätt i CI).
+        field = row[row.index("struct EditableText"):row.index("struct EditSurface")]
+        self.assertNotIn("TextField(", field)
+        self.assertIn("ReadingTextView(", field)
+        self.assertIn("style.lineSpacing = lineSpacing", field)
 
     def test_the_paragraph_you_read_stays_put_when_the_mode_changes(self):
         text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
