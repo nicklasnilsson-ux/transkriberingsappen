@@ -6,9 +6,9 @@ name: Landningssida
 on:
   push:
     branches: [main]
-    paths: ["site/**", "scripts/check_site.py", "project.yml", ".github/workflows/pages.yml"]
+    paths: ["site/**", "scripts/check_site.py", "project.yml", ".github/workflows/pages.yml", "Transkribera/Resources/Assets.xcassets/AppIcon.appiconset/**"]
   pull_request:
-    paths: ["site/**", "scripts/check_site.py", "project.yml", ".github/workflows/pages.yml"]
+    paths: ["site/**", "scripts/check_site.py", "project.yml", ".github/workflows/pages.yml", "Transkribera/Resources/Assets.xcassets/AppIcon.appiconset/**"]
   workflow_dispatch:
 
 permissions:
