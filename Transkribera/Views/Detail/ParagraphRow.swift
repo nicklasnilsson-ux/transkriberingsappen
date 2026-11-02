@@ -82,13 +82,13 @@ struct ParagraphRow: View {
                 }
             }
             .frame(maxWidth: textWidth, alignment: .leading)
+            .modifier(EditSurface())
         } else {
             Text(attributedText)
                 .font(.system(size: size))
                 .lineSpacing(4)
                 .textSelection(.enabled)
                 .frame(maxWidth: textWidth, alignment: .leading)
-                .modifier(EditSurface(isEditing: false))
         }
     }
 
