@@ -6,6 +6,33 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.8.0</title>
+      <pubDate>Mon, 02 Nov 2026 22:13:02 GMT</pubDate>
+      <sparkle:version>35</sparkle:version>
+      <sparkle:shortVersionString>0.8.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.8.0</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Nytt&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Tidigare versioner av texten. &amp;quot;Transkribera igen&amp;quot; skriver inte längre över texten: den förra versionen sparas, med dina rättningar och talarnamn. Appen behåller de 4 senaste versionerna per transkribering, och äldre raderas.&lt;/li&gt;
+&lt;li&gt;Versionsvalet ligger i titelkortet, till exempel &amp;quot;Version 2 av 4 · 14:32&amp;quot;, och syns först när det finns fler än en version. En äldre version går att läsa, rätta, söka i, kopiera och exportera som vanligt, och en remsa under titelkortet säger att du tittar på en äldre version. När titelkortet är hopfällt syns bara märket &amp;quot;Äldre version&amp;quot; när du står i en äldre.&lt;/li&gt;
+&lt;li&gt;Dialogen före &amp;quot;Transkribera igen&amp;quot; förklarar vad som händer: den här versionen sparas, du kan byta tillbaka med Version, och de 4 senaste behålls. Har du redan 4 versioner står det vilken som raderas (den äldsta, först när den nya är klar), och dialogen går då inte att stänga av. Annars finns &amp;quot;Visa inte den här rutan igen&amp;quot;, som du slår på igen under Inställningar › Transkribering.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Ändrat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Ny appikon: en ljudvåg som blir textrader, på enfärgad indigo.&lt;/li&gt;
+&lt;li&gt;Appens indigo används nu genom hela appen (knappar, markeringar, aktiv text), i både ljust och mörkt läge. Tidigare visades systemets blå eftersom accentfärgen inte var kopplad. Märket för svenska modeller följer samma färg.&lt;/li&gt;
+&lt;li&gt;Testlabbet finns inte längre i Hjälp-menyn, eftersom det är ett verktyg för utveckling och inte för vanlig användning. Det öppnas fortfarande med genvägen ⌥⇧⌘T. Inget annat påverkas.&lt;/li&gt;
+&lt;li&gt;Databasen får en ny version (schema 2) med plats för de sparade versionerna. Befintliga transkriberingar påverkas inte; de får en version tills du transkriberar om dem. En säkerhetskopia av databasen tas som vanligt när den nya versionen startas första gången.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Rättat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Avbryts eller misslyckas &amp;quot;Transkribera igen&amp;quot; längre fram står nu modellen som texten faktiskt gjordes med kvar (den byttes tidigare redan när körningen startade).&lt;/li&gt;
+&lt;li&gt;Filer du släpper eller öppnar medan en mötesinspelning pågår läggs i kön och transkriberas först när inspelningen är sparad, så att inspelningen inte störs. Vyn byter inte längre till filen, så knappen Stoppa och transkribera finns kvar. På inspelningssidan står hur många filer som väntar.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.8.0/Transkribera-v0.8.0.zip" length="14421357" type="application/octet-stream" sparkle:edSignature="mJF6VVNTJk2xqMU3SeyKzgJhVjgcp/8vzWte+gypI7KM/sEHStrWaDDdIPmgNAg6mDphJQsO7Ilnr/PaxshEBQ==" />
+    </item>
+    <item>
       <title>Version 0.7.13</title>
       <pubDate>Mon, 02 Nov 2026 16:49:58 GMT</pubDate>
       <sparkle:version>34</sparkle:version>
@@ -476,20 +503,6 @@
 &lt;/ul&gt;
 &lt;p&gt;&lt;b&gt;Full Changelog&lt;/b&gt;: &lt;a href="https://github.com/nicklasnilsson-ux/transkriberingsappen/compare/v0.4.1...v0.4.2"&gt;https://github.com/nicklasnilsson-ux/transkriberingsappen/compare/v0.4.1...v0.4.2&lt;/a&gt;&lt;/p&gt;</description>
       <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.4.2/Transkribera-v0.4.2.zip" length="2831858" type="application/octet-stream" sparkle:edSignature="+FyDoCT9HTwWaeTcJpw+KbVUdvZAeGujeQkZidNlb/JiZWgzN9qkfcIIEwzHn34nZcSx2itJZhH5AC/e46mFAg==" />
-    </item>
-    <item>
-      <title>Version 0.4.1</title>
-      <pubDate>Wed, 28 Oct 2026 20:18:05 GMT</pubDate>
-      <sparkle:version>5</sparkle:version>
-      <sparkle:shortVersionString>0.4.1</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.4.1</sparkle:fullReleaseNotesLink>
-      <description>&lt;h3&gt;What&amp;#x27;s Changed&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Rätta kraschen vid start i 0.4.0 och röktesta appen i CI (0.4.1) by @nicklasnilsson-ux in &lt;a href="https://github.com/nicklasnilsson-ux/transkriberingsappen/pull/12"&gt;https://github.com/nicklasnilsson-ux/transkriberingsappen/pull/12&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;&lt;b&gt;Full Changelog&lt;/b&gt;: &lt;a href="https://github.com/nicklasnilsson-ux/transkriberingsappen/compare/v0.4.0...v0.4.1"&gt;https://github.com/nicklasnilsson-ux/transkriberingsappen/compare/v0.4.0...v0.4.1&lt;/a&gt;&lt;/p&gt;</description>
-      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.4.1/Transkribera-v0.4.1.zip" length="2831884" type="application/octet-stream" sparkle:edSignature="U+EDVGfcJc+bjNVFreUIDkba6HwOI7PrHrG1UDQCHl2vdF9WBHU3FWg3Vg1L3gg/n6kGNrNwCls0J4iOIb5zBw==" />
     </item>
   </channel>
 </rss>
