@@ -80,7 +80,7 @@ class EmptyViewTests(unittest.TestCase):
 class CollapseAndPlayerTests(unittest.TestCase):
     def test_scroll_is_read_from_the_real_scroll_view(self):
         # GeometryReader ensam rapporterade inte under skrollning (0.7.1 fällde inte ihop).
-        self.assertIn("ScrollOffsetObserver {", detail)
+        self.assertRegex(detail, r"ScrollOffsetObserver[ (]")
         probe = (V / "Views/Detail/ScrollOffsetObserver.swift").read_text(encoding="utf-8")
         self.assertIn("boundsDidChangeNotification", probe)
         self.assertIn("postsBoundsChangedNotifications = true", probe)

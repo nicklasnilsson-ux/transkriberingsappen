@@ -88,6 +88,23 @@ targets:
         GENERATE_INFOPLIST_FILE: NO
         COMBINE_HIDPI_IMAGES: YES
 
+  # Tester som behöver appens vyer (t.ex. att texten inte hoppar när man redigerar).
+  # Körs av scripts/test-app.sh i CI.
+  TranskriberaAppTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: TranskriberaAppTests
+    dependencies:
+      - target: Transkribera
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: se.nicklasnilsson.transkribera.apptests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/Transkribera.app/Contents/MacOS/Transkribera
+        BUNDLE_LOADER: $(TEST_HOST)
+        CODE_SIGN_IDENTITY: "-"
+
 schemes:
   Transkribera:
     build:
@@ -95,5 +112,9 @@ schemes:
         Transkribera: all
     run:
       config: Debug
+    test:
+      config: Debug
+      targets:
+        - TranskriberaAppTests
     archive:
       config: Release

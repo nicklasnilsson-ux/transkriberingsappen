@@ -63,7 +63,7 @@ struct SegmentRow: View {
     }
 }
 
-/// Textfält för att rätta ett segment. Ändringen sparas när fältet lämnas.
+/// Textfält för att rätta ett segment (radlayouten). Ändringen sparas när fältet lämnas.
 /// Med anonymisering på rättas den anonymiserade texten och ändringen förs tillbaka till
 /// originalet (se `AnonymizedEditing`), så att de dolda uppgifterna aldrig skrivs över.
 struct SegmentEditor: View {
@@ -74,63 +74,51 @@ struct SegmentEditor: View {
     /// Samma radavstånd som i visningsläget, så att texten inte byter höjd.
     var lineSpacing: CGFloat = 4
 
-    @State private var draft = ""
+    /// Fylls redan när vyn skapas, så att fältet aldrig är tomt en bildruta (det ändrade höjden).
+    @State private var draft: String
     /// Det fältet utgår från: originalet och hur det visades. Uppdateras efter varje sparning.
-    @State private var baseOriginal = ""
-    @State private var baseShown = ""
+    @State private var baseOriginal: String
+    @State private var baseShown: String
     @State private var mapping: AnonymizedEditing?
-    @State private var started = false
     @FocusState private var isFocused: Bool
     @AppStorage(SettingsKey.readingTextSize) private var readingSize = ReadingTextSize.standard
 
+    init(segment: TranscriptSegment, displayText: String, isAnonymized: Bool, lineSpacing: CGFloat = 4) {
+        _segment = Bindable(wrappedValue: segment)
+        self.displayText = displayText
+        self.isAnonymized = isAnonymized
+        self.lineSpacing = lineSpacing
+        _draft = State(initialValue: displayText)
+        _baseOriginal = State(initialValue: segment.text)
+        _baseShown = State(initialValue: displayText)
+        _mapping = State(initialValue: isAnonymized ? AnonymizedEditing(original: segment.text, shown: displayText) : nil)
+    }
+
     /// Falskt om den anonymiserade texten inte går att föra tillbaka till originalet.
-    private var isEditable: Bool { !isAnonymized || !started || mapping != nil }
+    private var isEditable: Bool { !isAnonymized || mapping != nil }
 
     var body: some View {
-        Group {
-            if isEditable {
-                TextField("Text", text: $draft, axis: .vertical)
-                    .textFieldStyle(.plain)
-                    .focused($isFocused)
-                    .onSubmit(commit)
-                    .onChange(of: isFocused) { _, focused in
-                        if !focused { commit() }
-                    }
-            } else {
-                Text(displayText)
-                    .help("Det här stycket kan inte rättas med anonymiseringen på. Slå av anonymiseringen för att rätta det.")
-            }
-        }
-        .font(.system(size: ReadingTextSize.clamped(readingSize)))
-        .lineSpacing(lineSpacing)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        // Bara en tonad bakgrund när fältet har fokus. Ingen padding, så att höjden inte ändras.
-        .background(isFocused ? Color.accentColor.opacity(0.12) : Color.clear)
-        .onAppear(perform: start)
+        EditableText(
+            text: $draft,
+            isEditable: isEditable,
+            lineSpacing: lineSpacing,
+            isFocused: $isFocused,
+            commit: commit
+        )
         .onDisappear(perform: commit)
     }
 
-    private func start() {
-        guard !started else { return }
-        started = true
-        draft = displayText
-        baseOriginal = segment.text
-        baseShown = displayText
-        mapping = isAnonymized ? AnonymizedEditing(original: baseOriginal, shown: baseShown) : nil
-    }
-
     private func commit() {
-        guard started, isEditable else { return }
+        guard isEditable else { return }
         let trimmed = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             draft = baseShown
             return
         }
-        guard trimmed != baseShown else { return }
+        guard trimmed != baseShown.trimmingCharacters(in: .whitespacesAndNewlines) else { return }
         if isAnonymized, let mapping {
             let newOriginal = mapping.originalText(applying: trimmed)
             segment.updateText(newOriginal)
-            // Nästa sparning utgår från det som nu är sparat.
             baseOriginal = newOriginal
             baseShown = trimmed
             self.mapping = AnonymizedEditing(original: newOriginal, shown: trimmed)
@@ -139,6 +127,97 @@ struct SegmentEditor: View {
             baseOriginal = trimmed
             baseShown = trimmed
         }
+    }
+}
+
+/// Ett helt stycke i ett enda textfält, med samma löpande text som i visningsläget, så att
+/// radbrytningen och höjden blir desamma. Ändringen förs tillbaka till rätt segment när fältet
+/// lämnas (se `ParagraphEditing`), och med anonymisering på till originalet (`AnonymizedEditing`).
+struct ParagraphEditor: View {
+    let rows: [DisplaySegment]
+    var lineSpacing: CGFloat = 4
+
+    @State private var draft: String
+    /// Hur segmenten visades och vad som var sparat när fältet senast sparades.
+    @State private var baseShown: [String]
+    @FocusState private var isFocused: Bool
+
+    init(rows: [DisplaySegment], lineSpacing: CGFloat = 4) {
+        self.rows = rows
+        self.lineSpacing = lineSpacing
+        let shown = rows.map(\.text)
+        _baseShown = State(initialValue: shown)
+        _draft = State(initialValue: ParagraphEditing.join(shown))
+    }
+
+    /// Med anonymisering på går stycket bara att rätta om varje segment kan föras tillbaka.
+    private var isEditable: Bool {
+        rows.allSatisfy { row in
+            !row.isAnonymized || AnonymizedEditing(original: row.segment.text, shown: row.text) != nil
+        }
+    }
+
+    var body: some View {
+        EditableText(
+            text: $draft,
+            isEditable: isEditable,
+            lineSpacing: lineSpacing,
+            isFocused: $isFocused,
+            commit: commit
+        )
+        .onDisappear(perform: commit)
+    }
+
+    private func commit() {
+        guard isEditable else { return }
+        guard !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            draft = ParagraphEditing.join(baseShown)
+            return
+        }
+        let newShown = ParagraphEditing.split(baseShown, edited: draft)
+        guard newShown != baseShown else { return }
+        for (index, row) in rows.enumerated() where newShown[index] != baseShown[index] {
+            if row.isAnonymized {
+                guard let mapping = AnonymizedEditing(original: row.segment.text, shown: baseShown[index]) else { continue }
+                row.segment.updateText(mapping.originalText(applying: newShown[index]))
+            } else {
+                row.segment.updateText(newShown[index])
+            }
+        }
+        baseShown = newShown
+    }
+}
+
+/// Textfältet som både styckes- och radredigeringen använder. Samma typsnitt och radavstånd
+/// som visningen, ingen padding. Fokus syns som en tonad bakgrund som inte tar plats.
+struct EditableText: View {
+    @Binding var text: String
+    let isEditable: Bool
+    let lineSpacing: CGFloat
+    var isFocused: FocusState<Bool>.Binding
+    let commit: () -> Void
+
+    @AppStorage(SettingsKey.readingTextSize) private var readingSize = ReadingTextSize.standard
+
+    var body: some View {
+        Group {
+            if isEditable {
+                TextField("Text", text: $text, axis: .vertical)
+                    .textFieldStyle(.plain)
+                    .focused(isFocused)
+                    .onSubmit(commit)
+                    .onChange(of: isFocused.wrappedValue) { _, focused in
+                        if !focused { commit() }
+                    }
+            } else {
+                Text(text)
+                    .help("Det här stycket kan inte rättas med anonymiseringen på. Slå av anonymiseringen för att rätta det.")
+            }
+        }
+        .font(.system(size: ReadingTextSize.clamped(readingSize)))
+        .lineSpacing(lineSpacing)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(isFocused.wrappedValue ? Color.accentColor.opacity(0.12) : Color.clear)
     }
 }
 
