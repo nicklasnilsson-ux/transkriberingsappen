@@ -77,7 +77,7 @@ releaseskripten (`scripts/requirements.txt`) uppdaterade.
 
 Transkriberingarna ligger i en SwiftData-databas i appens sandlåda
 (`~/Library/Containers/se.nicklasnilsson.transkribera/Data/Library/Application Support/Transkribera`).
-Schemat är versionerat (`SchemaV1` och `TranskriberaMigrationPlan` i `Database.swift`).
+Schemat är versionerat (`SchemaV1`, `SchemaV2` och `TranskriberaMigrationPlan` i `Database.swift`; `SchemaV1` är en nedkopierad, frusen kopia av modellerna som de var till och med 0.7.13).
 Första gången en ny version startar kopieras databasen till `Säkerhetskopior`; går den inte
 att öppna flyttas den dit och appen startar med en tom lista och ett meddelande, i stället
 för att krascha.

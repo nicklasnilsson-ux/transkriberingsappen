@@ -11,9 +11,16 @@ final class LayoutLogicTests: XCTestCase {
         XCTAssertNotNil(RetranscribeConfirmation(replacingText: false, confirmed: false))
     }
 
-    func testDialogWarnsAboutCorrectionsAndSpeakerNames() {
-        XCTAssertTrue(RetranscribeConfirmation.dialogMessage.contains("Rättningar"))
-        XCTAssertTrue(RetranscribeConfirmation.dialogMessage.contains("talarnamn"))
+    func testDialogsSayWhatHappensToCorrectionsAndSpeakerNames() {
+        let room = RetranscribeDialog.message(.roomLeft(versions: 2))
+        XCTAssertTrue(room.contains("sparas"))
+        XCTAssertTrue(room.contains("rättningar"))
+        XCTAssertTrue(room.contains("talarnamn"))
+        XCTAssertTrue(RetranscribeDialog.warning(oldest: "09:10 · Pianissimo").contains("rättningar"))
+        // Bulk: antalet och vilka som tappar sin äldsta version nämns.
+        XCTAssertTrue(BulkRetranscribe.message(count: 7).contains("7"))
+        XCTAssertFalse(BulkRetranscribe.message(count: 7).contains("raderas"))
+        XCTAssertTrue(BulkRetranscribe.message(count: 7, atCapacity: 2).contains("2 av dem"))
     }
 
     func testCollapseHasHysteresis() {

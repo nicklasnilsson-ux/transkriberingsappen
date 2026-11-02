@@ -27,8 +27,16 @@ final class Transcript {
     var errorMessage: String?
     var isRecording: Bool
 
+    /// När texten som visas blev klar. `nil` för filer som skapades före sparade versioner;
+    /// då gäller `createdAt`. Se `liveVersionDate`.
+    var versionDate: Date?
+
     @Relationship(deleteRule: .cascade, inverse: \TranscriptSegment.transcript)
     var segments: [TranscriptSegment] = []
+
+    /// Sparade versioner av texten. Texten som visas ligger i `segments`; här ligger de andra.
+    @Relationship(deleteRule: .cascade, inverse: \TranscriptVersion.transcript)
+    var versions: [TranscriptVersion] = []
 
     init(
         title: String,

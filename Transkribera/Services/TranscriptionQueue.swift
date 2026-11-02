@@ -192,6 +192,9 @@ final class TranscriptionQueue {
             .applied(to: TranscriptionOptions.fromDefaults())
         currentTranscriptID = transcript.id
         transcript.status = .transcribing
+        // Modellen som texten som visas gjordes med. Den behövs när den förra versionen sparas,
+        // och när körningen avbryts eller misslyckas.
+        let previousModelName = transcript.modelName
         transcript.modelName = options.modelLabel
         save()
 
@@ -205,14 +208,17 @@ final class TranscriptionQueue {
 
         do {
             let output = try await job.value
-            transcript.replaceSegments(with: output.segments, in: context)
-            transcript.language = output.language
+            // Den förra versionen sparas, och de äldsta som inte får plats raderas först nu,
+            // när den nya finns (se `Transcript.addNewVersion`).
+            transcript.addNewVersion(output, previousModelName: previousModelName, in: context)
             transcript.status = .completed
             transcript.errorMessage = output.segments.isEmpty ? "Inget tal hittades i filen." : nil
         } catch is CancellationError {
+            if !transcript.segments.isEmpty { transcript.modelName = previousModelName }
             transcript.status = transcript.segments.isEmpty ? .failed : .completed
             transcript.errorMessage = transcript.segments.isEmpty ? "Avbruten" : nil
         } catch {
+            if !transcript.segments.isEmpty { transcript.modelName = previousModelName }
             transcript.status = .failed
             transcript.errorMessage = error.localizedDescription
         }

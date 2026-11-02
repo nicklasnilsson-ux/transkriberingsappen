@@ -42,6 +42,7 @@ struct TranscriptDetailView: View {
     @FocusState private var searchFocused: Bool
     @State private var isCollapsed = false
     @State private var confirmRetranscribe = false
+    @AppStorage(SettingsKey.askBeforeRetranscribe) private var askBeforeRetranscribe = true
     @State private var overrides = TranscriptionOverrides()
     @State private var showRerunSettings = false
     @AppStorage(MiniPlayerSize.storageKey) private var miniSizeRaw = MiniPlayerSize.small.rawValue
@@ -167,17 +168,13 @@ struct TranscriptDetailView: View {
             }
             Spacer()
             Button {
-                if hasText {
-                    confirmRetranscribe = true
-                } else {
-                    retranscribe(confirmed: false)
-                }
+                requestRetranscribe()
             } label: {
                 Label("Transkribera igen", systemImage: "arrow.clockwise")
             }
             .buttonStyle(RerunButtonStyle(isEmphasized: rerunSettingsChanged))
             .disabled(isWorking)
-            .help("Transkribera filen igen med valen i chipsen. Rättningar och talarnamn ersätts.")
+            .help("Transkribera filen igen med valen i chipsen. Den nuvarande versionen sparas.")
         }
         .popover(isPresented: $showRerunSettings, arrowEdge: .bottom) {
             RerunSettingsPopover(overrides: $overrides, file: fileBaseline)
@@ -267,6 +264,8 @@ struct TranscriptDetailView: View {
                 searchAndEditRow(inCollapsedBar: false)
 
                 if showSearch && !isCollapsed { searchRow }
+
+                olderVersionStrip
             }
         }
     }
@@ -309,6 +308,7 @@ struct TranscriptDetailView: View {
             Text(transcript.createdAt.formatted(date: .long, time: .shortened))
             Text("·")
             Text(TimeFormatting.duration(transcript.duration)).monospacedDigit()
+            versionPicker
         }
         .font(.callout)
         .foregroundStyle(.secondary)
@@ -325,6 +325,86 @@ struct TranscriptDetailView: View {
         .labelsHidden()
         .fixedSize()
         .help("Stycken: löpande text per talare med en tidskod per stycke. Rader: varje segment med egen tidskod.")
+    }
+
+    // MARK: - Versioner
+
+    /// Versionsvalet, t.ex. "Version 2 av 4 · 14:32". Finns först när det finns fler än en
+    /// version, och finns bara i det utfällda titelkortet. Indigo bakgrund när en äldre version visas.
+    @ViewBuilder
+    private var versionPicker: some View {
+        if let label = transcript.versionLabel {
+            let older = transcript.isViewingOlderVersion
+            Menu {
+                Picker("Version", selection: Binding(
+                    get: { transcript.id },
+                    set: { switchVersion(to: $0) }
+                )) {
+                    ForEach(transcript.versionInfos.reversed()) { info in
+                        Text(versionMenuTitle(info)).tag(info.id)
+                    }
+                }
+                .pickerStyle(.inline)
+                Divider()
+                Text("De \(VersionHistory.capacity) senaste versionerna sparas. Äldre raderas.")
+            } label: {
+                Text(label)
+                    .monospacedDigit()
+                    .fontWeight(older ? .semibold : .regular)
+                    .foregroundStyle(Color.accentColor)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 2)
+                    .background(Color.accentColor.opacity(older ? 0.15 : 0), in: Capsule())
+                    .overlay(Capsule().strokeBorder(Color.accentColor, lineWidth: 1))
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .disabled(isWorking)
+            .help("Byt mellan sparade versioner av texten. Varje version har egna rättningar och talarnamn.")
+        }
+    }
+
+    private func versionMenuTitle(_ info: VersionInfo) -> String {
+        let when = info.date.formatted(.dateTime.day().month(.abbreviated).hour().minute())
+        var title = "Version \(info.number) · \(when)"
+        if !info.modelName.isEmpty { title += " · \(RerunChange.baseModelName(info.modelName))" }
+        if info.number == transcript.versionCount { title += " (senaste)" }
+        return title
+    }
+
+    private func switchVersion(to id: UUID) {
+        guard id != transcript.id,
+              let version = transcript.versions.first(where: { $0.id == id }),
+              let context = transcript.modelContext else { return }
+        isEditing = false
+        transcript.switchTo(version, in: context)
+        try? context.save()
+    }
+
+    private func showLatestVersion() {
+        guard let latest = transcript.versions.max(by: { $0.date < $1.date }) else { return }
+        switchVersion(to: latest.id)
+    }
+
+    /// Remsan under titelkortet när en äldre version visas. Rättningar sparas i den versionen.
+    @ViewBuilder
+    private var olderVersionStrip: some View {
+        if transcript.isViewingOlderVersion, let label = transcript.versionLabel {
+            HStack(spacing: 8) {
+                Image(systemName: "clock.arrow.circlepath")
+                Text("Du tittar på en äldre version (\(label)). Rättningar sparas i den här versionen.")
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 8)
+                Button("Visa senaste versionen") { showLatestVersion() }
+                    .buttonStyle(.link)
+                    .disabled(isWorking)
+            }
+            .font(.callout)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(Color.accentColor.opacity(0.10), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        }
     }
 
     /// Sök i texten, Redigera/Klar och vilken text som rättas. Samma rad i titelkortet och i den
@@ -625,15 +705,28 @@ struct TranscriptDetailView: View {
                         .frame(height: video != nil ? size.height : nil)
                 }
                 VStack(alignment: .leading, spacing: 6) {
-                    Button {
-                        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
-                            proxy.scrollTo(Self.topID, anchor: .top)
+                    HStack(spacing: 8) {
+                        Button {
+                            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
+                                proxy.scrollTo(Self.topID, anchor: .top)
+                            }
+                        } label: {
+                            Text(transcript.title).font(.headline).lineLimit(1)
                         }
-                    } label: {
-                        Text(transcript.title).font(.headline).lineLimit(1)
+                        .buttonStyle(.plain)
+                        .help("Till början")
+                        // Versionsvalet är dolt när kortet är hopfällt. Bara det här märket syns,
+                        // och bara när en äldre version visas.
+                        if transcript.isViewingOlderVersion {
+                            Text("Äldre version")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(Color.accentColor)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 2)
+                                .overlay(Capsule().strokeBorder(Color.accentColor, lineWidth: 1))
+                                .fixedSize()
+                        }
                     }
-                    .buttonStyle(.plain)
-                    .help("Till början")
                     searchAndEditRow(inCollapsedBar: true)
                     if controlsUnderTitle, let player {
                         Spacer(minLength: 8)
@@ -723,6 +816,17 @@ struct TranscriptDetailView: View {
         )
         .frame(minWidth: 80, maxWidth: 200)
         .help("Hoppa i inspelningen")
+    }
+
+    /// Frågar först när något ska sparas eller raderas (se `RetranscribeDialog`).
+    private func requestRetranscribe() {
+        if !hasText {
+            retranscribe(confirmed: false)
+        } else if RetranscribeDialog.needsDialog(versionCount: transcript.versionCount, askSetting: askBeforeRetranscribe) {
+            confirmRetranscribe = true
+        } else {
+            retranscribe()
+        }
     }
 
     private func retranscribe(confirmed: Bool = true) {
@@ -1132,7 +1236,7 @@ private struct DetailLifecycle: ViewModifier {
     }
 }
 
-/// Dialogerna: bekräftelse för Transkribera igen och Byt namn på talare.
+/// Dialogerna: frågan före Transkribera igen (`RetranscribeSheet`) och Byt namn på talare.
 private struct DetailDialogs: ViewModifier {
     @Binding var confirmRetranscribe: Bool
     @Binding var speakerToRename: String?
@@ -1142,10 +1246,16 @@ private struct DetailDialogs: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .confirmationDialog("Transkribera igen?", isPresented: $confirmRetranscribe, titleVisibility: .visible) {
-                Button("Transkribera igen", role: .destructive, action: onRetranscribe)
-            } message: {
-                Text(RetranscribeConfirmation.dialogMessage)
+            .sheet(isPresented: $confirmRetranscribe) {
+                RetranscribeSheet(
+                    versionCount: transcript.versionCount,
+                    oldestDescription: transcript.oldestVersionDescription,
+                    onCancel: { confirmRetranscribe = false },
+                    onConfirm: {
+                        confirmRetranscribe = false
+                        onRetranscribe()
+                    }
+                )
             }
             .alert("Byt namn på talare", isPresented: Binding(
                 get: { speakerToRename != nil },

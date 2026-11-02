@@ -6,6 +6,19 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.8.0] – 2026-11-02
+
+### Nytt
+- Tidigare versioner av texten. "Transkribera igen" skriver inte längre över texten: den förra versionen sparas, med dina rättningar och talarnamn. Appen behåller de 4 senaste versionerna per transkribering, och äldre raderas.
+- Versionsvalet ligger i titelkortet, till exempel "Version 2 av 4 · 14:32", och syns först när det finns fler än en version. En äldre version går att läsa, rätta, söka i, kopiera och exportera som vanligt, och en remsa under titelkortet säger att du tittar på en äldre version. När titelkortet är hopfällt syns bara märket "Äldre version" när du står i en äldre.
+- Dialogen före "Transkribera igen" förklarar vad som händer: den här versionen sparas, du kan byta tillbaka med Version, och de 4 senaste behålls. Har du redan 4 versioner står det vilken som raderas (den äldsta, först när den nya är klar), och dialogen går då inte att stänga av. Annars finns "Visa inte den här rutan igen", som du slår på igen under Inställningar › Transkribering.
+
+### Ändrat
+- Databasen får en ny version (schema 2) med plats för de sparade versionerna. Befintliga transkriberingar påverkas inte; de får en version tills du transkriberar om dem. En säkerhetskopia av databasen tas som vanligt när den nya versionen startas första gången.
+
+### Rättat
+- Avbryts eller misslyckas "Transkribera igen" längre fram står nu modellen som texten faktiskt gjordes med kvar (den byttes tidigare redan när körningen startade).
+
 ## [0.7.13] – 2026-11-02
 
 ### Ändrat
