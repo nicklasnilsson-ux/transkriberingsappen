@@ -14,6 +14,8 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 - Dialogen före "Transkribera igen" förklarar vad som händer: den här versionen sparas, du kan byta tillbaka med Version, och de 4 senaste behålls. Har du redan 4 versioner står det vilken som raderas (den äldsta, först när den nya är klar), och dialogen går då inte att stänga av. Annars finns "Visa inte den här rutan igen", som du slår på igen under Inställningar › Transkribering.
 
 ### Ändrat
+- Ny appikon: en ljudvåg som blir textrader, på enfärgad indigo.
+- Appens indigo används nu genom hela appen (knappar, markeringar, aktiv text), i både ljust och mörkt läge. Tidigare visades systemets blå eftersom accentfärgen inte var kopplad. Märket för svenska modeller följer samma färg.
 - Testlabbet finns inte längre i Hjälp-menyn, eftersom det är ett verktyg för utveckling och inte för vanlig användning. Det öppnas fortfarande med genvägen ⌥⇧⌘T. Inget annat påverkas.
 - Databasen får en ny version (schema 2) med plats för de sparade versionerna. Befintliga transkriberingar påverkas inte; de får en version tills du transkriberar om dem. En säkerhetskopia av databasen tas som vanligt när den nya versionen startas första gången.
 
