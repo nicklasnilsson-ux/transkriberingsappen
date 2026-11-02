@@ -6,6 +6,8 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.7.10] – 2026-11-02
+
 ### Ändrat
 - Titelkortet har fått en ny uppställning. Titeln står till vänster och status, datum och längd till höger. Under den ligger Talare, Anonymisera och Stycken/Rader, och till höger Kopiera text och Exportera. Under avdelaren ligger Sök i texten och Redigera.
 - När titelkortet är hopfällt visas titeln med Sök i texten och Redigera till vänster och spelaren till höger. Anonymisera, Talare, Kopiera och Exportera finns bara i det utfällda titelkortet.
