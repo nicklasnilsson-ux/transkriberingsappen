@@ -5,16 +5,17 @@ En native macOS-app för att transkribera ljud och video **helt lokalt** på din
 ## Funktioner
 
 - **Dra och släpp** eller välj ljud- och videofiler (MP4, MOV, M4A, MP3, WAV, AIFF …). Flera filer läggs i kö.
-- **Lokal transkribering** med valfri Whisper-modell. Först i listan ligger [KB-Whisper](https://huggingface.co/collections/KBLab/kb-whisper) från Kungliga biblioteket, som gör betydligt färre fel på svenska; därefter OpenAI:s flerspråkiga modeller (Tiny → Large v3 Turbo). KB Medium och Large finns också i en ordagrann variant ("strict") som stryker mindre. Dessutom finns [Pianissimo](https://huggingface.co/KlangAI/pianissimo-sv) från Klang, en svensk Parakeet-modell som körs med FluidAudio och är många gånger snabbare. Väljaren visar storlek, fart, svenskstyrka och karaktär för varje modell. Modellen laddas ner första gången.
+- **Lokal transkribering** med tre modeller i väljaren: [Pianissimo](https://huggingface.co/KlangAI/pianissimo-sv) från Klang (förstaval för svenska och standard, en svensk Parakeet-modell som körs med FluidAudio och är många gånger snabbare), KB Large ordagrann från [KB-Whisper](https://huggingface.co/collections/KBLab/kb-whisper) (Kungliga biblioteket, när varje ord måste stämma, t.ex. citat, namn och facktermer) och Large v3 Turbo från OpenAI (andra språk än svenska). Väljaren visar storlek, fart, svenskstyrka och karaktär för varje modell. Övriga modeller finns kvar i koden men är dolda. Modellen laddas ner första gången.
 - **Språkval**: svenska som standard, automatisk identifiering eller ett annat språk. Kan även översätta till engelska.
 - **Talaridentifiering** (valfritt) med SpeakerKit: "Talare 1", "Talare 2" …, och du kan byta namn på dem.
-- **Inbyggd spelare**: klicka på ett segment så hoppar uppspelningen dit. Segmentet och ordet som spelas markeras och listan följer med.
-- **Redigera texten** direkt i appen.
-- **Sök** i transkriberingen med markering och filtrering av träffar.
+- **Inbyggd spelare**: klicka på en tidskod så hoppar uppspelningen dit. Stycket och ordet som spelas markeras och listan följer med.
+- **Redigera texten** direkt i appen, även med anonymiseringen på: ändringen förs tillbaka till originalet utan att de dolda uppgifterna skrivs över.
+- **Sök** i transkriberingen som med ⌘F i en webbläsare: hela texten visas, sökfältet visar t.ex. "3 av 12", och du stegar mellan träffarna med pilarna, Retur eller ⌘G.
 - **Export** till ren text, Markdown, SRT, WebVTT och JSON. Kopiera hela texten med ett klick.
 - **Exportera för analys** (Arkiv-menyn, ⇧⌘E): en Markdown-fil per session med kort huvud och ett stycke per talarbyte med tidskod – anpassat för att tematisera t.ex. användartester i Claude. Flera transkriberingar kan exporteras på en gång.
+- **Flera transkriberingar och omtagning**: markera flera i sidopanelen (⌘-klick eller ⇧-klick) för att exportera, radera eller ta om dem. **Transkribera igen** låter dig välja annan modell, annat språk eller andra talarval. Från version 0.8.0 sparas de fyra senaste versionerna, med egna rättningar och talarnamn, och du byter mellan dem i titelkortet.
 - **Mötesinspelning**: spela in datorns systemljud (t.ex. Google Meet/Teams) och på macOS 15+ även mikrofonen. Inspelningen transkriberas när du stoppar.
-- **Anonymisering** (på som standard): namn på personer, platser och organisationer, personnummer, telefonnummer, e-post, adresser, kontonummer och regnummer ersätts med t.ex. `[PERSON 1]` när du läser, kopierar och exporterar. Hälsa, religion, politisk åsikt m.m. fångas delvis. Originaltexten sparas, och du kan visa den igen med ögonknappen eller under Inställningar › Integritet. Allt sker lokalt. Ingen automatisk anonymisering är helt säker, så läs igenom texten innan du delar den.
+- **Anonymisering** (på som standard): namn på personer, platser och organisationer, personnummer, telefonnummer, e-post, adresser, kontonummer och regnummer ersätts med t.ex. `[PERSON 1]` när du läser, kopierar och exporterar. Hälsa, religion, politisk åsikt m.m. fångas delvis. Originaltexten sparas, och du kan slå av och på anonymiseringen med knappen Anonymisera eller under Inställningar › Integritet. Allt sker lokalt. Ingen automatisk anonymisering är helt säker, så läs igenom texten innan du delar den.
 - Allt sparas lokalt med SwiftData.
 
 ## Installera
