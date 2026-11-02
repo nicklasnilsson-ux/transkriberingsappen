@@ -69,7 +69,7 @@ final class LayoutLogicTests: XCTestCase {
         XCTAssertTrue(DeleteConfirmation.message(count: 4).contains("4"))
         XCTAssertTrue(BulkRetranscribe.title(count: 4).contains("4"))
         XCTAssertTrue(BulkRetranscribe.message(count: 4).contains("4"))
-        XCTAssertTrue(BulkRetranscribe.message(count: 4).contains("Rättningar"))
+        XCTAssertTrue(BulkRetranscribe.message(count: 4).contains("sparas"))
         XCTAssertEqual(DeleteConfirmation.title(count: 1), "Radera 1 transkribering?")
     }
 

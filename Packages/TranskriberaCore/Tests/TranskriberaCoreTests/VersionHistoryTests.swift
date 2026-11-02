@@ -24,8 +24,9 @@ final class VersionHistoryTests: XCTestCase {
     }
 
     func testSeveralAreDroppedIfTheListsomehowIsTooLong() {
+        // Fem sparade + den nya: bara tre sparade får plats, så de två äldsta raderas.
         let v = [slot(1), slot(2), slot(3), slot(4), slot(5)]
-        XCTAssertEqual(VersionHistory.idsToDrop(existing: v), [v[0].id, v[1].id, v[2].id])
+        XCTAssertEqual(VersionHistory.idsToDrop(existing: v), [v[0].id, v[1].id])
     }
 
     func testPositionAndLatest() {
