@@ -273,6 +273,10 @@ struct ReadingTextView: NSViewRepresentable {
     private var attributes: [NSAttributedString.Key: Any] {
         let style = NSMutableParagraphStyle()
         style.lineSpacing = lineSpacing
+        // Samma radhöjd som Text, så att raderna hamnar på samma ställe.
+        let lineHeight = Self.lineHeight(fontSize: fontSize)
+        style.minimumLineHeight = lineHeight
+        style.maximumLineHeight = lineHeight
         return [.font: font, .foregroundColor: NSColor.labelColor, .paragraphStyle: style]
     }
 
@@ -294,8 +298,21 @@ struct ReadingTextView: NSViewRepresentable {
         layout.enumerateLineFragments(forGlyphRange: glyphs) { _, _, _, _, _ in lines += 1 }
         if layout.extraLineFragmentTextContainer != nil { lines += 1 }
         lines = max(lines, 1)
-        let lineHeight = layout.defaultLineHeight(for: view.font ?? NSFont.systemFont(ofSize: NSFont.systemFontSize))
-        return ceil(CGFloat(lines) * lineHeight + CGFloat(lines - 1) * lineSpacing)
+        let lineHeight = lineHeight(fontSize: Double(view.font?.pointSize ?? NSFont.systemFontSize))
+        return CGFloat(lines) * lineHeight + CGFloat(lines - 1) * lineSpacing
+    }
+
+    private static var lineHeights: [Double: CGFloat] = [:]
+
+    /// Höjden på en rad hos SwiftUI:s `Text` i den här storleken, mätt en gång per storlek.
+    /// Den skiljer sig någon bråkdel från textvyns egen radhöjd, och det blev flera punkter
+    /// i ett långt stycke (mätt av `EditModeHeightTests`).
+    static func lineHeight(fontSize: Double) -> CGFloat {
+        if let cached = lineHeights[fontSize] { return cached }
+        let host = NSHostingView(rootView: Text("Åg").font(.system(size: fontSize)).fixedSize())
+        let height = host.fittingSize.height
+        lineHeights[fontSize] = height
+        return height
     }
 
     final class Coordinator: NSObject, NSTextViewDelegate {
