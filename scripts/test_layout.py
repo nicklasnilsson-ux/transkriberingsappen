@@ -83,10 +83,34 @@ class EditModeTests(unittest.TestCase):
 
     def test_edit_state_label_sits_next_to_the_edit_button_not_on_the_title_row(self):
         text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
-        i = text.index("editStateLabel\n")
-        self.assertIn("editToggle(iconsOnly: false)", text[i:i + 120], "Etiketten ska ligga direkt före knappen")
-        title_row = text[text.index('TextField("Titel"'):text.index("if showSearch")]
+        start = text.index("private func searchAndEditRow")
+        row = text[start:text.index("\n    }\n", start)]
+        # Nicklas skiss 2026-11-02: Sök i texten, Redigera/Klar, och texten om redigeringen sist,
+        # så att ingenting annat flyttar sig när den visas.
+        self.assertLess(row.index("searchButton("), row.index("editToggle"))
+        self.assertLess(row.index("editToggle"), row.index("editStateLabel"))
+        title_row = text[text.index("private var titleRow"):text.index("private var layoutPicker")]
         self.assertNotIn("isEditing", title_row, "Titelraden ändras inte av redigeringsläget (layouten hoppar)")
+
+    def test_title_card_follows_the_sketch(self):
+        text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
+        card = text[text.index("private var titleCard"):text.index("private var titleRow")]
+        tools = ["speakersMenu", "anonymizeToggle", "layoutPicker", "copyButton", "exportMenu()", "Divider()", "searchAndEditRow("]
+        positions = [card.index(t) for t in tools]
+        self.assertEqual(positions, sorted(positions), "Ordningen i titelkortet följer skissen")
+        self.assertNotIn("interviewerPill", text, "Intervjuaren väljs under Talare, inget märke efter titeln")
+        bar = text[text.index("func collapsedBar"):text.index("func miniPlayer")]
+        self.assertIn("searchAndEditRow(scrollProxy: proxy)", bar, "Samma Sök/Redigera-rad i den hopfällda raden")
+        for tool in ("anonymizeToggle", "copyButton", "exportMenu()", "speakersMenu"):
+            self.assertNotIn(tool, bar, f"{tool} finns bara i titelkortet")
+        self.assertLess(bar.index("searchAndEditRow"), bar.index("miniPlayer("), "Titel och knappar till vänster, spelaren till höger")
+
+    def test_on_states_are_filled_and_keep_their_size(self):
+        text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
+        self.assertIn(".modifier(OnStateButtonStyle(isOn: isEditing))", text)
+        self.assertIn(".modifier(OnStateButtonStyle(isOn: anonymize))", text)
+        export = text[text.index("private func exportMenu"):text.index("private var playerCard")]
+        self.assertNotIn("borderedProminent", export, "Fylld betyder att ett läge är på; Exportera är ingen växel")
 
     def test_escape_shortcut_only_exists_while_editing(self):
         text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
