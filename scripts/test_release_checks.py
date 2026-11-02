@@ -98,9 +98,18 @@ class UpgradeStoreTests(unittest.TestCase):
 
     def test_seed_then_check(self):
         upgrade_store.seed(self.store)
-        upgrade_store.check(self.store)
+        upgrade_store.check(self.store, require_migration=False)
         db = sqlite3.connect(self.store)
         self.assertEqual(db.execute("SELECT Z_MAX FROM Z_PRIMARYKEY ORDER BY Z_ENT").fetchall(), [(1,), (2,)])
+
+    def test_check_detects_a_database_that_was_not_migrated_to_schema_2(self):
+        upgrade_store.seed(self.store)
+        with self.assertRaises(SystemExit):
+            upgrade_store.check(self.store)  # tabellen för sparade versioner saknas
+        db = sqlite3.connect(self.store)
+        db.execute("CREATE TABLE ZTRANSCRIPTVERSION (Z_PK INTEGER PRIMARY KEY)")
+        db.commit()
+        upgrade_store.check(self.store)
 
     def test_check_detects_lost_segment(self):
         upgrade_store.seed(self.store)
@@ -108,7 +117,7 @@ class UpgradeStoreTests(unittest.TestCase):
         db.execute("DELETE FROM ZTRANSCRIPTSEGMENT WHERE ZINDEX = 1")
         db.commit()
         with self.assertRaises(SystemExit):
-            upgrade_store.check(self.store)
+            upgrade_store.check(self.store, require_migration=False)
 
     def test_check_detects_lost_transcript(self):
         with self.assertRaises(SystemExit):

@@ -31,6 +31,7 @@ private struct TranscriptionSettingsView: View {
     @AppStorage(SettingsKey.recordMicrophone) private var recordMicrophone = true
     @AppStorage(SettingsKey.pianissimoCarefulSeams) private var carefulSeams = false
     @AppStorage(SettingsKey.levelVolume) private var levelVolume = true
+    @AppStorage(SettingsKey.askBeforeRetranscribe) private var askBeforeRetranscribe = true
     @AppStorage(SettingsKey.model) private var modelRaw = WhisperModel.default.rawValue
 
     private var usesParakeet: Bool { WhisperModel.resolved(modelRaw).usesParakeet }
@@ -119,6 +120,15 @@ private struct TranscriptionSettingsView: View {
                 Text("Experiment")
             } footer: {
                 Text("Ännu inte bevisat bättre. Gäller bara Pianissimo och tar 10–50 % längre tid. Det som användes står efter modellens namn i transkriberingen.")
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
+                Toggle("Fråga innan Transkribera igen", isOn: $askBeforeRetranscribe)
+            } header: {
+                Text("Transkribera igen")
+            } footer: {
+                Text("Den nuvarande versionen sparas, och appen behåller de \(VersionHistory.capacity) senaste versionerna. Frågan visas alltid när den äldsta versionen skulle raderas, även om du har stängt av den här.")
                     .foregroundStyle(.secondary)
             }
         }

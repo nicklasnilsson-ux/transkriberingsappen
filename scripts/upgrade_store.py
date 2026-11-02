@@ -73,7 +73,7 @@ def seed(path: str) -> None:
     print(f"La in transkriberingen \"{TITLE}\" med {len(SEGMENTS)} segment.")
 
 
-def check(path: str) -> None:
+def check(path: str, require_migration: bool = True) -> None:
     db = sqlite3.connect(path)
     rows = db.execute("SELECT Z_PK, ZTITLE, ZSTATUSRAW FROM ZTRANSCRIPT WHERE ZID = ?", (TRANSCRIPT_ID.bytes,)).fetchall()
     if len(rows) != 1:
@@ -87,6 +87,11 @@ def check(path: str) -> None:
     if [tuple(s) for s in segments] != SEGMENTS:
         sys.exit(f"Segmenten har ändrats eller försvunnit: {segments}")
     print(f"Transkriberingen och alla {len(SEGMENTS)} segment finns kvar.")
+    # Sedan 0.8.0 har databasen en tabell för sparade versioner. Saknas den har den nya appen
+    # inte migrerat databasen (utan öppnat den som den var, eller en tom).
+    tables = {row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+    if require_migration and "ZTRANSCRIPTVERSION" not in tables:
+        sys.exit("Databasen har inte migrerats till schema 2: tabellen för sparade versioner saknas.")
 
 
 if __name__ == "__main__":

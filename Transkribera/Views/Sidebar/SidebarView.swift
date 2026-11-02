@@ -14,6 +14,7 @@ struct SidebarView: View {
     @State private var filter = ""
     @State private var transcriptToDelete: Transcript?
     @State private var transcriptToRetranscribe: Transcript?
+    @AppStorage(SettingsKey.askBeforeRetranscribe) private var askBeforeRetranscribe = true
     @State private var showsNextSettings = false
     /// Listans val som mängd: en eller flera. Flera ligger i `multiSelection`, en i `selection`.
     private var listSelection: Binding<Set<Transcript>> {
@@ -75,20 +76,18 @@ struct SidebarView: View {
                  ? "Texten och inspelningen raderas. Det går inte att ångra."
                  : "Texten och appens kopia av filen raderas. Originalfilen påverkas inte. Det går inte att ångra.")
         }
-        .confirmationDialog(
-            "Transkribera ”\(transcriptToRetranscribe?.title ?? "")” igen?",
-            isPresented: Binding(get: { transcriptToRetranscribe != nil }, set: { if !$0 { transcriptToRetranscribe = nil } }),
-            titleVisibility: .visible
-        ) {
-            Button("Transkribera igen", role: .destructive) {
-                if let transcript = transcriptToRetranscribe,
-                   let confirmation = RetranscribeConfirmation(replacingText: !transcript.segments.isEmpty, confirmed: true) {
-                    queue.retranscribe(transcript, confirmation: confirmation)
+        .sheet(item: $transcriptToRetranscribe) { transcript in
+            RetranscribeSheet(
+                versionCount: transcript.versionCount,
+                oldestDescription: transcript.oldestVersionDescription,
+                onCancel: { transcriptToRetranscribe = nil },
+                onConfirm: {
+                    if let confirmation = RetranscribeConfirmation(replacingText: !transcript.segments.isEmpty, confirmed: true) {
+                        queue.retranscribe(transcript, confirmation: confirmation)
+                    }
+                    transcriptToRetranscribe = nil
                 }
-                transcriptToRetranscribe = nil
-            }
-        } message: {
-            Text(RetranscribeConfirmation.dialogMessage)
+            )
         }
         .onDeleteCommand {
             if multiSelection.count > 1 {
@@ -218,9 +217,19 @@ struct SidebarView: View {
         .listStyle(.sidebar)
     }
 
+    /// Frågar först när något ska sparas eller raderas (se `RetranscribeDialog`).
+    private func requestRetranscribe(_ transcript: Transcript) {
+        let hasText = !transcript.segments.isEmpty
+        if hasText, RetranscribeDialog.needsDialog(versionCount: transcript.versionCount, askSetting: askBeforeRetranscribe) {
+            transcriptToRetranscribe = transcript
+        } else if let confirmation = RetranscribeConfirmation(replacingText: hasText, confirmed: true) {
+            queue.retranscribe(transcript, confirmation: confirmation)
+        }
+    }
+
     @ViewBuilder
     private func menu(for transcript: Transcript) -> some View {
-        Button("Transkribera igen med nuvarande inställningar…") { transcriptToRetranscribe = transcript }
+        Button("Transkribera igen med nuvarande inställningar…") { requestRetranscribe(transcript) }
             .disabled(transcript.status == .transcribing || transcript.status == .queued)
         Button("Visa ljud-/videofilen i Finder") {
             NSWorkspace.shared.activateFileViewerSelecting([transcript.mediaURL])

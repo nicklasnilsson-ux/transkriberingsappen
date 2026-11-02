@@ -14,6 +14,8 @@ struct MultiSelectionView: View {
         transcripts.contains { $0.status == .queued || $0.status == .transcribing }
     }
     private var anyText: Bool { transcripts.contains { !$0.segments.isEmpty } }
+    /// De som redan har alla platser för versioner använda: deras äldsta version raderas.
+    private var atCapacity: Int { transcripts.filter { $0.versionCount >= VersionHistory.capacity }.count }
 
     var body: some View {
         @Bindable var appState = appState
@@ -34,15 +36,16 @@ struct MultiSelectionView: View {
             .listStyle(.inset)
 
             if anyText {
-                Label(RetranscribeConfirmation.dialogMessage + " Gäller Transkribera igen.", systemImage: "exclamationmark.triangle")
+                Label(BulkRetranscribe.message(count: count, atCapacity: atCapacity),
+                      systemImage: atCapacity > 0 ? "exclamationmark.triangle" : "info.circle")
                     .font(.callout)
-                    .foregroundStyle(Color.warning)
+                    .foregroundStyle(atCapacity > 0 ? AnyShapeStyle(Color.warning) : AnyShapeStyle(.secondary))
             }
 
             HStack(spacing: 10) {
                 Button(BulkRetranscribe.buttonTitle(count: count)) { confirmRetranscribe = true }
                     .disabled(anyWorking)
-                    .help("Transkribera de valda igen med nuvarande inställningar. Rättningar och talarnamn ersätts.")
+                    .help("Transkribera de valda igen med nuvarande inställningar. Den nuvarande versionen av varje text sparas.")
                 Button("Exportera för analys…") { appState.isAnalysisExportPresented = true }
                     .help("Samla de valda i en fil för analys")
                 Spacer()
@@ -61,7 +64,7 @@ struct MultiSelectionView: View {
                 }
             }
         } message: {
-            Text(BulkRetranscribe.message(count: count))
+            Text(BulkRetranscribe.message(count: count, atCapacity: atCapacity))
         }
         .confirmationDialog(DeleteConfirmation.title(count: count), isPresented: $appState.requestBulkDelete, titleVisibility: .visible) {
             Button("Radera \(count)", role: .destructive) {
