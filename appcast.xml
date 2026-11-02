@@ -6,6 +6,24 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.7.13</title>
+      <pubDate>Mon, 02 Nov 2026 16:49:58 GMT</pubDate>
+      <sparkle:version>34</sparkle:version>
+      <sparkle:shortVersionString>0.7.13</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.7.13</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Ändrat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Sök i texten fungerar som ⌘F i en webbläsare. Hela texten visas, sökfältet visar till exempel &amp;quot;3 av 12&amp;quot; och du stegar mellan träffarna med pilarna, Retur eller ⌘G (⇧⌘G bakåt). Texten skrollar till träffen, som är orange; övriga träffar är gula. &amp;quot;Visa bara träffar&amp;quot; är borttaget.&lt;/li&gt;
+&lt;li&gt;Det hopfällda titelkortet ligger kloss mot överkanten med raka hörn upptill, så att texten inte syns ovanför det.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Rättat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Sökfältet i det hopfällda titelkortet tappade fokus efter ett par bokstäver och sidan hoppade till början.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.7.13/Transkribera-v0.7.13.zip" length="14308158" type="application/octet-stream" sparkle:edSignature="A4J2NK/IStPfvub1xku5/R7cFPgTOsMRdOyZ+LP0rT7pHPJ3h5bC34c4cyJuAaanAyYzEtFwPu8v1pwml2wDBA==" />
+    </item>
+    <item>
       <title>Version 0.7.12</title>
       <pubDate>Mon, 02 Nov 2026 15:40:19 GMT</pubDate>
       <sparkle:version>33</sparkle:version>
@@ -472,21 +490,6 @@
 &lt;/ul&gt;
 &lt;p&gt;&lt;b&gt;Full Changelog&lt;/b&gt;: &lt;a href="https://github.com/nicklasnilsson-ux/transkriberingsappen/compare/v0.4.0...v0.4.1"&gt;https://github.com/nicklasnilsson-ux/transkriberingsappen/compare/v0.4.0...v0.4.1&lt;/a&gt;&lt;/p&gt;</description>
       <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.4.1/Transkribera-v0.4.1.zip" length="2831884" type="application/octet-stream" sparkle:edSignature="U+EDVGfcJc+bjNVFreUIDkba6HwOI7PrHrG1UDQCHl2vdF9WBHU3FWg3Vg1L3gg/n6kGNrNwCls0J4iOIb5zBw==" />
-    </item>
-    <item>
-      <title>Version 0.4.0</title>
-      <pubDate>Wed, 28 Oct 2026 20:05:06 GMT</pubDate>
-      <sparkle:version>4</sparkle:version>
-      <sparkle:shortVersionString>0.4.0</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.4.0</sparkle:fullReleaseNotesLink>
-      <description>&lt;h3&gt;What&amp;#x27;s Changed&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Visa transkriberingen som stycken per talare som standard by @nicklasnilsson-ux in &lt;a href="https://github.com/nicklasnilsson-ux/transkriberingsappen/pull/10"&gt;https://github.com/nicklasnilsson-ux/transkriberingsappen/pull/10&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;Automatiska uppdateringar med Sparkle och betakanal (0.4.0) by @nicklasnilsson-ux in &lt;a href="https://github.com/nicklasnilsson-ux/transkriberingsappen/pull/11"&gt;https://github.com/nicklasnilsson-ux/transkriberingsappen/pull/11&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;&lt;b&gt;Full Changelog&lt;/b&gt;: &lt;a href="https://github.com/nicklasnilsson-ux/transkriberingsappen/compare/v0.3.0...v0.4.0"&gt;https://github.com/nicklasnilsson-ux/transkriberingsappen/compare/v0.3.0...v0.4.0&lt;/a&gt;&lt;/p&gt;</description>
-      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.4.0/Transkribera-v0.4.0.zip" length="2829421" type="application/octet-stream" sparkle:edSignature="Ny7OUEO+1KBrHn3iO83OQNLI8ckMa+BT/rqXsVEV1kUrE+Y0twJPb/WLbBB02YPoXVns9lokfQXleyVXrXi/Cw==" />
     </item>
   </channel>
 </rss>
