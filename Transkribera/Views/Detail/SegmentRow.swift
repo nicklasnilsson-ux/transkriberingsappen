@@ -35,6 +35,7 @@ struct SegmentRow: View {
                 if isEditing {
                     SegmentEditor(segment: segment, displayText: displayText, isAnonymized: isAnonymized, lineSpacing: 3)
                         .id(isAnonymized)
+                        .modifier(EditSurface())
                 } else {
                     // Ordtidsstämplarna hör till originaltexten.
                     let showsOriginal = displayText == segment.text
@@ -48,7 +49,6 @@ struct SegmentRow: View {
                     .lineSpacing(3)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .modifier(EditSurface(isEditing: false))
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -104,7 +104,8 @@ struct SegmentEditor: View {
         .font(.system(size: ReadingTextSize.clamped(readingSize)))
         .lineSpacing(lineSpacing)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .modifier(EditSurface(isEditing: isEditable, focused: isFocused))
+        // Bara en tonad bakgrund när fältet har fokus. Ingen padding, så att höjden inte ändras.
+        .background(isFocused ? Color.accentColor.opacity(0.12) : Color.clear)
         .onAppear(perform: start)
         .onDisappear(perform: commit)
     }
@@ -141,27 +142,24 @@ struct SegmentEditor: View {
     }
 }
 
-/// Ytan runt en text. Samma padding i visnings- och redigeringsläget, så att bara kant och
-/// bakgrund ändras när man går in i redigeringsläget och ingenting flyttar sig.
-/// Den vänstra paddingen tas tillbaka, så att texten ligger kvar i linje med talarens namn.
+/// Fältytan i redigeringsläget: bakgrund och kant som ritas utanför texten och inte tar någon
+/// plats i layouten. Texten har därför exakt samma mått i visnings- och redigeringsläget, och
+/// ingenting hoppar när man växlar. Läggs på en hel rad eller ett helt stycke, inte på varje segment.
 struct EditSurface: ViewModifier {
-    let isEditing: Bool
-    var focused = false
-
     private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: 6, style: .continuous) }
 
     func body(content: Content) -> some View {
         content
-            .padding(.horizontal, 6)
-            .padding(.vertical, 3)
-            .background(shape.fill(isEditing ? Color.accentColor.opacity(0.08) : Color.clear))
-            .overlay(
-                shape.strokeBorder(
-                    focused ? Color.accentColor : (isEditing ? Color.secondary.opacity(0.45) : Color.clear),
-                    lineWidth: focused ? 2 : 1
-                )
-            )
-            .padding(.leading, -6)
+            .background {
+                shape.fill(Color.accentColor.opacity(0.07))
+                    .padding(.horizontal, -8)
+                    .padding(.vertical, -3)
+            }
+            .overlay {
+                shape.strokeBorder(Color.secondary.opacity(0.45), lineWidth: 1)
+                    .padding(.horizontal, -8)
+                    .padding(.vertical, -3)
+            }
     }
 }
 

@@ -57,17 +57,35 @@ class EditModeTests(unittest.TestCase):
         roles = text[text.index("private var showsRolesBanner"):][:200]
         self.assertNotIn("!isEditing", roles, "Rollbannern får inte försvinna när redigeringsläget slås på (layouten hoppar)")
 
-    def test_view_and_edit_text_share_the_same_surface(self):
-        for name in ("ParagraphRow.swift", "SegmentRow.swift"):
-            self.assertIn("EditSurface(isEditing: false)", (self.DETAIL / name).read_text(encoding="utf-8"), name)
+    def test_edit_surface_takes_no_space_in_the_layout(self):
+        # Fältytan ritas utanför texten. Positiv padding eller en ram på varje segment gjorde att
+        # varje textrad växte i höjd när man gick in i redigeringsläget.
         row = (self.DETAIL / "SegmentRow.swift").read_text(encoding="utf-8")
-        self.assertIn("EditSurface(isEditing: isEditable", row)
+        start = row.index("struct EditSurface")
+        surface = row[start:row.index("/// Aktivt stycke", start)]
+        self.assertNotIn(".padding(.horizontal, 6)", surface)
+        for line in surface.splitlines():
+            if ".padding(" in line:
+                self.assertIn("-", line, f"Positiv padding i EditSurface: {line.strip()}")
         self.assertIn(".lineSpacing(lineSpacing)", row, "Fältet ska ha samma radavstånd som visningen")
+        editor = row[row.index("struct SegmentEditor"):start]
+        self.assertNotIn("EditSurface", editor, "Ytan läggs på raden eller stycket, inte på varje segment")
+
+    def test_the_surface_is_added_once_per_row_or_paragraph(self):
+        self.assertIn(".modifier(EditSurface())", (self.DETAIL / "ParagraphRow.swift").read_text(encoding="utf-8"))
+        self.assertIn(".modifier(EditSurface())", (self.DETAIL / "SegmentRow.swift").read_text(encoding="utf-8"))
 
     def test_edit_mode_is_labelled_and_closes_with_escape(self):
         text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
-        for needle in ('"Klar"', "editingPill", ".onExitCommand", ".keyboardShortcut(.escape"):
+        for needle in ('"Klar"', "editStateLabel", ".onExitCommand", ".keyboardShortcut(.escape"):
             self.assertIn(needle, text)
+
+    def test_edit_state_label_sits_next_to_the_edit_button_not_on_the_title_row(self):
+        text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
+        i = text.index("editStateLabel\n")
+        self.assertIn("editToggle(iconsOnly: false)", text[i:i + 120], "Etiketten ska ligga direkt före knappen")
+        title_row = text[text.index('TextField("Titel"'):text.index("if showSearch")]
+        self.assertNotIn("isEditing", title_row, "Titelraden ändras inte av redigeringsläget (layouten hoppar)")
 
     def test_escape_shortcut_only_exists_while_editing(self):
         text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")

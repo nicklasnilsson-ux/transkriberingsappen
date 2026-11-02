@@ -242,7 +242,6 @@ struct TranscriptDetailView: View {
                         .font(.title2.weight(.semibold))
                         .help("Klicka för att byta namn")
                     interviewerPill
-                    if isEditing { editingPill }
                     Spacer(minLength: 8)
                     Button {
                         openSearch()
@@ -260,7 +259,9 @@ struct TranscriptDetailView: View {
                 Divider()
                 HStack(spacing: 8) {
                     toolButtons(iconsOnly: false)
-                    Spacer()
+                    Spacer(minLength: 8)
+                    editStateLabel
+                    editToggle(iconsOnly: false)
                     if hasText {
                         Picker("Visning", selection: $layout) {
                             ForEach(TranscriptLayout.allCases) { layout in
@@ -277,15 +278,17 @@ struct TranscriptDetailView: View {
         }
     }
 
-    /// Visar att man är i redigeringsläget. Ligger på titelraden, så att ingenting flyttar sig.
-    private var editingPill: some View {
-        Label(anonymizationOptions != nil ? "Redigerar anonymiserad text" : "Redigerar originaltexten", systemImage: "pencil")
-            .font(.callout.weight(.semibold))
-            .foregroundStyle(Color.accentColor)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 2)
-            .background(Color.accentColor.opacity(0.12), in: Capsule())
-            .accessibilityElement(children: .combine)
+    /// Säger vilken text som rättas. Ligger vid knappen Redigera/Klar, i mellanrummet som redan finns
+    /// före knappen, så att ingenting flyttar sig när den visas.
+    @ViewBuilder
+    private var editStateLabel: some View {
+        if isEditing {
+            Text(anonymizationOptions != nil ? "Rättar anonymiserad text" : "Rättar originaltexten")
+                .font(.callout.weight(.semibold))
+                .foregroundStyle(Color.accentColor)
+                .lineLimit(1)
+                .truncationMode(.tail)
+        }
     }
 
     @ViewBuilder
@@ -345,9 +348,9 @@ struct TranscriptDetailView: View {
         Task { @MainActor in searchFocused = true }
     }
 
-    /// Redigera, Anonymisera, Talare och Kopiera text. Med text i titelkortet, bara ikoner i den hopfällda raden.
+    /// Redigera/Klar. Med text i titelkortet, bara ikon i den hopfällda raden.
     @ViewBuilder
-    private func toolButtons(iconsOnly: Bool) -> some View {
+    private func editToggle(iconsOnly: Bool) -> some View {
         Toggle(isOn: $isEditing) {
             toolLabel(isEditing ? "Klar" : "Redigera", isEditing ? "checkmark" : "pencil", iconsOnly: iconsOnly)
         }
@@ -357,7 +360,11 @@ struct TranscriptDetailView: View {
               ? "Stäng redigeringsläget. Ändringarna sparas automatiskt (Esc)"
               : "Rätta texten direkt i transkriberingen")
         .disabled(!hasText)
+    }
 
+    /// Anonymisera, Talare och Kopiera text. Med text i titelkortet, bara ikoner i den hopfällda raden.
+    @ViewBuilder
+    private func toolButtons(iconsOnly: Bool) -> some View {
         Toggle(isOn: $anonymize) {
             toolLabel("Anonymisera", anonymize ? "eye.slash" : "eye", iconsOnly: iconsOnly)
         }
@@ -512,6 +519,7 @@ struct TranscriptDetailView: View {
             .buttonStyle(.plain)
             .help("Till början")
             Spacer(minLength: 8)
+            editToggle(iconsOnly: true)
             toolButtons(iconsOnly: true)
             Button {
                 withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
