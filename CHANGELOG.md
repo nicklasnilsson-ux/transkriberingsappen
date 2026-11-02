@@ -14,10 +14,12 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 - Dialogen före "Transkribera igen" förklarar vad som händer: den här versionen sparas, du kan byta tillbaka med Version, och de 4 senaste behålls. Har du redan 4 versioner står det vilken som raderas (den äldsta, först när den nya är klar), och dialogen går då inte att stänga av. Annars finns "Visa inte den här rutan igen", som du slår på igen under Inställningar › Transkribering.
 
 ### Ändrat
+- Testlabbet finns inte längre i Hjälp-menyn, eftersom det är ett verktyg för utveckling och inte för vanlig användning. Det öppnas fortfarande med genvägen ⌥⇧⌘T. Inget annat påverkas.
 - Databasen får en ny version (schema 2) med plats för de sparade versionerna. Befintliga transkriberingar påverkas inte; de får en version tills du transkriberar om dem. En säkerhetskopia av databasen tas som vanligt när den nya versionen startas första gången.
 
 ### Rättat
 - Avbryts eller misslyckas "Transkribera igen" längre fram står nu modellen som texten faktiskt gjordes med kvar (den byttes tidigare redan när körningen startade).
+- Filer du släpper eller öppnar medan en mötesinspelning pågår läggs i kön och transkriberas först när inspelningen är sparad, så att inspelningen inte störs. Vyn byter inte längre till filen, så knappen Stoppa och transkribera finns kvar. På inspelningssidan står hur många filer som väntar.
 
 ## [0.7.13] – 2026-11-02
 

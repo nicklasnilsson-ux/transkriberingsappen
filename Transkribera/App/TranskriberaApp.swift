@@ -7,7 +7,7 @@ struct TranskriberaApp: App {
     private let container: ModelContainer
     @State private var appState: AppState
     @State private var queue: TranscriptionQueue
-    @State private var recorder = MeetingRecorder()
+    @State private var recorder: MeetingRecorder
     @State private var lab = TestLab()
     @StateObject private var updater = AppUpdater()
     @AppStorage(SettingsKey.readingTextSize) private var readingSize = ReadingTextSize.standard
@@ -22,6 +22,10 @@ struct TranskriberaApp: App {
         _appState = State(initialValue: appState)
         let queue = TranscriptionQueue(transcriber: TranscriberService(), context: container.mainContext)
         _queue = State(initialValue: queue)
+        // Filer som släpps under en mötesinspelning väntar tills inspelningen är sparad.
+        let recorder = MeetingRecorder()
+        recorder.onBusyChange = { [weak queue] busy in queue?.setRecordingBusy(busy) }
+        _recorder = State(initialValue: recorder)
     }
 
     var body: some Scene {
@@ -30,6 +34,7 @@ struct TranskriberaApp: App {
                 .environment(appState)
                 .environment(queue)
                 .environment(recorder)
+                .background(TestLabShortcut())
         }
         .modelContainer(container)
         .commands {
@@ -60,12 +65,9 @@ struct TranskriberaApp: App {
                 Button("Normal storlek") { readingSize = ReadingTextSize.standard }
                     .keyboardShortcut("0")
             }
-            CommandGroup(after: .help) {
-                TestLabMenuButton()
-            }
         }
 
-        Window("Testlabb", id: TestLabMenuButton.windowID) {
+        Window("Testlabb", id: TestLabShortcut.windowID) {
             TestLabView()
                 .environment(queue)
                 .environment(lab)
@@ -80,14 +82,19 @@ struct TranskriberaApp: App {
     }
 }
 
-/// Menyvalet "Testlabb…" i Hjälp-menyn. Ett verktyg för att jämföra inställningar,
-/// inte för vanlig användning, därför inte i Arkiv-menyn.
-private struct TestLabMenuButton: View {
+/// Testlabbet är ett verktyg för att jämföra inställningar, inte för vanlig användning,
+/// därför finns det inte i någon meny. Det öppnas med den dolda genvägen ⌥⇧⌘T.
+/// Kontrolleras av scripts/test_testlab_hidden.py.
+private struct TestLabShortcut: View {
     static let windowID = "testlab"
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
-        Button("Testlabb…") { openWindow(id: Self.windowID) }
+        Button("") { openWindow(id: Self.windowID) }
+            .keyboardShortcut("t", modifiers: [.command, .option, .shift])
+            .opacity(0)
+            .frame(width: 0, height: 0)
+            .accessibilityHidden(true)
     }
 }
 
