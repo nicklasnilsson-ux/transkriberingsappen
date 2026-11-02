@@ -31,6 +31,9 @@ enum SettingsKey {
     static let sortformerDiarization = "sortformerDiarization"
     /// Textstorlek på läsytan i punkter, ett av `ReadingTextSize.steps`.
     static let readingTextSize = "readingTextSize"
+    /// Fråga innan Transkribera igen (på som standard). Gäller bara när det finns plats för
+    /// fler versioner; när den äldsta raderas frågar appen alltid (se `RetranscribeDialog`).
+    static let askBeforeRetranscribe = "askBeforeRetranscribe"
 }
 
 enum SpeakerCountSetting {

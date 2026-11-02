@@ -125,7 +125,7 @@ class MultiSelectTests(unittest.TestCase):
         view = (V / "Views/Home/MultiSelectionView.swift").read_text(encoding="utf-8")
         self.assertIn("RetranscribeConfirmation(replacingText", view)
         self.assertIn("DeleteConfirmation(count:", view)
-        self.assertIn("BulkRetranscribe.message(count: count)", view)
+        self.assertIn("BulkRetranscribe.message(count: count,", view)
         self.assertIn("DeleteConfirmation.message(count: count)", view)
         # Köns flerfunktioner kan inte anropas utan bekräftelsetypen.
         self.assertRegex(queue, r"func delete\(_ transcripts: \[Transcript\], confirmation: DeleteConfirmation\)")

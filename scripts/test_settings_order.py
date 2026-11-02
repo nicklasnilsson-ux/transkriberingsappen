@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 
 SETTINGS = Path(__file__).resolve().parent.parent / "Transkribera" / "Views" / "Settings" / "SettingsView.swift"
-ORDER = ["Språk", "Talare", "Ordlista", "Ordträff", "Tidsstämplar", "Mötesinspelning", "Experiment"]
+ORDER = ["Språk", "Talare", "Ordlista", "Ordträff", "Tidsstämplar", "Mötesinspelning", "Experiment", "Transkribera igen"]
 
 
 class SettingsOrderTests(unittest.TestCase):

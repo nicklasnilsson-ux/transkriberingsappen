@@ -3,13 +3,14 @@ import SwiftData
 
 // MARK: - Schemaversioner
 
-/// Databasens första version, oförändrad sedan 0.1.0.
+/// Databasens första version (0.1.0 till 0.7.13), nedkopierad så som modellerna såg ut då.
+/// Den här versionen får aldrig ändras: den beskriver hur äldre användares databaser ser ut.
 ///
-/// Ändrar du något i `Transcript` eller `TranscriptSegment` måste databasen få en ny
-/// version, annars kan äldre användares data inte öppnas:
-/// 1. Kopiera modellerna som de ser ut nu till `SchemaV1` (nästlade typer), så att den
-///    gamla versionen finns kvar oförändrad.
-/// 2. Lägg till `SchemaV2` med de nya modellerna och ett steg i `TranskriberaMigrationPlan`
+/// Ändrar du något i `Transcript`, `TranscriptSegment` eller `TranscriptVersion` måste databasen
+/// få en ny version, annars kan äldre användares data inte öppnas:
+/// 1. Kopiera modellerna som de ser ut nu till den senaste `SchemaVn` (nästlade typer), så att
+///    den gamla versionen finns kvar oförändrad.
+/// 2. Lägg till `SchemaVn+1` med de nya modellerna och ett steg i `TranskriberaMigrationPlan`
 ///    (`.lightweight` för nya valfria fält eller fält med standardvärde, annars `.custom`).
 /// CI:s uppgraderingstest (`scripts/upgrade-test.sh`) öppnar en databas från förra
 /// versionen med den nya appen och stoppar releasen om något tappas.
@@ -17,17 +18,78 @@ enum SchemaV1: VersionedSchema {
     static let versionIdentifier = Schema.Version(1, 0, 0)
 
     static var models: [any PersistentModel.Type] {
-        [Transcript.self, TranscriptSegment.self]
+        [SchemaV1.Transcript.self, SchemaV1.TranscriptSegment.self]
+    }
+
+    @Model
+    final class Transcript {
+        var id: UUID
+        var title: String
+        var createdAt: Date
+        var mediaFileName: String
+        var originalFileName: String
+        var isVideo: Bool
+        var duration: Double
+        var language: String?
+        var modelName: String
+        var statusRaw: String
+        var errorMessage: String?
+        var isRecording: Bool
+
+        @Relationship(deleteRule: .cascade, inverse: \TranscriptSegment.transcript)
+        var segments: [TranscriptSegment] = []
+
+        init(id: UUID, title: String, createdAt: Date, mediaFileName: String, originalFileName: String,
+             isVideo: Bool, duration: Double, modelName: String, statusRaw: String, isRecording: Bool) {
+            self.id = id
+            self.title = title
+            self.createdAt = createdAt
+            self.mediaFileName = mediaFileName
+            self.originalFileName = originalFileName
+            self.isVideo = isVideo
+            self.duration = duration
+            self.modelName = modelName
+            self.statusRaw = statusRaw
+            self.isRecording = isRecording
+        }
+    }
+
+    @Model
+    final class TranscriptSegment {
+        var index: Int
+        var start: Double
+        var end: Double
+        var text: String
+        var speaker: String?
+        var wordsData: Data?
+        var transcript: Transcript?
+
+        init(index: Int, start: Double, end: Double, text: String) {
+            self.index = index
+            self.start = start
+            self.end = end
+            self.text = text
+        }
+    }
+}
+
+/// Version 2 (0.8.0): sparade tidigare versioner av texten (`TranscriptVersion`) och
+/// `Transcript.versionDate`. Bara nya fält och en ny modell, så migreringen är lätt.
+enum SchemaV2: VersionedSchema {
+    static let versionIdentifier = Schema.Version(2, 0, 0)
+
+    static var models: [any PersistentModel.Type] {
+        [Transcript.self, TranscriptSegment.self, TranscriptVersion.self]
     }
 }
 
 enum TranskriberaMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
-        [SchemaV1.self]
+        [SchemaV1.self, SchemaV2.self]
     }
 
     static var stages: [MigrationStage] {
-        []
+        [.lightweight(fromVersion: SchemaV1.self, toVersion: SchemaV2.self)]
     }
 }
 
@@ -55,7 +117,7 @@ enum Database {
     }
 
     static func open() -> Result {
-        let schema = Schema(versionedSchema: SchemaV1.self)
+        let schema = Schema(versionedSchema: SchemaV2.self)
         let url = storeURL
         backUpIfNewVersion(url)
 
@@ -84,11 +146,18 @@ enum Database {
     }
 
     private static func makeContainer(schema: Schema, url: URL) throws -> ModelContainer {
-        try ModelContainer(
-            for: schema,
-            migrationPlan: TranskriberaMigrationPlan.self,
-            configurations: ModelConfiguration(schema: schema, url: url)
-        )
+        do {
+            return try ModelContainer(
+                for: schema,
+                migrationPlan: TranskriberaMigrationPlan.self,
+                configurations: ModelConfiguration(schema: schema, url: url)
+            )
+        } catch {
+            // Känner migreringsplanen inte igen databasens version provar vi SwiftDatas egen
+            // lätta migrering (nya fält och modeller) innan databasen flyttas undan.
+            print("Migreringsplanen kunde inte öppna databasen, provar utan: \(error)")
+            return try ModelContainer(for: schema, configurations: ModelConfiguration(schema: schema, url: url))
+        }
     }
 
     // MARK: Säkerhetskopior

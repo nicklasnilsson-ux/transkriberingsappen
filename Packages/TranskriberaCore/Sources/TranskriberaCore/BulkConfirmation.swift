@@ -27,8 +27,15 @@ public enum BulkRetranscribe {
         "Transkribera \(count) igen?"
     }
 
-    public static func message(count: Int) -> String {
-        "\(RetranscribeConfirmation.dialogMessage) Gäller alla \(count) valda."
+    /// `atCapacity`: hur många av de valda som redan har alla platser för versioner använda.
+    public static func message(count: Int, atCapacity: Int = 0) -> String {
+        var text = "Den nuvarande versionen av varje text sparas, med rättningar och talarnamn. Appen behåller de \(VersionHistory.capacity) senaste versionerna per transkribering. Gäller alla \(count) valda."
+        if atCapacity == 1 {
+            text += " 1 av dem har redan \(VersionHistory.capacity) versioner, så dess äldsta version raderas när den nya är klar."
+        } else if atCapacity > 1 {
+            text += " \(atCapacity) av dem har redan \(VersionHistory.capacity) versioner, så deras äldsta versioner raderas när de nya är klara."
+        }
+        return text
     }
 
     public static func buttonTitle(count: Int) -> String { "Transkribera \(count) igen…" }

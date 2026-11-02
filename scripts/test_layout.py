@@ -214,7 +214,7 @@ class RetranscribeTests(unittest.TestCase):
     def test_the_confirmation_dialog_is_used_where_text_would_be_replaced(self):
         for name in ("Detail/TranscriptDetailView.swift", "Sidebar/SidebarView.swift"):
             text = (VIEWS / name).read_text(encoding="utf-8")
-            self.assertIn("RetranscribeConfirmation.dialogMessage", text, name)
+            self.assertIn("RetranscribeSheet(", text, name)
 
     def test_collapsed_bar_uses_the_tested_thresholds(self):
         text = (VIEWS / "Detail" / "TranscriptDetailView.swift").read_text(encoding="utf-8")
