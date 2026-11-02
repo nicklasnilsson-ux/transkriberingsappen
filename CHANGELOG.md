@@ -6,6 +6,13 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.7.12] – 2026-11-02
+
+### Ändrat
+- Sökfältet följer med när titelkortet är hopfällt. Klickar du på Sök i texten medan du skrollar öppnas fältet direkt i den hopfällda raden, utan att sidan hoppar till början.
+- Med liten bild eller bara ljud ligger spelkontrollerna staplade bredvid bilden i det hopfällda titelkortet. Då får texten om redigeringen plats.
+- Det står nu "Redigerar anonymiserad text" (eller "Redigerar originaltexten") i stället för "Rättar …".
+
 ## [0.7.11] – 2026-11-02
 
 ### Ändrat

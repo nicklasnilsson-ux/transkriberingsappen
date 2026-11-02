@@ -100,13 +100,20 @@ class EditModeTests(unittest.TestCase):
         self.assertEqual(positions, sorted(positions), "Ordningen i titelkortet följer skissen")
         self.assertNotIn("interviewerPill", text, "Intervjuaren väljs under Talare, inget märke efter titeln")
         bar = text[text.index("func collapsedBar"):text.index("func miniPlayer")]
-        self.assertIn("searchAndEditRow(scrollProxy: proxy)", bar, "Samma Sök/Redigera-rad i den hopfällda raden")
+        self.assertIn("searchAndEditRow(inCollapsedBar: true)", bar, "Samma Sök/Redigera-rad i den hopfällda raden")
         for tool in ("anonymizeToggle", "copyButton", "exportMenu()", "speakersMenu"):
             self.assertNotIn(tool, bar, f"{tool} finns bara i titelkortet")
         # Skiss 2026-11-02 (v3): ljud och video längst till vänster, titel och knappar efter.
         self.assertLess(bar.index("miniPlayer("), bar.index("searchAndEditRow"))
-        self.assertLess(bar.index("playbackRow("), bar.index("searchAndEditRow"))
+        self.assertLess(bar.index("playbackColumn("), bar.index("searchAndEditRow"))
         self.assertIn("controlsUnderTitle", bar, "Mellanstor och stor bild: kontrollerna under knapparna")
+        # Skiss v4: sökfältet följer med i den hopfällda raden, och liten bild/ljud får
+        # kontrollerna staplade så att "Redigerar anonymiserad text" får plats.
+        self.assertIn("if showSearch { searchRow }", bar)
+        self.assertIn("playbackColumn(", bar)
+        self.assertIn("if showSearch && !isCollapsed { searchRow }", text, "Bara ett sökfält åt gången")
+        self.assertIn('"Redigerar anonymiserad text"', text)
+        self.assertNotIn('"Rättar anonymiserad text"', text)
 
     def test_on_states_are_filled_and_keep_their_size(self):
         text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
