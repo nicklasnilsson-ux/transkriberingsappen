@@ -6,6 +6,8 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.7.8] – 2026-11-02
+
 ### Rättat
 - Texten hoppar inte längre när du växlar mellan visning och redigering. Fältytan ritas nu runt hela stycket eller raden utan att ta plats, så varje textrad behåller sin höjd.
 - Texten "Rättar anonymiserad text" (eller "Rättar originaltexten") ligger nu precis vid knappen Redigera/Klar i stället för som en stor etikett på titelraden. Knappen Redigera/Klar sitter bredvid valet Stycken/Rader.
