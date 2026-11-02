@@ -6,6 +6,11 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.7.11] – 2026-11-02
+
+### Ändrat
+- När titelkortet är hopfällt ligger ljud och video längst till vänster, med titeln, Sök i texten och Redigera efter. Med mellanstor och stor bild ligger spelkontrollerna längst ned under knapparna.
+
 ## [0.7.10] – 2026-11-02
 
 ### Ändrat

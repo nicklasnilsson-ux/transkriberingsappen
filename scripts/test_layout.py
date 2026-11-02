@@ -103,7 +103,10 @@ class EditModeTests(unittest.TestCase):
         self.assertIn("searchAndEditRow(scrollProxy: proxy)", bar, "Samma Sök/Redigera-rad i den hopfällda raden")
         for tool in ("anonymizeToggle", "copyButton", "exportMenu()", "speakersMenu"):
             self.assertNotIn(tool, bar, f"{tool} finns bara i titelkortet")
-        self.assertLess(bar.index("searchAndEditRow"), bar.index("miniPlayer("), "Titel och knappar till vänster, spelaren till höger")
+        # Skiss 2026-11-02 (v3): ljud och video längst till vänster, titel och knappar efter.
+        self.assertLess(bar.index("miniPlayer("), bar.index("searchAndEditRow"))
+        self.assertLess(bar.index("playbackRow("), bar.index("searchAndEditRow"))
+        self.assertIn("controlsUnderTitle", bar, "Mellanstor och stor bild: kontrollerna under knapparna")
 
     def test_on_states_are_filled_and_keep_their_size(self):
         text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
