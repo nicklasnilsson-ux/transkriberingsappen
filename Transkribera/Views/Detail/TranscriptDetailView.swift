@@ -13,6 +13,8 @@ struct TranscriptDetailView: View {
     @State private var query = ""
     @State private var showOnlyMatches = true
     @State private var isEditing = false
+    /// Håller stycket du läser kvar på skärmen när redigeringsläget växlar.
+    @State private var scrollAnchor = ScrollAnchor()
     @State private var followPlayback = true
     @State private var speakerToRename: String?
     @State private var newSpeakerName = ""
@@ -85,7 +87,7 @@ struct TranscriptDetailView: View {
             .padding(.horizontal, 20)
             .padding(.vertical, 14)
             // Hela innehållet mäts, så att skrollpositionen alltid rapporteras.
-            .background(ScrollOffsetObserver { updateCollapse(offset: $0) })
+            .background(ScrollOffsetObserver(onChange: { updateCollapse(offset: $0) }, anchor: scrollAnchor))
             .background(GeometryReader { geo in
                 Color.clear.preference(
                     key: ScrollOffsetKey.self,
@@ -95,6 +97,10 @@ struct TranscriptDetailView: View {
         }
         .coordinateSpace(name: Self.scrollSpace)
         .onPreferenceChange(ScrollOffsetKey.self) { updateCollapse(offset: $0) }
+        // Stycket vid fönstrets överkant står kvar på samma plats när läget växlar.
+        .onChange(of: isEditing) { _, _ in
+            if let anchor = scrollAnchor.currentAnchor() { scrollAnchor.restore(anchor) }
+        }
         // Esc stänger redigeringsläget. Fälten sparar när de tappar fokus.
         .onExitCommand { if isEditing { isEditing = false } }
         .background {
@@ -644,6 +650,7 @@ struct TranscriptDetailView: View {
                         onSeek: { player?.seek(to: segment.start) }
                     )
                     .id(segment.persistentModelID)
+                    .background(RowFrameReporter(id: AnyHashable(segment.persistentModelID), anchor: scrollAnchor, space: Self.scrollSpace))
                     .contextMenu { segmentMenu(row) }
                     Divider()
                 }
@@ -683,6 +690,7 @@ struct TranscriptDetailView: View {
                         }
                     )
                     .id(paragraph.first?.id)
+                    .background(RowFrameReporter(id: AnyHashable(paragraph.first?.id), anchor: scrollAnchor, space: Self.scrollSpace))
                     .contextMenu { paragraphMenu(paragraph) }
                     Divider()
                 }

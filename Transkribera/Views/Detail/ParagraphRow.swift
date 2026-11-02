@@ -74,15 +74,12 @@ struct ParagraphRow: View {
     private var paragraphText: some View {
         let size = ReadingTextSize.clamped(readingSize)
         if isEditing {
-            // Varje segment rättas för sig, så att tidskoderna stämmer.
-            VStack(alignment: .leading, spacing: 0) {
-                ForEach(rows) { row in
-                    SegmentEditor(segment: row.segment, displayText: row.text, isAnonymized: row.isAnonymized, lineSpacing: 4)
-                        .id(row.isAnonymized)
-                }
-            }
-            .frame(maxWidth: textWidth, alignment: .leading)
-            .modifier(EditSurface())
+            // Hela stycket i ett fält, med samma radbrytning som visningen. Ändringen förs
+            // tillbaka till rätt segment när fältet lämnas, så att tidskoderna stämmer.
+            ParagraphEditor(rows: rows, lineSpacing: 4)
+                .id(rows.map(\.isAnonymized))
+                .frame(maxWidth: textWidth, alignment: .leading)
+                .modifier(EditSurface())
         } else {
             Text(attributedText)
                 .font(.system(size: size))

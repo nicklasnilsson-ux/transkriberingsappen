@@ -4,7 +4,8 @@ Kör: python3 -m unittest discover -s scripts"""
 import unittest
 from pathlib import Path
 
-VIEWS = Path(__file__).resolve().parent.parent / "Transkribera" / "Views"
+ROOT = Path(__file__).resolve().parent.parent
+VIEWS = ROOT / "Transkribera" / "Views"
 
 
 class LayoutTests(unittest.TestCase):
@@ -91,6 +92,37 @@ class EditModeTests(unittest.TestCase):
         text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
         i = text.index(".keyboardShortcut(.escape")
         self.assertIn("if isEditing", text[i - 200:i], "Esc får inte slå PÅ redigeringsläget")
+
+
+    def test_a_paragraph_is_edited_in_one_field(self):
+        # Ett fält per segment bröt styckets löpande text i flera rader (0.7.8 hoppade).
+        para = (self.DETAIL / "ParagraphRow.swift").read_text(encoding="utf-8")
+        editing = para[para.index("if isEditing"):para.index("} else {", para.index("if isEditing"))]
+        self.assertIn("ParagraphEditor(rows: rows", editing)
+        self.assertNotIn("SegmentEditor", editing)
+        self.assertNotIn("ForEach", editing)
+        row = (self.DETAIL / "SegmentRow.swift").read_text(encoding="utf-8")
+        self.assertIn("ParagraphEditing.split", row, "Ändringen förs tillbaka till segmenten med den testade funktionen")
+        # SwiftUI:s TextField ignorerar .lineSpacing: fältet blev lägre än visningen (mätt i CI).
+        field = row[row.index("struct EditableText"):row.index("struct EditSurface")]
+        self.assertNotIn("TextField(", field)
+        self.assertIn("ReadingTextView(", field)
+        self.assertIn("style.lineSpacing = lineSpacing", field)
+
+    def test_the_paragraph_you_read_stays_put_when_the_mode_changes(self):
+        text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
+        i = text.index(".onChange(of: isEditing)")
+        self.assertIn("scrollAnchor.restore", text[i:i + 250])
+        self.assertIn("anchor: scrollAnchor", text)
+        self.assertGreaterEqual(text.count("RowFrameReporter("), 2, "Både stycken och rader rapporterar sin position")
+
+    def test_heights_are_measured_in_ci(self):
+        workflow = (ROOT / ".github/workflows/build.yml").read_text(encoding="utf-8")
+        self.assertIn("./scripts/test-app.sh", workflow)
+        tests = (ROOT / "TranskriberaAppTests/EditModeHeightTests.swift").read_text(encoding="utf-8")
+        self.assertIn("ParagraphRow(", tests)
+        self.assertIn("SegmentRow(", tests)
+        self.assertIn("ReadingTextSize.steps", tests)
 
 
 class TimecodeTests(unittest.TestCase):

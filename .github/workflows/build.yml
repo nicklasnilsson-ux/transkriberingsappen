@@ -142,6 +142,9 @@ jobs:
             echo "Ingen appcast än."
           fi
 
+      - name: Apptester – texten hoppar inte när man redigerar
+        run: ./scripts/test-app.sh
+
       - name: Bygg appen
         env:
           MARKETING_VERSION_OVERRIDE: ${{ steps.version.outputs.short }}
@@ -194,7 +197,9 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: xcodebuild-log
-          path: build/xcodebuild.log
+          path: |
+            build/xcodebuild.log
+            build/xcodebuild-test.log
           if-no-files-found: ignore
 
       - name: Release-text från CHANGELOG.md
