@@ -11,7 +11,12 @@ struct TranscriptDetailView: View {
 
     @State private var player: PlayerController?
     @State private var query = ""
-    @State private var showOnlyMatches = true
+    /// Träffen man har stegat till i sökfältet (som ⌘F i en webbläsare).
+    @State private var hitIndex = 0
+    /// Ökar varje gång texten ska skrollas till aktuell träff, även när det är samma träff igen.
+    @State private var searchJump = 0
+    /// Senaste skrollpositionen, så att raden kan fällas ut när sökfältet stängs.
+    @State private var lastOffset = OffsetMemory()
     @State private var isEditing = false
     /// Håller stycket du läser kvar på skärmen när redigeringsläget växlar.
     @State private var scrollAnchor = ScrollAnchor()
@@ -103,6 +108,8 @@ struct TranscriptDetailView: View {
         }
         // Esc stänger redigeringsläget. Fälten sparar när de tappar fokus.
         .onExitCommand { if isEditing { isEditing = false } }
+        // Sökfältet stegar till en träff: den hamnar mitt i fönstret, under den hopfällda raden.
+        .onChange(of: searchJump) { _, _ in scrollToCurrentHit(proxy: proxy) }
         .background {
             if isEditing {
                 Button("Klar") { isEditing = false }
@@ -113,13 +120,19 @@ struct TranscriptDetailView: View {
     }
 
     private func updateCollapse(offset: Double) {
-        let next = TitleCardCollapse.isCollapsed(offset: offset, wasCollapsed: isCollapsed)
+        lastOffset.value = offset
+        // Medan sökfältet är öppet fälls raden inte ut igen. Annars försvinner fältet (och fokus)
+        // när en träff ligger nära toppen.
+        let next = TitleCardCollapse.isCollapsed(offset: offset, wasCollapsed: isCollapsed, keepCollapsed: showSearch)
         guard next != isCollapsed else { return }
+        // Sökfältet flyttar från titelkortet till den hopfällda raden; skrivandet ska fortsätta där.
+        let refocus = showSearch && searchFocused
         if reduceMotion {
             isCollapsed = next
         } else {
             withAnimation(.easeInOut(duration: 0.15)) { isCollapsed = next }
         }
+        if refocus { focusSearchKeepingText() }
     }
 
     // MARK: - Kort
@@ -128,6 +141,13 @@ struct TranscriptDetailView: View {
     private var isWorking: Bool { transcript.status == .queued || transcript.status == .transcribing }
 
     private var cardShape: RoundedRectangle { RoundedRectangle(cornerRadius: 12, style: .continuous) }
+    /// Den hopfällda raden: raka hörn upptill där den möter vyns överkant.
+    private var barShape: UnevenRoundedRectangle {
+        UnevenRoundedRectangle(
+            cornerRadii: .init(topLeading: 0, bottomLeading: 12, bottomTrailing: 12, topTrailing: 0),
+            style: .continuous
+        )
+    }
 
     private func card<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
         content()
@@ -356,21 +376,37 @@ struct TranscriptDetailView: View {
             TextField("Sök i transkriberingen", text: $query)
                 .textFieldStyle(.plain)
                 .focused($searchFocused)
-                .onSubmit {}
-            if !query.isEmpty {
-                let count = TextSearch.countMatches(of: query, in: (displaySegments(transcript.sortedSegments) ?? []).map(\.text))
-                Text(count == 1 ? "1 träff" : "\(count) träffar")
+                // Retur: nästa träff. Esc: stäng.
+                .onSubmit { stepHit(forward: true) }
+                .onExitCommand { closeSearch() }
+                .onChange(of: query) { _, _ in
+                    hitIndex = 0
+                    searchJump += 1
+                }
+            if !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                let count = searchHits.count
+                Text(TextSearch.positionLabel(index: hitIndex, count: count))
                     .font(.callout.monospacedDigit())
                     .foregroundStyle(.secondary)
-                Toggle("Visa bara träffar", isOn: $showOnlyMatches)
-                    .toggleStyle(.checkbox)
-                    .help("Dölj stycken som inte innehåller sökordet")
+                    .fixedSize()
+                HStack(spacing: 2) {
+                    Button { stepHit(forward: false) } label: {
+                        Image(systemName: "chevron.up").frame(width: 18, height: 16)
+                    }
+                    .keyboardShortcut("g", modifiers: [.command, .shift])
+                    .help("Förra träffen (⇧⌘G)")
+                    .accessibilityLabel("Förra träffen")
+                    Button { stepHit(forward: true) } label: {
+                        Image(systemName: "chevron.down").frame(width: 18, height: 16)
+                    }
+                    .keyboardShortcut("g", modifiers: .command)
+                    .help("Nästa träff (Retur eller ⌘G)")
+                    .accessibilityLabel("Nästa träff")
+                }
+                .disabled(count == 0)
             }
-            Button("Stäng") {
-                query = ""
-                showSearch = false
-            }
-            .buttonStyle(.link)
+            Button("Stäng") { closeSearch() }
+                .buttonStyle(.link)
         }
         .padding(8)
         .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
@@ -380,6 +416,62 @@ struct TranscriptDetailView: View {
         showSearch = true
         // Fältet finns inte i vyn förrän nästa varv.
         Task { @MainActor in searchFocused = true }
+    }
+
+    private func closeSearch() {
+        query = ""
+        showSearch = false
+        searchFocused = false
+        // Raden hölls hopfälld medan man sökte; nu följer den skrollpositionen igen.
+        updateCollapse(offset: lastOffset.value)
+    }
+
+    /// Ger sökfältet fokus igen när det har flyttat, med markören sist i stället för att hela
+    /// sökordet markeras (då skulle nästa bokstav ersätta det).
+    private func focusSearchKeepingText() {
+        Task { @MainActor in
+            searchFocused = true
+            await Task.yield()
+            if let editor = NSApp.keyWindow?.firstResponder as? NSTextView {
+                editor.setSelectedRange(NSRange(location: (editor.string as NSString).length, length: 0))
+            }
+        }
+    }
+
+    /// Alla träffar i den text som visas, i läsordning.
+    private var searchHits: [SearchHit<PersistentIdentifier>] {
+        guard showSearch else { return [] }
+        let rows = displaySegments(transcript.sortedSegments) ?? []
+        return TextSearch.hits(of: query, in: rows.map {
+            (id: $0.id, text: $0.text.trimmingCharacters(in: .whitespacesAndNewlines))
+        })
+    }
+
+    private var currentHit: SearchHit<PersistentIdentifier>? {
+        let hits = searchHits
+        guard !hits.isEmpty else { return nil }
+        return hits[min(hitIndex, hits.count - 1)]
+    }
+
+    private func stepHit(forward: Bool) {
+        let count = searchHits.count
+        guard count > 0 else { return }
+        hitIndex = TextSearch.step(from: min(hitIndex, count - 1), count: count, forward: forward)
+        searchJump += 1
+    }
+
+    /// Skrollar till stycket (eller raden) med aktuell träff. Hela texten visas hela tiden.
+    private func scrollToCurrentHit(proxy: ScrollViewProxy) {
+        guard let hit = currentHit else { return }
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
+            // Samma id som raderna har: styckets första segment, eller segmentet självt.
+            if layout == .paragraphs, let rows = displaySegments(transcript.sortedSegments),
+               let paragraph = Self.paragraphs(rows).first(where: { $0.contains { $0.id == hit.id } }) {
+                proxy.scrollTo(paragraph.first?.id, anchor: .center)
+            } else {
+                proxy.scrollTo(hit.id, anchor: .center)
+            }
+        }
     }
 
     /// Redigera/Klar. Fylld med accentfärgen när redigeringsläget är på.
@@ -557,10 +649,10 @@ struct TranscriptDetailView: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
-        .background(.regularMaterial, in: cardShape)
-        .overlay(cardShape.strokeBorder(Color(nsColor: .separatorColor), lineWidth: 1))
+        // Kloss mot vyns överkant med raka hörn upptill, så att ingen text syns ovanför raden.
+        .background(.regularMaterial, in: barShape)
+        .overlay(barShape.strokeBorder(Color(nsColor: .separatorColor), lineWidth: 1))
         .padding(.horizontal, 20)
-        .padding(.top, 8)
         .frame(maxWidth: 860)
     }
 
@@ -690,23 +782,18 @@ struct TranscriptDetailView: View {
     }
 
     private func segmentRows(rows: [DisplaySegment], currentTime: Double, activeID: PersistentIdentifier?, proxy: ScrollViewProxy) -> some View {
-        let visible = (query.isEmpty || !showOnlyMatches)
-            ? rows
-            : rows.filter { TextSearch.matches($0.text, query: query) }
-
+        // Hela texten visas alltid; sökningen markerar och stegar mellan träffarna.
+        let hit = currentHit
         return VStack(alignment: .leading, spacing: 0) {
-            if visible.isEmpty {
-                ContentUnavailableView.search(text: query)
-                    .padding(.top, 40)
-            }
             LazyVStack(alignment: .leading, spacing: 0) {
-                ForEach(visible) { row in
+                ForEach(rows) { row in
                     let segment = row.segment
                     SegmentRow(
                         segment: segment,
                         displayText: row.text,
                         displaySpeaker: row.speaker,
                         query: query,
+                        currentOccurrence: hit?.id == row.id ? hit?.occurrence : nil,
                         isActive: segment.persistentModelID == activeID,
                         currentTime: currentTime,
                         isEditing: isEditing,
@@ -727,21 +814,17 @@ struct TranscriptDetailView: View {
 
     private func paragraphRows(rows: [DisplaySegment], currentTime: Double, activeID: PersistentIdentifier?, proxy: ScrollViewProxy) -> some View {
         let paragraphs = Self.paragraphs(rows)
-        let visible = (query.isEmpty || !showOnlyMatches)
-            ? paragraphs
-            : paragraphs.filter { paragraph in paragraph.contains { TextSearch.matches($0.text, query: query) } }
+        // Hela texten visas alltid; sökningen markerar och stegar mellan träffarna.
+        let hit = currentHit
         let activeParagraphID = paragraphs.first { paragraph in paragraph.contains { $0.id == activeID } }?.first?.id
 
         return VStack(alignment: .leading, spacing: 0) {
-            if visible.isEmpty {
-                ContentUnavailableView.search(text: query)
-                    .padding(.top, 40)
-            }
             LazyVStack(alignment: .leading, spacing: 0) {
-                ForEach(visible, id: \.first?.id) { paragraph in
+                ForEach(paragraphs, id: \.first?.id) { paragraph in
                     ParagraphRow(
                         rows: paragraph,
                         query: query,
+                        currentHit: hit,
                         activeID: activeID,
                         currentTime: currentTime,
                         isEditing: isEditing,
@@ -1007,6 +1090,11 @@ private struct AnonymizedState {
 }
 
 /// Ett segment som det visas: anonymiserad eller original text och talare.
+/// Senaste skrollpositionen. En klass, så att skrollningen inte ritar om vyn.
+final class OffsetMemory {
+    var value: Double = 0
+}
+
 struct DisplaySegment: Identifiable {
     let segment: TranscriptSegment
     let text: String

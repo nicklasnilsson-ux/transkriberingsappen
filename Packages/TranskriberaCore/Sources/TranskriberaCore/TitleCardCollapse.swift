@@ -6,8 +6,10 @@ public enum TitleCardCollapse {
     public static let collapseAt: Double = 260
     public static let expandBelow: Double = 200
 
-    public static func isCollapsed(offset: Double, wasCollapsed: Bool) -> Bool {
-        if wasCollapsed { return offset >= expandBelow }
+    /// `keepCollapsed`: raden får inte fällas ut, t.ex. medan sökfältet är öppet i den. Annars
+    /// försvinner fältet mitt i skrivandet när en träff ligger nära toppen.
+    public static func isCollapsed(offset: Double, wasCollapsed: Bool, keepCollapsed: Bool = false) -> Bool {
+        if wasCollapsed { return keepCollapsed || offset >= expandBelow }
         return offset > collapseAt
     }
 }

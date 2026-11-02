@@ -8,7 +8,8 @@ enum SegmentText {
         text: String,
         query: String,
         words: [WordTimingData],
-        currentTime: Double?
+        currentTime: Double?,
+        currentOccurrence: Int? = nil
     ) -> AttributedString {
         var attributed = AttributedString(text)
 
@@ -31,9 +32,12 @@ enum SegmentText {
             }
         }
 
-        for range in TextSearch.ranges(of: query, in: text) {
+        // Den träff man har stegat till är orange, som ⌘F i Safari; övriga träffar gula.
+        for (index, range) in TextSearch.ranges(of: query, in: text).enumerated() {
             if let attributedRange = Range(range, in: attributed) {
-                attributed[attributedRange].backgroundColor = .yellow.opacity(0.55)
+                attributed[attributedRange].backgroundColor = index == currentOccurrence
+                    ? .orange
+                    : .yellow.opacity(0.55)
                 attributed[attributedRange].foregroundColor = .black
             }
         }

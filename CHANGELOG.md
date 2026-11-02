@@ -6,6 +6,15 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.7.13] – 2026-11-02
+
+### Ändrat
+- Sök i texten fungerar som ⌘F i en webbläsare. Hela texten visas, sökfältet visar till exempel "3 av 12" och du stegar mellan träffarna med pilarna, Retur eller ⌘G (⇧⌘G bakåt). Texten skrollar till träffen, som är orange; övriga träffar är gula. "Visa bara träffar" är borttaget.
+- Det hopfällda titelkortet ligger kloss mot överkanten med raka hörn upptill, så att texten inte syns ovanför det.
+
+### Rättat
+- Sökfältet i det hopfällda titelkortet tappade fokus efter ett par bokstäver och sidan hoppade till början.
+
 ## [0.7.12] – 2026-11-02
 
 ### Ändrat

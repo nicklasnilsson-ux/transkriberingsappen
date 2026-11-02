@@ -45,6 +45,26 @@ final class TextSearchTests: XCTestCase {
         XCTAssertEqual(TextSearch.ranges(of: "hej", in: text).count, 3)
         XCTAssertEqual(TextSearch.countMatches(of: "hej", in: [text, "inget"]), 3)
     }
+
+    func testHitsAreInReadingOrder() {
+        let items: [(id: Int, text: String)] = [(1, "hej och hej"), (2, "inget"), (3, "Hej")]
+        XCTAssertEqual(TextSearch.hits(of: "hej", in: items), [
+            SearchHit(id: 1, occurrence: 0), SearchHit(id: 1, occurrence: 1), SearchHit(id: 3, occurrence: 0),
+        ])
+        XCTAssertEqual(TextSearch.hits(of: "  ", in: items), [])
+    }
+
+    func testStepWrapsAround() {
+        XCTAssertEqual(TextSearch.step(from: 0, count: 3, forward: true), 1)
+        XCTAssertEqual(TextSearch.step(from: 2, count: 3, forward: true), 0)
+        XCTAssertEqual(TextSearch.step(from: 0, count: 3, forward: false), 2)
+        XCTAssertEqual(TextSearch.step(from: 0, count: 0, forward: true), 0)
+    }
+
+    func testPositionLabel() {
+        XCTAssertEqual(TextSearch.positionLabel(index: 2, count: 12), "3 av 12")
+        XCTAssertEqual(TextSearch.positionLabel(index: 0, count: 0), "Inga träffar")
+    }
 }
 
 final class ExporterTests: XCTestCase {

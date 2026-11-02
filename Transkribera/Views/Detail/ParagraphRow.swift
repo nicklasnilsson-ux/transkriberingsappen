@@ -7,6 +7,8 @@ import TranskriberaCore
 struct ParagraphRow: View {
     let rows: [DisplaySegment]
     let query: String
+    /// Träffen man har stegat till med sökfältets pilar, om den finns i det här stycket.
+    var currentHit: SearchHit<PersistentIdentifier>? = nil
     let activeID: PersistentIdentifier?
     let currentTime: Double?
     let isEditing: Bool
@@ -103,7 +105,8 @@ struct ParagraphRow: View {
                 text: text,
                 query: query,
                 words: active && showsOriginal ? row.segment.words : [],
-                currentTime: active ? currentTime : nil
+                currentTime: active ? currentTime : nil,
+                currentOccurrence: currentHit?.id == row.id ? currentHit?.occurrence : nil
             )
         }
         return result

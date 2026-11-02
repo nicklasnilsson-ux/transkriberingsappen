@@ -30,6 +30,9 @@ final class LayoutLogicTests: XCTestCase {
 
     func testNegativeOffsetFromOverscrollIsExpanded() {
         XCTAssertFalse(TitleCardCollapse.isCollapsed(offset: -30, wasCollapsed: true))
+        // Medan sökfältet är öppet i raden fälls den inte ut, så att fältet inte tappar fokus.
+        XCTAssertTrue(TitleCardCollapse.isCollapsed(offset: 0, wasCollapsed: true, keepCollapsed: true))
+        XCTAssertFalse(TitleCardCollapse.isCollapsed(offset: 0, wasCollapsed: false, keepCollapsed: true))
     }
 
     func testMiniPlayerSizesGrowAndKeepAspect() {

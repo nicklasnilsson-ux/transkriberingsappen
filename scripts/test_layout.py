@@ -159,6 +159,39 @@ class EditModeTests(unittest.TestCase):
         self.assertIn("ReadingTextSize.steps", tests)
 
 
+class SearchTests(unittest.TestCase):
+    """Sökningen fungerar som ⌘F (0.7.13). Förut filtrerades texten, så att den krympte, raden
+    fälldes ut och sökfältet tappade fokus efter två bokstäver."""
+    DETAIL = VIEWS / "Detail"
+
+    def setUp(self):
+        self.text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
+
+    def test_whole_text_stays_visible(self):
+        self.assertNotIn("showOnlyMatches", self.text)
+        self.assertNotIn(".filter { TextSearch.matches", self.text)
+        self.assertNotIn("filter { paragraph in paragraph.contains { TextSearch", self.text)
+
+    def test_hits_can_be_stepped_through(self):
+        self.assertIn("TextSearch.positionLabel(", self.text)
+        self.assertIn('.onSubmit { stepHit(forward: true) }', self.text)
+        self.assertIn('.keyboardShortcut("g", modifiers: .command)', self.text)
+        self.assertIn('.keyboardShortcut("g", modifiers: [.command, .shift])', self.text)
+        self.assertIn("proxy.scrollTo(hit.id, anchor: .center)", self.text)
+        self.assertIn("currentOccurrence", (self.DETAIL / "SegmentText.swift").read_text(encoding="utf-8"))
+
+    def test_search_field_keeps_focus(self):
+        self.assertIn("keepCollapsed: showSearch", self.text)
+        self.assertIn("if refocus { focusSearchKeepingText() }", self.text)
+
+    def test_collapsed_bar_is_flush_with_the_top(self):
+        bar = self.text[self.text.index("private func collapsedBar"):self.text.index("private func miniPlayer")]
+        self.assertNotIn(".padding(.top", bar)
+        self.assertIn(".background(.regularMaterial, in: barShape)", bar)
+        self.assertIn("topLeading: 0", self.text)
+        self.assertIn("topTrailing: 0", self.text)
+
+
 class TimecodeTests(unittest.TestCase):
     def test_paragraphs_and_rows_use_the_same_timecode_button(self):
         for name in ("ParagraphRow.swift", "SegmentRow.swift"):

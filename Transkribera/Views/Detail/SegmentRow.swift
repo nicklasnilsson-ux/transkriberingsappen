@@ -9,6 +9,8 @@ struct SegmentRow: View {
     let displayText: String
     let displaySpeaker: String?
     let query: String
+    /// Vilken träff i den här raden man har stegat till med sökfältets pilar.
+    var currentOccurrence: Int? = nil
     let isActive: Bool
     let currentTime: Double?
     let isEditing: Bool
@@ -43,7 +45,8 @@ struct SegmentRow: View {
                         text: displayText,
                         query: query,
                         words: isActive && showsOriginal ? segment.words : [],
-                        currentTime: isActive ? currentTime : nil
+                        currentTime: isActive ? currentTime : nil,
+                        currentOccurrence: currentOccurrence
                     ))
                     .font(.system(size: ReadingTextSize.clamped(readingSize)))
                     .lineSpacing(3)
