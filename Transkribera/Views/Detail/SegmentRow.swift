@@ -298,8 +298,8 @@ struct ReadingTextView: NSViewRepresentable {
         layout.enumerateLineFragments(forGlyphRange: glyphs) { _, _, _, _, _ in lines += 1 }
         if layout.extraLineFragmentTextContainer != nil { lines += 1 }
         lines = max(lines, 1)
-        let lineHeight = lineHeight(fontSize: Double(view.font?.pointSize ?? NSFont.systemFontSize))
-        return CGFloat(lines) * lineHeight + CGFloat(lines - 1) * lineSpacing
+        let rowHeight = Self.lineHeight(fontSize: Double(view.font?.pointSize ?? NSFont.systemFontSize))
+        return CGFloat(lines) * rowHeight + CGFloat(lines - 1) * lineSpacing
     }
 
     private static var lineHeights: [Double: CGFloat] = [:]
