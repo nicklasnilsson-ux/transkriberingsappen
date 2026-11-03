@@ -43,6 +43,19 @@ final class VersionHistoryTests: XCTestCase {
         XCTAssertEqual(VersionHistory.label(number: 2, total: 4, time: "14:32"), "Version 2 av 4 · 14:32")
     }
 
+    func testShownDateIsTheShownVersionsAndNeverTheFirstTranscriptionWhenAnotherIsShown() {
+        let first = Date(timeIntervalSince1970: 1_000)
+        let third = Date(timeIntervalSince1970: 9_000)
+        // Aldrig omgjord: filens första transkribering.
+        XCTAssertEqual(VersionHistory.shownDate(versionDate: nil, createdAt: first), first)
+        // En annan version visas: dess tid, inte createdAt.
+        XCTAssertEqual(VersionHistory.shownDate(versionDate: third, createdAt: first), third)
+    }
+
+    func testShortLabelHasNoTimeBecauseTheDateBesideItHasIt() {
+        XCTAssertEqual(VersionHistory.shortLabel(number: 3, total: 3), "Version 3 av 3")
+    }
+
     func testDialogKindAndWhenItIsShown() {
         XCTAssertEqual(RetranscribeDialog.kind(versionCount: 1), .roomLeft(versions: 1))
         XCTAssertEqual(RetranscribeDialog.kind(versionCount: 3), .roomLeft(versions: 3))

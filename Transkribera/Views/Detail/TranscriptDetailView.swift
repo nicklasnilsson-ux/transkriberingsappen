@@ -161,11 +161,7 @@ struct TranscriptDetailView: View {
     /// 1. Modell, språk och antal talare som transkriberingen gjordes med, och Transkribera igen.
     private var chipsRow: some View {
         HStack(spacing: 8) {
-            settingsChip(modelChipText, help: "Modell. Klicka för att välja en annan till nästa omtagning.")
-            settingsChip(languageChipText, help: "Språk. Klicka för att välja ett annat till nästa omtagning.")
-            if let speakersText = speakersChipText {
-                settingsChip(speakersText, help: "Talare. Klicka för att ändra till nästa omtagning.")
-            }
+            settingsPill
             Spacer()
             Button {
                 requestRetranscribe()
@@ -174,10 +170,7 @@ struct TranscriptDetailView: View {
             }
             .buttonStyle(RerunButtonStyle(isEmphasized: rerunSettingsChanged))
             .disabled(isWorking)
-            .help("Transkribera filen igen med valen i chipsen. Den nuvarande versionen sparas.")
-        }
-        .popover(isPresented: $showRerunSettings, arrowEdge: .bottom) {
-            RerunSettingsPopover(overrides: $overrides, file: fileBaseline)
+            .help("Transkribera filen igen med valen i knappen till vänster. Den nuvarande versionen sparas.")
         }
     }
 
@@ -217,11 +210,14 @@ struct TranscriptDetailView: View {
         return n == 1 ? "1 talare" : "\(n) talare"
     }
 
-    /// Chip som öppnar valen för omtagningen; accentkant när något är ändrat.
-    private func settingsChip(_ text: String, help: String) -> some View {
+    /// En enda knapp med de tre valen ("KB Large ordagrann · Svenska · 3 talare") som öppnar
+    /// popovern. Accentkant när något är ändrat.
+    private var settingsPill: some View {
         Button { showRerunSettings = true } label: {
-            HStack(spacing: 4) {
-                Text(text)
+            HStack(spacing: 6) {
+                Text(settingsSummary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
                 Image(systemName: "chevron.down").font(.caption2)
             }
             .font(.callout)
@@ -232,7 +228,14 @@ struct TranscriptDetailView: View {
         }
         .buttonStyle(.plain)
         .disabled(isWorking)
-        .help(help)
+        .help("Modell, språk och talare. Klicka för att välja andra till nästa omtagning.")
+        .popover(isPresented: $showRerunSettings, arrowEdge: .bottom) {
+            RerunSettingsPopover(overrides: $overrides, file: fileBaseline)
+        }
+    }
+
+    private var settingsSummary: String {
+        [modelChipText, languageChipText, speakersChipText].compactMap { $0 }.joined(separator: " · ")
     }
 
     private var statusText: String {
@@ -305,7 +308,7 @@ struct TranscriptDetailView: View {
             Text(statusText)
                 .foregroundStyle(transcript.status == .failed ? AnyShapeStyle(Color.warning) : AnyShapeStyle(.secondary))
             Text("·")
-            Text(transcript.createdAt.formatted(date: .long, time: .shortened))
+            Text(transcript.liveVersionDate.formatted(date: .long, time: .shortened))
             Text("·")
             Text(TimeFormatting.duration(transcript.duration)).monospacedDigit()
             versionPicker
@@ -329,11 +332,11 @@ struct TranscriptDetailView: View {
 
     // MARK: - Versioner
 
-    /// Versionsvalet, t.ex. "Version 2 av 4 · 14:32". Finns först när det finns fler än en
+    /// Versionsvalet, t.ex. "Version 2 av 4". Datumet och klockslaget bredvid är den visade versionens. Finns först när det finns fler än en
     /// version, och finns bara i det utfällda titelkortet. Indigo bakgrund när en äldre version visas.
     @ViewBuilder
     private var versionPicker: some View {
-        if let label = transcript.versionLabel {
+        if let label = transcript.versionShortLabel {
             let older = transcript.isViewingOlderVersion
             Menu {
                 Picker("Version", selection: Binding(

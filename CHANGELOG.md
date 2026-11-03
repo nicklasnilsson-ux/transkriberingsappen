@@ -6,6 +6,12 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+### Ändrat
+- Modell, språk och antal talare ovanför titelkortet är nu en enda knapp, till exempel "KB Large ordagrann · Svenska · 3 talare". De tre knapparna öppnade förut samma ruta. Klicka på knappen för att ändra valen till nästa omtagning.
+
+### Rättat
+- Datum och tid på andra raden i titelkortet visade alltid när filen först transkriberades, även när en annan version var vald. Nu visar raden när den version du ser blev klar. Versionsmärket säger bara "Version 3 av 3", eftersom klockslaget redan står i datumet.
+
 ## [0.8.0] – 2026-11-02
 
 ### Nytt

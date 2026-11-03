@@ -62,7 +62,7 @@ struct VersionInfo: Identifiable, Equatable {
 
 extension Transcript {
     /// När texten som visas blev klar.
-    var liveVersionDate: Date { versionDate ?? createdAt }
+    var liveVersionDate: Date { VersionHistory.shownDate(versionDate: versionDate, createdAt: createdAt) }
 
     private var slots: [VersionSlot] {
         [VersionSlot(id: id, date: liveVersionDate)] + versions.map { VersionSlot(id: $0.id, date: $0.date) }
@@ -95,6 +95,12 @@ extension Transcript {
             total: position.total,
             time: liveVersionDate.formatted(date: .omitted, time: .shortened)
         )
+    }
+
+    /// Märket i titelkortet: "Version 2 av 4". Tiden står i datumet bredvid.
+    var versionShortLabel: String? {
+        guard versionCount > 1, let position = VersionHistory.position(of: id, in: slots) else { return nil }
+        return VersionHistory.shortLabel(number: position.number, total: position.total)
     }
 
     /// Beskrivning av den äldsta versionen till dialogen: "tid · modell".

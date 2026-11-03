@@ -62,6 +62,25 @@ class VersionTests(unittest.TestCase):
         self.assertIn("Äldre version", bar)
         self.assertIn("isViewingOlderVersion", bar)
 
+    def test_title_card_date_is_the_shown_versions_not_the_first_transcription(self):
+        # Felet 0.8.0: raden visade createdAt (första transkriberingen) även när en annan version visades.
+        detail = read("Views/Detail/TranscriptDetailView.swift")
+        self.assertNotIn("createdAt", detail)
+        meta = detail[detail.index("private var metaLine"):detail.index("private var layoutPicker")]
+        self.assertIn("transcript.liveVersionDate.formatted(", meta)
+        model = read("Models/TranscriptVersion.swift")
+        self.assertIn("VersionHistory.shownDate(versionDate: versionDate, createdAt: createdAt)", model)
+        # Märket upprepar inte klockslaget som datumet bredvid redan har.
+        picker = detail[detail.index("private var versionPicker"):detail.index("private func versionMenuTitle")]
+        self.assertIn("versionShortLabel", picker)
+        self.assertNotIn("versionLabel", picker)
+
+    def test_rerun_settings_are_one_pill_with_one_popover(self):
+        detail = read("Views/Detail/TranscriptDetailView.swift")
+        self.assertEqual(detail.count("RerunSettingsPopover("), 1)
+        self.assertEqual(detail.count("showRerunSettings = true"), 1)
+        self.assertNotIn("settingsChip(", detail)
+
     def test_ask_setting_exists_with_the_same_default_in_both_places(self):
         for rel in ("Views/Settings/SettingsView.swift", "Views/Detail/RetranscribeSheet.swift"):
             self.assertRegex(read(rel), r"SettingsKey\.askBeforeRetranscribe\)\s+private var \w+\s*=\s*true", rel)
