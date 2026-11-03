@@ -13,9 +13,12 @@ class LayoutTests(unittest.TestCase):
         users = [p.name for p in VIEWS.rglob("*.swift") if ".dropDestination(" in p.read_text(encoding="utf-8")]
         self.assertEqual(users, ["ContentView.swift"], f"Släppyta utanför roten: {users}")
 
-    def test_mode_switcher_is_in_the_toolbar(self):
-        text = (VIEWS / "ContentView.swift").read_text(encoding="utf-8")
-        self.assertIn("ToolbarItem(placement: .principal)", text)
+    def test_mode_switcher_is_in_the_sidebar_not_the_toolbar(self):
+        # Pianissimo: titelbaren är fri för det som hör till den öppnade texten.
+        content = (VIEWS / "ContentView.swift").read_text(encoding="utf-8")
+        self.assertNotIn("ToolbarItem", content)
+        text = (VIEWS / "Sidebar" / "SidebarView.swift").read_text(encoding="utf-8")
+        self.assertIn("private var modeSwitcher", text)
         self.assertIn(".pickerStyle(.segmented)", text)
 
     def test_sidebar_groups_come_from_the_tested_core_function(self):
@@ -53,74 +56,55 @@ class EditModeTests(unittest.TestCase):
     def test_entering_edit_mode_inserts_nothing_above_the_text(self):
         text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
         start = text.index("private var noticeCard")
-        block = text[start:text.index("// 7.", start)]
+        block = text[start:text.index("private func miniPlayer", start)]
         self.assertNotIn("isEditing", block, "Kortet ovanför texten får inte bero på redigeringsläget (layouten hoppar)")
         roles = text[text.index("private var showsRolesBanner"):][:200]
         self.assertNotIn("!isEditing", roles, "Rollbannern får inte försvinna när redigeringsläget slås på (layouten hoppar)")
+        header = text[text.index("private var headerRow"):text.index("private var fileBaseline") if text.index("private var fileBaseline") > text.index("private var headerRow") else None]
+        self.assertNotIn("isEditing", header, "Raden överst ändras inte av redigeringsläget (layouten hoppar)")
 
-    def test_edit_surface_takes_no_space_in_the_layout(self):
-        # Fältytan ritas utanför texten. Positiv padding eller en ram på varje segment gjorde att
-        # varje textrad växte i höjd när man gick in i redigeringsläget.
-        row = (self.DETAIL / "SegmentRow.swift").read_text(encoding="utf-8")
-        start = row.index("struct EditSurface")
-        surface = row[start:row.index("/// Aktivt stycke", start)]
-        self.assertNotIn(".padding(.horizontal, 6)", surface)
-        for line in surface.splitlines():
-            if ".padding(" in line:
-                self.assertIn("-", line, f"Positiv padding i EditSurface: {line.strip()}")
-        self.assertIn(".lineSpacing(lineSpacing)", row, "Fältet ska ha samma radavstånd som visningen")
-        editor = row[row.index("struct SegmentEditor"):start]
-        self.assertNotIn("EditSurface", editor, "Ytan läggs på raden eller stycket, inte på varje segment")
-
-    def test_the_surface_is_added_once_per_row_or_paragraph(self):
-        self.assertIn(".modifier(EditSurface())", (self.DETAIL / "ParagraphRow.swift").read_text(encoding="utf-8"))
-        self.assertIn(".modifier(EditSurface())", (self.DETAIL / "SegmentRow.swift").read_text(encoding="utf-8"))
-
-    def test_edit_mode_is_labelled_and_closes_with_escape(self):
+    def test_titlebar_has_search_edit_and_more_in_that_order(self):
+        # Pianissimo (Nicklas 2026-11-03): Sök, Redigera och ⋯ ligger alltid i titelbaren. Texten om
+        # redigeringen står före knappen, så att ingenting annat flyttar sig när den visas.
         text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
-        for needle in ('"Klar"', "editStateLabel", ".onExitCommand", ".keyboardShortcut(.escape"):
-            self.assertIn(needle, text)
-
-    def test_edit_state_label_sits_next_to_the_edit_button_not_on_the_title_row(self):
-        text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
-        start = text.index("private func searchAndEditRow")
-        row = text[start:text.index("\n    }\n", start)]
-        # Nicklas skiss 2026-11-02: Sök i texten, Redigera/Klar, och texten om redigeringen sist,
-        # så att ingenting annat flyttar sig när den visas.
-        self.assertLess(row.index("searchButton("), row.index("editToggle"))
-        self.assertLess(row.index("editToggle"), row.index("editStateLabel"))
-        title_row = text[text.index("private var titleRow"):text.index("private var layoutPicker")]
-        self.assertNotIn("isEditing", title_row, "Titelraden ändras inte av redigeringsläget (layouten hoppar)")
-
-    def test_title_card_follows_the_sketch(self):
-        text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
-        card = text[text.index("private var titleCard"):text.index("private var titleRow")]
-        tools = ["speakersMenu", "anonymizeToggle", "layoutPicker", "copyButton", "exportMenu()", "Divider()", "searchAndEditRow("]
-        positions = [card.index(t) for t in tools]
-        self.assertEqual(positions, sorted(positions), "Ordningen i titelkortet följer skissen")
-        self.assertNotIn("interviewerPill", text, "Intervjuaren väljs under Talare, inget märke efter titeln")
-        bar = text[text.index("func collapsedBar"):text.index("func miniPlayer")]
-        self.assertIn("searchAndEditRow(inCollapsedBar: true)", bar, "Samma Sök/Redigera-rad i den hopfällda raden")
-        for tool in ("anonymizeToggle", "copyButton", "exportMenu()", "speakersMenu"):
-            self.assertNotIn(tool, bar, f"{tool} finns bara i titelkortet")
-        # Skiss 2026-11-02 (v3): ljud och video längst till vänster, titel och knappar efter.
-        self.assertLess(bar.index("miniPlayer("), bar.index("searchAndEditRow"))
-        self.assertLess(bar.index("playbackColumn("), bar.index("searchAndEditRow"))
-        self.assertIn("controlsUnderTitle", bar, "Mellanstor och stor bild: kontrollerna under knapparna")
-        # Skiss v4: sökfältet följer med i den hopfällda raden, och liten bild/ljud får
-        # kontrollerna staplade så att "Redigerar anonymiserad text" får plats.
-        self.assertIn("if showSearch { searchRow }", bar)
-        self.assertIn("playbackColumn(", bar)
-        self.assertIn("if showSearch && !isCollapsed { searchRow }", text, "Bara ett sökfält åt gången")
+        bar = text[text.index("private var detailToolbar"):text.index("private var moreMenu")]
+        order = ["toolbarSearch", "editStateLabel", "editToggle", "moreMenu"]
+        positions = [bar.index(t) for t in order]
+        self.assertEqual(positions, sorted(positions))
+        self.assertIn(".toolbar { detailToolbar }", text)
         self.assertIn('"Redigerar anonymiserad text"', text)
         self.assertNotIn('"Rättar anonymiserad text"', text)
+
+    def test_header_and_tools_follow_the_handoff(self):
+        text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
+        tools = text[text.index("private var toolsRow"):text.index("private var fileBaseline")] if text.index("private var toolsRow") < text.index("private var fileBaseline") else text[text.index("private var toolsRow"):][:500]
+        order = ["layoutPicker", "speakersMenu", "anonymizeToggle", "copyButton", "exportMenu()"]
+        positions = [tools.index(t) for t in order]
+        self.assertEqual(positions, sorted(positions), "Verktygsraden: Stycken/Rader, Talare, Anonymisera, Kopiera, Exportera")
+        scroll = text[text.index("private func mainScroll"):text.index(".frame(maxWidth: 820)")]
+        order = ["headerRow", "olderVersionStrip", "toolsRow", "noticeCard", "textArea("]
+        positions = [scroll.index(t) for t in order]
+        self.assertEqual(positions, sorted(positions))
+        header = text[text.index("private var headerRow"):text.index("private var rerunButton")]
+        order = ["versionPicker", "settingsPill", "rerunButton"]
+        positions = [header.index(t) for t in order]
+        self.assertEqual(positions, sorted(positions))
+        self.assertNotIn("interviewerPill", text, "Intervjuaren väljs under Talare, inget märke efter titeln")
+
+    def test_the_tools_are_also_in_the_more_menu(self):
+        # Nicklas 2026-11-03: verktygen finns både i raden och i ⋯-menyn, så att de nås när raden skrollat bort.
+        text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
+        menu = text[text.index("private var moreMenu"):text.index("/// Alla träffar i den text som visas")]
+        for item in ("$layout", "$anonymize", "speakersMenuContent", "copyText()", "exportMenuContent", "requestRetranscribe()"):
+            self.assertIn(item, menu, f"{item} saknas i ⋯-menyn")
 
     def test_on_states_are_filled_and_keep_their_size(self):
         text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
         self.assertIn(".modifier(OnStateButtonStyle(isOn: isEditing))", text)
         self.assertIn(".modifier(OnStateButtonStyle(isOn: anonymize))", text)
-        export = text[text.index("private func exportMenu"):text.index("private var playerCard")]
+        export = text[text.index("private func exportMenu"):text.index("private var exportMenuContent")]
         self.assertNotIn("borderedProminent", export, "Fylld betyder att ett läge är på; Exportera är ingen växel")
+        self.assertIn("Color.neutralButton", export, "Exportera är en neutral svart primärknapp")
 
     def test_escape_shortcut_only_exists_while_editing(self):
         text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
@@ -180,16 +164,17 @@ class SearchTests(unittest.TestCase):
         self.assertIn("proxy.scrollTo(hit.id, anchor: .center)", self.text)
         self.assertIn("currentOccurrence", (self.DETAIL / "SegmentText.swift").read_text(encoding="utf-8"))
 
-    def test_search_field_keeps_focus(self):
-        self.assertIn("keepCollapsed: showSearch", self.text)
-        self.assertIn("if refocus { focusSearchKeepingText() }", self.text)
+    def test_search_field_is_always_in_the_titlebar_and_shrinks(self):
+        self.assertIn("private var toolbarSearch", self.text)
+        self.assertIn("minWidth: 140", self.text, "Sökfältet krymper när fönstret är smalt")
+        self.assertIn('.keyboardShortcut("f")', self.text)
+        self.assertIn("searchFocused = true", self.text, "⌘F flyttar markören till sökfältet")
 
-    def test_collapsed_bar_is_flush_with_the_top(self):
-        bar = self.text[self.text.index("private func collapsedBar"):self.text.index("private func miniPlayer")]
-        self.assertNotIn(".padding(.top", bar)
-        self.assertIn(".background(Color.surface, in: barShape)", bar)
-        self.assertIn("topLeading: 0", self.text)
-        self.assertIn("topTrailing: 0", self.text)
+    def test_player_is_fixed_under_the_titlebar_and_nothing_collapses(self):
+        body = self.text[self.text.index("var body: some View"):self.text.index("private func mainScroll")]
+        self.assertLess(body.index("playerBar"), body.index("ScrollViewReader"), "Spelaren ligger utanför skrollytan")
+        for gone in ("isCollapsed", "collapsedBar", "TitleCardCollapse", "updateCollapse"):
+            self.assertNotIn(gone, self.text, f"{gone}: titelkortet fälls inte längre ihop")
 
 
 class TimecodeTests(unittest.TestCase):
@@ -215,12 +200,6 @@ class RetranscribeTests(unittest.TestCase):
         for name in ("Detail/TranscriptDetailView.swift", "Sidebar/SidebarView.swift"):
             text = (VIEWS / name).read_text(encoding="utf-8")
             self.assertIn("RetranscribeSheet(", text, name)
-
-    def test_collapsed_bar_uses_the_tested_thresholds(self):
-        text = (VIEWS / "Detail" / "TranscriptDetailView.swift").read_text(encoding="utf-8")
-        self.assertIn("TitleCardCollapse.isCollapsed(", text)
-        self.assertIn("accessibilityReduceMotion", text)
-
 
 if __name__ == "__main__":
     unittest.main()

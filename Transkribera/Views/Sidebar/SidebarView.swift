@@ -8,6 +8,7 @@ struct SidebarView: View {
     @Binding var multiSelection: [Transcript]
     @Environment(TranscriptionQueue.self) private var queue
     @Environment(AppState.self) private var appState
+    @Environment(MeetingRecorder.self) private var recorder
     @AppStorage(SettingsKey.model) private var modelRaw = WhisperModel.default.rawValue
     @AppStorage(SettingsKey.language) private var language = "sv"
     @Query(sort: \Transcript.createdAt, order: .reverse) private var transcripts: [Transcript]
@@ -105,6 +106,7 @@ struct SidebarView: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(Color.textSecondary)
                 .padding(.leading, 2)
+            modeSwitcher
             settingsButton
             dropArea
         }
@@ -119,6 +121,23 @@ struct SidebarView: View {
         )
         .padding(.horizontal, 12)
         .padding(.top, 10)
+    }
+
+    /// Fil eller Mötesinspelning. Ligger överst i sidopanelen (inte i fönstrets verktygsfält), så
+    /// att titelbaren är fri för det som hör till den öppnade texten.
+    private var modeSwitcher: some View {
+        Picker("Läge", selection: Binding(
+            get: { appState.mode },
+            set: { appState.mode = $0; appState.clearSelection() }
+        )) {
+            Text("Fil").tag(AppMode.file)
+            Label("Mötesinspelning", systemImage: "circle")
+                .labelStyle(RecordingDotLabelStyle(isRecording: recorder.isRecording))
+                .tag(AppMode.meeting)
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .help("Fil: transkribera ljud- och videofiler. Mötesinspelning: spela in datorns ljud.")
     }
 
     /// Högst upp: modell och språk för nästa transkribering. Knappen öppnar inställningarna.
@@ -300,6 +319,21 @@ private struct SidebarRow: View {
         case .transcribing: ("Transkriberar", false)
         case .queued: ("I kö", false)
         case .failed: ("Misslyckades", true)
+        }
+    }
+}
+
+/// Rubrik i lägesväxlaren: en röd prick (7 pt) före texten medan det spelas in.
+private struct RecordingDotLabelStyle: LabelStyle {
+    let isRecording: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(spacing: 5) {
+            if isRecording {
+                Circle().fill(Color.red).frame(width: 7, height: 7)
+                    .accessibilityLabel("Spelar in")
+            }
+            configuration.title
         }
     }
 }

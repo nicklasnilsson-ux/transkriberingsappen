@@ -76,22 +76,6 @@ struct ContentView: View {
         .foregroundStyle(Color.textPrimary)
         // macOS-standard: ⌘-klick avmarkerar en rad i listan, Esc avmarkerar allt och tömmer vyn.
         .onExitCommand { appState.clearSelection() }
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                Picker("Läge", selection: Binding(
-                    get: { appState.mode },
-                    set: { appState.mode = $0; appState.clearSelection() }
-                )) {
-                    Text("Fil").tag(AppMode.file)
-                    Label("Mötesinspelning", systemImage: "circle")
-                        .labelStyle(RecordingDotLabelStyle(isRecording: recorder.isRecording))
-                        .tag(AppMode.meeting)
-                }
-                .pickerStyle(.segmented)
-                .frame(width: 260)
-                .help("Fil: transkribera ljud- och videofiler. Mötesinspelning: spela in datorns ljud.")
-            }
-        }
         // Hela fönstret tar emot släppta filer.
         .dropDestination(for: URL.self) { urls, _ in
             Task { await importAndShow(urls) }
@@ -137,21 +121,6 @@ struct ContentView: View {
             Button("OK", role: .cancel) { appState.databaseProblem = nil }
         } message: {
             Text(appState.databaseProblem ?? "")
-        }
-    }
-}
-
-/// Rubrik i lägesväxlaren: en röd prick (7 pt) före texten medan det spelas in.
-private struct RecordingDotLabelStyle: LabelStyle {
-    let isRecording: Bool
-
-    func makeBody(configuration: Configuration) -> some View {
-        HStack(spacing: 5) {
-            if isRecording {
-                Circle().fill(Color.red).frame(width: 7, height: 7)
-                    .accessibilityLabel("Spelar in")
-            }
-            configuration.title
         }
     }
 }

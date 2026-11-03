@@ -7,6 +7,9 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 ## [Kommande]
 
 ### Ändrat
+- Ny uppställning av fönstret: Fil/Mötesinspelning ligger överst i sidopanelen. Titelbaren har alltid Sök i texten (⌘F), Redigera och en ⋯-meny med verktygen. Spelaren ligger fast under titelbaren, och version, modell, verktygsrad och text skrollar tillsammans. Titelkortet fälls inte längre ihop. Exportera är en svart knapp. Namnet på transkriberingen byts i titelbaren.
+
+### Ändrat
 - Ny, vitare och stramare färgpalett i hela appen (ljust, mörkt och Öka kontrast), i stället för systemets bakgrunder. Accentfärgen är densamma. Stoppa inspelning är nu en neutral svart knapp, Starta inspelning behåller accentfärgen.
 
 ## [0.8.1] – 2026-11-03
