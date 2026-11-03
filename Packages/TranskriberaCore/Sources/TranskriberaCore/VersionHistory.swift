@@ -44,7 +44,19 @@ public enum VersionHistory {
         ordered(slots).last?.id == id
     }
 
-    /// Etiketten i titelkortet, t.ex. "Version 2 av 4 · 14:32". Klockslaget står alltid med,
+    /// Datumet som titelkortet visar: när texten som visas blev klar. `versionDate` saknas på
+    /// texter som aldrig gjorts om, och då är det när filen först transkriberades. Aldrig
+    /// `createdAt` om en annan version visas, annars säger datumet något annat än texten under.
+    public static func shownDate(versionDate: Date?, createdAt: Date) -> Date {
+        versionDate ?? createdAt
+    }
+
+    /// Märket i titelkortet, t.ex. "Version 2 av 4". Klockslaget står redan i datumet bredvid.
+    public static func shortLabel(number: Int, total: Int) -> String {
+        "Version \(number) av \(total)"
+    }
+
+    /// Etiketten i remsan och menyn, t.ex. "Version 2 av 4 · 14:32". Klockslaget står alltid med,
     /// eftersom numren räknas om när den äldsta raderas.
     public static func label(number: Int, total: Int, time: String) -> String {
         "Version \(number) av \(total) · \(time)"
