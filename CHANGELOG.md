@@ -7,6 +7,9 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 ## [Kommande]
 
 ### Ändrat
+- Redigering per stycke: klicka i texten för att rätta just det stycket. Spara och Avbryt (Esc förkastar) ligger i titelbaren, och Redigera öppnar stycket överst i bild. Ett klick utanför, Retur eller ⌘Retur sparar. Efter sparning visas "Sparat · Ångra" tills du öppnar ett nytt stycke, och Ångra ger tillbaka både texten och ordtiderna. Ett osparat stycke sparas automatiskt vid byte av version, kopiering, export och Transkribera igen.
+
+### Ändrat
 - Mötesinspelning: inställningarna (mikrofon, skilj på talare, antal talare) och knapparna Starta och Stoppa inspelning ligger i sidopanelen i stället för släppytan. Under inspelning är inställningarna låsta, och huvudytan visar bara tid och status. Högerpanelen är borttagen.
 
 ### Ändrat

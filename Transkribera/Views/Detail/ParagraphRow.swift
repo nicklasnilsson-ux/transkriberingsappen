@@ -12,6 +12,9 @@ struct ParagraphRow: View {
     let activeID: PersistentIdentifier?
     let currentTime: Double?
     let isEditing: Bool
+    var session: EditSession? = nil
+    /// Ett klick i texten öppnar stycket för rättning.
+    var onBeginEdit: () -> Void = {}
     let onSeek: (Double) -> Void
     /// Innehållet i ▾-menyn bredvid talarens namn.
     var speakerMenu: ((String) -> AnyView)? = nil
@@ -78,7 +81,7 @@ struct ParagraphRow: View {
         if isEditing {
             // Hela stycket i ett fält, med samma radbrytning som visningen. Ändringen förs
             // tillbaka till rätt segment när fältet lämnas, så att tidskoderna stämmer.
-            ParagraphEditor(rows: rows, lineSpacing: 4)
+            ParagraphEditor(rows: rows, lineSpacing: 4, session: session)
                 .id(rows.map(\.isAnonymized))
                 .frame(maxWidth: textWidth, alignment: .leading)
                 .modifier(EditSurface())
@@ -88,6 +91,8 @@ struct ParagraphRow: View {
                 .lineSpacing(4)
                 .textSelection(.enabled)
                 .frame(maxWidth: textWidth, alignment: .leading)
+                .contentShape(Rectangle())
+                .onTapGesture { onBeginEdit() }
         }
     }
 

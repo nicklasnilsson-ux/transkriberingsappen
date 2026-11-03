@@ -109,7 +109,6 @@ class EditModeTests(unittest.TestCase):
 
     def test_on_states_are_filled_and_keep_their_size(self):
         text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
-        self.assertIn(".modifier(OnStateButtonStyle(isOn: isEditing))", text)
         self.assertIn(".modifier(OnStateButtonStyle(isOn: anonymize))", text)
         export = text[text.index("private func exportMenu"):text.index("private var exportMenuContent")]
         self.assertNotIn("borderedProminent", export, "Fylld betyder att ett läge är på; Exportera är ingen växel")
@@ -120,6 +119,45 @@ class EditModeTests(unittest.TestCase):
         i = text.index(".keyboardShortcut(.escape")
         self.assertIn("if isEditing", text[i - 200:i], "Esc får inte slå PÅ redigeringsläget")
 
+
+    def test_one_paragraph_is_edited_at_a_time(self):
+        # Nicklas 2026-11-03: klick i texten öppnar ETT stycke. Inget globalt redigeringsläge längre.
+        text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
+        self.assertIn("@State private var editingID: PersistentIdentifier?", text)
+        self.assertNotIn("@State private var isEditing", text)
+        self.assertIn("private var isEditing: Bool { editingID != nil }", text)
+        self.assertIn("editingID == paragraph.first?.segment.persistentModelID", text)
+        para = (self.DETAIL / "ParagraphRow.swift").read_text(encoding="utf-8")
+        self.assertIn(".onTapGesture { onBeginEdit() }", para, "Ett klick i texten öppnar stycket")
+
+    def test_escape_discards_and_retur_or_click_outside_saves(self):
+        row = (self.DETAIL / "SegmentRow.swift").read_text(encoding="utf-8")
+        coordinator = row[row.index("func textView(_ view: NSTextView, doCommandBy"):row.index("struct EditSurface")]
+        esc = coordinator[coordinator.index("cancelOperation"):coordinator.index("default:")]
+        self.assertIn("parent.cancel()", esc)
+        self.assertNotIn("commit()", esc, "Esc får inte spara")
+        self.assertNotIn("makeFirstResponder", esc, "Att lämna fältet sparar; Esc ska förkasta")
+        for editor in ("struct SegmentEditor", "struct ParagraphEditor"):
+            body = row[row.index(editor):]
+            body = body[:body.index("\n}\n")]
+            self.assertIn("guard isEditable, !discarded", body, "Ett förkastat stycke får inte sparas när fältet försvinner")
+        text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
+        self.assertIn("if isEditing { saveEditing() }", text, "Klick utanför sparar")
+
+    def test_unsaved_paragraph_is_saved_before_version_export_copy_and_rerun(self):
+        text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
+        for fn in ("private func switchVersion", "private func copyText", "private func requestRetranscribe", "private func export(as"):
+            start = text.index(fn)
+            self.assertIn("saveEditing()", text[start:start + 400], f"{fn} måste spara det öppna stycket först")
+
+    def test_undo_restores_word_timings_and_is_cleared_by_a_new_paragraph(self):
+        row = (self.DETAIL / "SegmentRow.swift").read_text(encoding="utf-8")
+        self.assertIn("wordsData: $0.segment.wordsData", row)
+        text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
+        begin = text[text.index("private func beginEditing"):][:300]
+        self.assertIn("lastEdit = nil", begin)
+        undo = text[text.index("private func undoLastEdit"):][:500]
+        self.assertIn("segment.wordsData = entry.wordsData", undo)
 
     def test_a_paragraph_is_edited_in_one_field(self):
         # Ett fält per segment bröt styckets löpande text i flera rader (0.7.8 hoppade).
