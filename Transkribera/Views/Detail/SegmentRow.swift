@@ -1,6 +1,22 @@
 import AppKit
+import SwiftData
 import SwiftUI
 import TranskriberaCore
+
+/// Förbinder fältet i det öppna stycket med titelbaren: Spara och Avbryt går dit, och det sparade
+/// stycket (för Ångra) går tillbaka. En vanlig klass, så att inget ritas om när fältet registrerar sig.
+final class EditSession {
+    /// Sparar det som står i fältet. Sätts av fältet.
+    var save: (() -> Void)?
+    /// Förkastar det som står i fältet, så att det inte sparas när fältet försvinner. Sätts av fältet.
+    var discard: (() -> Void)?
+    /// Fältet har sparat en ändring; det som fanns före ligger i `EditUndo`.
+    var onSaved: (EditUndo) -> Void = { _ in }
+    /// Fältet tappade fokus eller Retur trycktes; stycket med det här id:t är klart.
+    var onFinish: (PersistentIdentifier?) -> Void = { _ in }
+    /// Esc trycktes i fältet.
+    var onCancel: () -> Void = {}
+}
 
 /// En rad i transkriberingen: tidsstämpel, talare och text.
 struct SegmentRow: View {
@@ -16,6 +32,9 @@ struct SegmentRow: View {
     let isEditing: Bool
     /// Texten som visas är anonymiserad; då rättas den visade texten och ändringen förs tillbaka till originalet.
     var isAnonymized = false
+    var session: EditSession? = nil
+    /// Ett klick i texten öppnar raden för rättning.
+    var onBeginEdit: () -> Void = {}
     let onSeek: () -> Void
 
     @AppStorage(SettingsKey.readingTextSize) private var readingSize = ReadingTextSize.standard
@@ -35,7 +54,7 @@ struct SegmentRow: View {
                 }
 
                 if isEditing {
-                    SegmentEditor(segment: segment, displayText: displayText, isAnonymized: isAnonymized, lineSpacing: 3)
+                    SegmentEditor(segment: segment, displayText: displayText, isAnonymized: isAnonymized, lineSpacing: 3, session: session)
                         .id(isAnonymized)
                         .modifier(EditSurface())
                 } else {
@@ -52,6 +71,8 @@ struct SegmentRow: View {
                     .lineSpacing(3)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+                    .onTapGesture { onBeginEdit() }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -76,7 +97,10 @@ struct SegmentEditor: View {
     let isAnonymized: Bool
     /// Samma radavstånd som i visningsläget, så att texten inte byter höjd.
     var lineSpacing: CGFloat = 4
+    var session: EditSession? = nil
 
+    /// Förkastat med Esc eller Avbryt: inget får sparas när fältet försvinner.
+    @State private var discarded = false
     /// Fylls redan när vyn skapas, så att fältet aldrig är tomt en bildruta (det ändrade höjden).
     @State private var draft: String
     /// Det fältet utgår från: originalet och hur det visades. Uppdateras efter varje sparning.
@@ -85,11 +109,12 @@ struct SegmentEditor: View {
     @State private var mapping: AnonymizedEditing?
     @AppStorage(SettingsKey.readingTextSize) private var readingSize = ReadingTextSize.standard
 
-    init(segment: TranscriptSegment, displayText: String, isAnonymized: Bool, lineSpacing: CGFloat = 4) {
+    init(segment: TranscriptSegment, displayText: String, isAnonymized: Bool, lineSpacing: CGFloat = 4, session: EditSession? = nil) {
         _segment = Bindable(wrappedValue: segment)
         self.displayText = displayText
         self.isAnonymized = isAnonymized
         self.lineSpacing = lineSpacing
+        self.session = session
         _draft = State(initialValue: displayText)
         _baseOriginal = State(initialValue: segment.text)
         _baseShown = State(initialValue: displayText)
@@ -104,19 +129,29 @@ struct SegmentEditor: View {
             text: $draft,
             isEditable: isEditable,
             lineSpacing: lineSpacing,
-            commit: commit
+            commit: commit,
+            finish: { session?.onFinish(segment.persistentModelID) },
+            cancel: { session?.onCancel() }
         )
+        .onAppear {
+            session?.save = commit
+            session?.discard = { discarded = true }
+        }
         .onDisappear(perform: commit)
     }
 
     private func commit() {
-        guard isEditable else { return }
+        guard isEditable, !discarded else { return }
         let trimmed = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             draft = baseShown
             return
         }
         guard trimmed != baseShown.trimmingCharacters(in: .whitespacesAndNewlines) else { return }
+        let before = [Self.entry(segment)]
+        defer {
+            if let undo = EditUndo.changes(before: before, after: [Self.entry(segment)]) { session?.onSaved(undo) }
+        }
         if isAnonymized, let mapping {
             let newOriginal = mapping.originalText(applying: trimmed)
             segment.updateText(newOriginal)
@@ -129,6 +164,10 @@ struct SegmentEditor: View {
             baseShown = trimmed
         }
     }
+
+    private static func entry(_ segment: TranscriptSegment) -> EditUndo.Entry {
+        EditUndo.Entry(index: segment.index, text: segment.text, wordsData: segment.wordsData)
+    }
 }
 
 /// Ett helt stycke i ett enda textfält, med samma löpande text som i visningsläget, så att
@@ -137,14 +176,18 @@ struct SegmentEditor: View {
 struct ParagraphEditor: View {
     let rows: [DisplaySegment]
     var lineSpacing: CGFloat = 4
+    var session: EditSession? = nil
 
+    /// Förkastat med Esc eller Avbryt: inget får sparas när fältet försvinner.
+    @State private var discarded = false
     @State private var draft: String
     /// Hur segmenten visades och vad som var sparat när fältet senast sparades.
     @State private var baseShown: [String]
 
-    init(rows: [DisplaySegment], lineSpacing: CGFloat = 4) {
+    init(rows: [DisplaySegment], lineSpacing: CGFloat = 4, session: EditSession? = nil) {
         self.rows = rows
         self.lineSpacing = lineSpacing
+        self.session = session
         let shown = rows.map(\.text)
         _baseShown = State(initialValue: shown)
         _draft = State(initialValue: ParagraphEditing.join(shown))
@@ -162,19 +205,33 @@ struct ParagraphEditor: View {
             text: $draft,
             isEditable: isEditable,
             lineSpacing: lineSpacing,
-            commit: commit
+            commit: commit,
+            finish: { session?.onFinish(rows.first?.segment.persistentModelID) },
+            cancel: { session?.onCancel() }
         )
+        .onAppear {
+            session?.save = commit
+            session?.discard = { discarded = true }
+        }
         .onDisappear(perform: commit)
     }
 
+    private func entries() -> [EditUndo.Entry] {
+        rows.map { EditUndo.Entry(index: $0.segment.index, text: $0.segment.text, wordsData: $0.segment.wordsData) }
+    }
+
     private func commit() {
-        guard isEditable else { return }
+        guard isEditable, !discarded else { return }
         guard !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             draft = ParagraphEditing.join(baseShown)
             return
         }
         let newShown = ParagraphEditing.split(baseShown, edited: draft)
         guard newShown != baseShown else { return }
+        let before = entries()
+        defer {
+            if let undo = EditUndo.changes(before: before, after: entries()) { session?.onSaved(undo) }
+        }
         for (index, row) in rows.enumerated() where newShown[index] != baseShown[index] {
             if row.isAnonymized {
                 guard let mapping = AnonymizedEditing(original: row.segment.text, shown: baseShown[index]) else { continue }
@@ -198,6 +255,10 @@ struct EditableText: View {
     let isEditable: Bool
     let lineSpacing: CGFloat
     let commit: () -> Void
+    /// Fältet är klart: det tappade fokus eller Retur trycktes.
+    var finish: () -> Void = {}
+    /// Esc trycktes: förkasta.
+    var cancel: () -> Void = {}
 
     @State private var isFocused = false
     @AppStorage(SettingsKey.readingTextSize) private var readingSize = ReadingTextSize.standard
@@ -211,7 +272,9 @@ struct EditableText: View {
                     fontSize: size,
                     lineSpacing: lineSpacing,
                     isFocused: $isFocused,
-                    commit: commit
+                    commit: commit,
+                    finish: finish,
+                    cancel: cancel
                 )
             } else {
                 Text(text)
@@ -227,13 +290,15 @@ struct EditableText: View {
 
 /// Redigerbar text i macOS egen textvy, med samma typsnitt, radhöjd och radavstånd som
 /// SwiftUI:s `Text` i visningsläget. Höjden räknas som rader × radhöjd + radavstånd mellan
-/// raderna, precis som `Text` gör. Retur och Esc sparar; Esc stänger sedan redigeringsläget.
+/// raderna, precis som `Text` gör. Retur sparar och stänger stycket; Esc förkastar det.
 struct ReadingTextView: NSViewRepresentable {
     @Binding var text: String
     let fontSize: Double
     let lineSpacing: CGFloat
     @Binding var isFocused: Bool
     let commit: () -> Void
+    var finish: () -> Void = {}
+    var cancel: () -> Void = {}
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -257,6 +322,14 @@ struct ReadingTextView: NSViewRepresentable {
         view.setAccessibilityLabel("Text")
         apply(to: view)
         view.string = text
+        // Fältet byts in när man klickar i stycket: markören ska stå i det direkt.
+        let coordinator = context.coordinator
+        DispatchQueue.main.async { [weak view] in
+            guard let view, let window = view.window else { return }
+            window.makeFirstResponder(view)
+            view.setSelectedRange(NSRange(location: 0, length: 0))
+            coordinator.parent.isFocused = true
+        }
         return view
     }
 
@@ -333,21 +406,19 @@ struct ReadingTextView: NSViewRepresentable {
         func textDidEndEditing(_ notification: Notification) {
             parent.isFocused = false
             parent.commit()
+            parent.finish()
         }
 
         func textView(_ view: NSTextView, doCommandBy selector: Selector) -> Bool {
             switch selector {
             case #selector(NSResponder.insertNewline(_:)):
-                // Retur sparar och lämnar fältet, som i den tidigare versionen.
-                view.window?.makeFirstResponder(nil)
+                // Retur sparar och stänger stycket.
+                parent.commit()
+                parent.finish()
                 return true
             case #selector(NSResponder.cancelOperation(_:)):
-                // Esc sparar och lämnar fältet, och går sedan vidare så att redigeringsläget stängs.
-                let window = view.window
-                window?.makeFirstResponder(nil)
-                if let responder = window?.firstResponder {
-                    responder.tryToPerform(#selector(NSResponder.cancelOperation(_:)), with: nil)
-                }
+                // Esc förkastar det som skrivits i stycket.
+                parent.cancel()
                 return true
             default:
                 return false

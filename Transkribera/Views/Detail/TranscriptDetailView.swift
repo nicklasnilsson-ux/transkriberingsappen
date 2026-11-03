@@ -15,7 +15,12 @@ struct TranscriptDetailView: View {
     @State private var hitIndex = 0
     /// Ökar varje gång texten ska skrollas till aktuell träff, även när det är samma träff igen.
     @State private var searchJump = 0
-    @State private var isEditing = false
+    /// Stycket (eller raden) som rättas just nu. Ett i taget; `nil` när inget rättas.
+    @State private var editingID: PersistentIdentifier?
+    /// Den senaste sparade rättningen, så att den går att ångra tills ett nytt stycke öppnas.
+    @State private var lastEdit: EditUndo?
+    /// Kopplar fältet i det öppna stycket till titelbaren (Spara, Avbryt) och tillbaka.
+    @State private var editSession = EditSession()
     /// Håller stycket du läser kvar på skärmen när redigeringsläget växlar.
     @State private var scrollAnchor = ScrollAnchor()
     @State private var followPlayback = true
@@ -95,6 +100,8 @@ struct TranscriptDetailView: View {
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 20)
             .padding(.vertical, 14)
+            // Ett klick utanför det öppna stycket sparar det. Klick i texten når aldrig hit.
+            .background(Color.clear.contentShape(Rectangle()).onTapGesture { if isEditing { saveEditing() } })
             // Skrollvyn läses av, så att stycket du läser kan stå kvar när läget växlar.
             .background(ScrollOffsetObserver(onChange: { _ in }, anchor: scrollAnchor))
         }
@@ -103,13 +110,14 @@ struct TranscriptDetailView: View {
         .onChange(of: isEditing) { _, _ in
             if let anchor = scrollAnchor.currentAnchor() { scrollAnchor.restore(anchor) }
         }
-        // Esc stänger redigeringsläget. Fälten sparar när de tappar fokus.
-        .onExitCommand { if isEditing { isEditing = false } }
+        // Esc förkastar rättningen av stycket. Spara och klick utanför sparar.
+        .onExitCommand { if isEditing { cancelEditing() } }
+        .onAppear { connectEditSession() }
         // Sökfältet stegar till en träff: den hamnar mitt i fönstret.
         .onChange(of: searchJump) { _, _ in scrollToCurrentHit(proxy: proxy) }
         .background {
             if isEditing {
-                Button("Klar") { isEditing = false }
+                Button("Avbryt") { cancelEditing() }
                     .keyboardShortcut(.escape, modifiers: [])
                     .hidden()
             }
@@ -119,6 +127,7 @@ struct TranscriptDetailView: View {
     // MARK: - Kort
 
     private var hasText: Bool { !transcript.segments.isEmpty }
+    private var isEditing: Bool { editingID != nil }
     private var isWorking: Bool { transcript.status == .queued || transcript.status == .transcribing }
 
     private var cardShape: RoundedRectangle { RoundedRectangle(cornerRadius: 12, style: .continuous) }
@@ -342,7 +351,7 @@ struct TranscriptDetailView: View {
         guard id != transcript.id,
               let version = transcript.versions.first(where: { $0.id == id }),
               let context = transcript.modelContext else { return }
-        isEditing = false
+        saveEditing()
         transcript.switchTo(version, in: context)
         try? context.save()
     }
@@ -372,8 +381,8 @@ struct TranscriptDetailView: View {
         }
     }
 
-    /// Säger vilken text som rättas. Ligger sist på raden efter Klar, så att ingenting flyttar sig
-    /// när den visas.
+    /// Säger vilken text som rättas, eller att rättningen är sparad och går att ångra.
+    /// Ligger före knapparna, så att ingenting flyttar sig när den visas.
     @ViewBuilder
     private var editStateLabel: some View {
         if isEditing {
@@ -384,6 +393,16 @@ struct TranscriptDetailView: View {
                 .truncationMode(.tail)
                 // Titeln får hellre kortas än den här texten.
                 .layoutPriority(1)
+        } else if lastEdit != nil {
+            HStack(spacing: 6) {
+                Label("Sparat", systemImage: "checkmark")
+                    .font(.callout.weight(.semibold))
+                    .foregroundStyle(Color.success)
+                    .lineLimit(1)
+                Button("Ångra") { undoLastEdit() }
+                    .help("Ge tillbaka stycket som det var före rättningen")
+            }
+            .layoutPriority(1)
         }
     }
 
@@ -547,17 +566,81 @@ struct TranscriptDetailView: View {
         }
     }
 
-    /// Redigera/Klar. Fylld med accentfärgen när redigeringsläget är på.
+    /// Redigera ⇄ Avbryt och Spara. Syns alltid i titelbaren. Redigera öppnar stycket som står
+    /// överst i bild; man kan också klicka direkt i texten.
+    @ViewBuilder
     private var editToggle: some View {
-        Toggle(isOn: $isEditing) {
-            Label(isEditing ? "Klar" : "Redigera", systemImage: isEditing ? "checkmark" : "pencil")
+        if isEditing {
+            Button("Avbryt") { cancelEditing() }
+                .help("Förkasta rättningen av stycket (Esc)")
+            Button("Spara") { saveEditing() }
+                .buttonStyle(.borderedProminent)
+                .keyboardShortcut(.return, modifiers: .command)
+                .help("Spara rättningen (⌘Retur). Ett klick utanför stycket sparar också")
+        } else {
+            Button {
+                if let id = firstVisibleEditTarget() { beginEditing(id) }
+            } label: {
+                Label("Redigera", systemImage: "pencil")
+            }
+            .help("Rätta texten direkt i transkriberingen. Du kan också klicka i texten")
+            .disabled(!hasText)
         }
-        .toggleStyle(.button)
-        .modifier(OnStateButtonStyle(isOn: isEditing))
-        .help(isEditing
-              ? "Stäng redigeringsläget. Ändringarna sparas automatiskt (Esc)"
-              : "Rätta texten direkt i transkriberingen")
-        .disabled(!hasText)
+    }
+
+    // MARK: - Rättning av ett stycke
+
+    private func connectEditSession() {
+        editSession.onSaved = { lastEdit = $0 }
+        // Bara det öppna stycket stänger sig självt. Ett som byts ut får inte stänga det nya.
+        editSession.onFinish = { id in if editingID == id { editingID = nil } }
+        editSession.onCancel = { cancelEditing() }
+    }
+
+    /// Öppnar ett stycke för rättning. Stycket som var öppet sparas först.
+    private func beginEditing(_ id: PersistentIdentifier) {
+        guard editingID != id else { return }
+        editSession.save?()
+        lastEdit = nil
+        editingID = id
+    }
+
+    /// Sparar det öppna stycket och stänger det.
+    private func saveEditing() {
+        editSession.save?()
+        editingID = nil
+    }
+
+    /// Förkastar det som skrivits. Hann fältet spara först (t.ex. när det tappade fokus) läggs det tillbaka.
+    private func cancelEditing() {
+        guard isEditing else { return }
+        editSession.discard?()
+        editingID = nil
+        if lastEdit != nil { undoLastEdit() }
+    }
+
+    private func undoLastEdit() {
+        guard let undo = lastEdit else { return }
+        for entry in undo.entries {
+            guard let segment = transcript.segments.first(where: { $0.index == entry.index }) else { continue }
+            segment.text = entry.text
+            segment.wordsData = entry.wordsData
+        }
+        lastEdit = nil
+        try? transcript.modelContext?.save()
+    }
+
+    /// Stycket (eller raden) som står överst i bild.
+    private func firstVisibleEditTarget() -> PersistentIdentifier? {
+        guard let rows = displaySegments(transcript.sortedSegments) else { return nil }
+        let anchor = scrollAnchor.currentAnchor()?.id
+        if layout == .paragraphs {
+            let paragraphs = Self.paragraphs(rows)
+            let target = paragraphs.first { AnyHashable($0.first?.id) == anchor } ?? paragraphs.first
+            return target?.first?.segment.persistentModelID
+        }
+        let target = rows.first { AnyHashable($0.segment.persistentModelID) == anchor } ?? rows.first
+        return target?.segment.persistentModelID
     }
 
     /// Anonymisera. Fylld med accentfärgen när anonymiseringen är på.
@@ -608,6 +691,7 @@ struct TranscriptDetailView: View {
     }
 
     private func copyText() {
+        saveEditing()
         copyToPasteboard(TranscriptExporter.fullText(outputSegments))
         copied = true
         Task {
@@ -756,6 +840,7 @@ struct TranscriptDetailView: View {
 
     /// Frågar först när något ska sparas eller raderas (se `RetranscribeDialog`).
     private func requestRetranscribe() {
+        saveEditing()
         if !hasText {
             retranscribe(confirmed: false)
         } else if RetranscribeDialog.needsDialog(versionCount: transcript.versionCount, askSetting: askBeforeRetranscribe) {
@@ -836,8 +921,10 @@ struct TranscriptDetailView: View {
                         currentOccurrence: hit?.id == row.id ? hit?.occurrence : nil,
                         isActive: segment.persistentModelID == activeID,
                         currentTime: currentTime,
-                        isEditing: isEditing,
+                        isEditing: editingID == segment.persistentModelID,
                         isAnonymized: row.isAnonymized,
+                        session: editSession,
+                        onBeginEdit: { beginEditing(segment.persistentModelID) },
                         onSeek: { player?.seek(to: segment.start) }
                     )
                     .id(segment.persistentModelID)
@@ -867,7 +954,11 @@ struct TranscriptDetailView: View {
                         currentHit: hit,
                         activeID: activeID,
                         currentTime: currentTime,
-                        isEditing: isEditing,
+                        isEditing: editingID == paragraph.first?.segment.persistentModelID,
+                        session: editSession,
+                        onBeginEdit: {
+                            if let id = paragraph.first?.segment.persistentModelID { beginEditing(id) }
+                        },
                         onSeek: { player?.seek(to: $0) },
                         speakerMenu: { speaker in
                             AnyView(Group {
@@ -901,6 +992,7 @@ struct TranscriptDetailView: View {
                 .filter { !$0.isEmpty }
                 .joined(separator: " ")
             Button("Spela upp stycket") { player?.seek(to: first.segment.start) }
+            Button("Redigera stycket") { beginEditing(first.segment.persistentModelID) }
             Button("Kopiera stycket") { copyToPasteboard(text) }
             Button("Kopiera med tidsstämpel") {
                 var line = "[\(TimeFormatting.short(first.segment.start))] "
@@ -919,6 +1011,7 @@ struct TranscriptDetailView: View {
     private func segmentMenu(_ row: DisplaySegment) -> some View {
         let segment = row.segment
         Button("Spela upp härifrån") { player?.seek(to: segment.start) }
+        Button("Redigera raden") { beginEditing(segment.persistentModelID) }
         Button("Kopiera stycket") { copyToPasteboard(row.text) }
         Button("Kopiera med tidsstämpel") {
             copyToPasteboard("[\(TimeFormatting.short(segment.start))] \(row.text)")
@@ -1099,6 +1192,7 @@ struct TranscriptDetailView: View {
     }
 
     private func export(as format: ExportFormat) {
+        saveEditing()
         let output = TranscriptExporter.export(
             outputSegments,
             metadata: transcript.metadata,
