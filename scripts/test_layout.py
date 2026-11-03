@@ -177,6 +177,19 @@ class SearchTests(unittest.TestCase):
             self.assertNotIn(gone, self.text, f"{gone}: titelkortet fälls inte längre ihop")
 
 
+class RolePromptTests(unittest.TestCase):
+    """Pianissimo: valet av intervjuare får en Klar-rad med Ångra, och spela-knappen vid varje talare finns kvar."""
+
+    def test_role_choice_can_be_undone_and_play_button_stays(self):
+        text = (VIEWS / "Detail" / "TranscriptDetailView.swift").read_text(encoding="utf-8")
+        self.assertIn("chooseInterviewer(speaker)", text)
+        self.assertIn("transcript.restoreSpeakers(choice.before)", text)
+        self.assertIn('Button("Ångra")', text)
+        self.assertIn('.help("Lyssna på \\(speaker)")', text)
+        tests = (ROOT / "TranskriberaAppTests" / "RoleChoiceTests.swift").read_text(encoding="utf-8")
+        self.assertIn("restoreSpeakers", tests)
+
+
 class TimecodeTests(unittest.TestCase):
     def test_paragraphs_and_rows_use_the_same_timecode_button(self):
         for name in ("ParagraphRow.swift", "SegmentRow.swift"):

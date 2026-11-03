@@ -123,6 +123,18 @@ final class Transcript {
         }
     }
 
+    /// Talarna per segment i läsordning, så att ett rollval går att ångra.
+    var speakerSnapshot: [String?] { sortedSegments.map(\.speaker) }
+
+    /// Återställer talarna från `speakerSnapshot`. Görs inget om antalet segment ändrats.
+    func restoreSpeakers(_ snapshot: [String?]) {
+        let sorted = sortedSegments
+        guard sorted.count == snapshot.count else { return }
+        for (segment, speaker) in zip(sorted, snapshot) where segment.speaker != speaker {
+            segment.speaker = speaker
+        }
+    }
+
     /// Gör `speaker` till intervjuare och övriga talare till kunder.
     func setInterviewer(_ speaker: String) {
         applySpeakerNames(SpeakerRoles.names(for: speakers, interviewer: speaker))

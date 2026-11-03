@@ -7,6 +7,9 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 ## [Kommande]
 
 ### Ändrat
+- Frågan "Vem av talarna är du?" ligger i en tonad ruta. När du har valt visas "Klart. Talare 1 är intervjuare." med Ångra, som återställer talarna exakt som de var.
+
+### Ändrat
 - Transkribera igen ligger nu inne i rutan med modell, språk och talare, tillsammans med Återställ. Ändrade val kastas om man stänger rutan utan att transkribera igen. Klar visas med en grön bock, och en äldre version märks även i titelbaren.
 
 ### Ändrat
