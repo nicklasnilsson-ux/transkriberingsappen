@@ -6,6 +6,9 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+### Rättat
+- Mötesinspelningen sa "tillåtelse saknas" för alla fel vid start, även när tillåtelsen fanns. Nu skiljer appen på nekad tillåtelse och andra fel och visar felkoden vid andra fel. Vid nekad tillåtelse förklarar texten att du kan behöva ta bort Transkribera ur listan med − och lägga till den igen efter en uppdatering.
+
 ## [0.8.1] – 2026-11-03
 
 ### Ändrat
