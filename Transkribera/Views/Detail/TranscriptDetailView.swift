@@ -24,6 +24,8 @@ struct TranscriptDetailView: View {
     @State private var copied = false
     /// "Inte nu" på frågan om vem som är intervjuaren, för den här visningen.
     @State private var rolesDismissed = false
+    /// Det senaste rollvalet, så att det går att ångra tills man gör något annat.
+    @State private var roleChoice: RoleChoice?
     @AppStorage(SettingsKey.exportTimestamps) private var exportTimestamps = true
     @AppStorage(SettingsKey.transcriptLayout) private var layout: TranscriptLayout = .paragraphs
     @AppStorage(SettingsKey.anonymize) private var anonymize = true
@@ -691,16 +693,18 @@ struct TranscriptDetailView: View {
 
     private var showsAnonymizationBanner: Bool { anonymizationOptions != nil && hasText }
 
-    /// 5. Notiser samlade i ett kort.
+    /// 5. Notiser samlade i en tonad ruta.
     @ViewBuilder
     private var noticeCard: some View {
-        if showsRolesBanner || showsAnonymizationBanner {
-            card {
-                VStack(alignment: .leading, spacing: 8) {
-                    rolesBanner
-                    anonymizationBanner
-                }
+        if showsRolesBanner || showsAnonymizationBanner || roleChoice != nil {
+            VStack(alignment: .leading, spacing: 8) {
+                rolesBanner
+                roleChoiceRow
+                anonymizationBanner
             }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.accentColor.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
 
@@ -940,7 +944,7 @@ struct TranscriptDetailView: View {
                     HStack(spacing: 2) {
                         Circle().fill(SpeakerPalette.color(for: speaker)).frame(width: 8, height: 8)
                             .accessibilityHidden(true)
-                        Button(speaker) { transcript.setInterviewer(speaker) }
+                        Button(speaker) { chooseInterviewer(speaker) }
                             .help("\(speaker) blir Intervjuare och övriga Kund 1, Kund 2 … Det går att ändra under Talare i verktygsfältet.")
                         Button {
                             if let first = transcript.sortedSegments.first(where: { $0.speaker == speaker }) {
@@ -956,6 +960,31 @@ struct TranscriptDetailView: View {
                 Spacer()
                 Button("Inte nu") { rolesDismissed = true }
                     .buttonStyle(.link)
+            }
+            .font(.callout)
+        }
+    }
+
+    /// Gör `speaker` till intervjuare. Förra läget sparas så att valet går att ångra.
+    private func chooseInterviewer(_ speaker: String) {
+        let before = transcript.speakerSnapshot
+        transcript.setInterviewer(speaker)
+        roleChoice = RoleChoice(speaker: speaker, before: before)
+    }
+
+    /// "Klart. Talare 1 är intervjuare." med Ångra, tills man gör något annat.
+    @ViewBuilder
+    private var roleChoiceRow: some View {
+        if let choice = roleChoice {
+            HStack(spacing: 8) {
+                Image(systemName: "checkmark.circle").foregroundStyle(Color.success).accessibilityHidden(true)
+                Text("Klart. \(choice.speaker) är intervjuare.")
+                Spacer(minLength: 8)
+                Button("Ångra") {
+                    transcript.restoreSpeakers(choice.before)
+                    roleChoice = nil
+                }
+                .buttonStyle(.link)
             }
             .font(.callout)
         }
@@ -1123,6 +1152,12 @@ struct AnonymizationInput: Equatable {
 private struct AnonymizedState {
     var input: AnonymizationInput
     var result: AnonymizationResult
+}
+
+/// Ett rollval som går att ångra: vem som valdes och talarna per segment före valet.
+private struct RoleChoice {
+    let speaker: String
+    let before: [String?]
 }
 
 /// Ett segment som det visas: anonymiserad eller original text och talare.
