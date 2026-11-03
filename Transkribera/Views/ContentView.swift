@@ -65,7 +65,7 @@ struct ContentView: View {
                 TranscriptDetailView(transcript: transcript)
                     .id(transcript.id)
             } else if appState.mode == .meeting {
-                MeetingModeView { appState.selection = $0 }
+                MeetingModeView()
             } else {
                 FileModeEmptyView()
             }

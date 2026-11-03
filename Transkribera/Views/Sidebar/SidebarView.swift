@@ -108,7 +108,12 @@ struct SidebarView: View {
                 .padding(.leading, 2)
             modeSwitcher
             settingsButton
-            dropArea
+            // I mötesläget ersätter inställningarna släppytan: man gör en sak i taget.
+            if appState.mode == .meeting {
+                MeetingControls()
+            } else {
+                dropArea
+            }
         }
         .padding(10)
         .background(
@@ -161,6 +166,7 @@ struct SidebarView: View {
             .background(Color.chip, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
         .buttonStyle(.plain)
+        .disabled(appState.mode == .meeting && recorder.isBusy)
         .help("Inställningar för en ny transkribering: modell, språk, antal talare och ordlista")
         .popover(isPresented: $showsNextSettings, arrowEdge: .trailing) {
             NextTranscriptionSettingsForm()

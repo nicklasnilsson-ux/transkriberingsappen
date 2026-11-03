@@ -137,21 +137,3 @@ struct NextTranscriptionSettingsForm: View {
         .padding(16)
     }
 }
-
-/// Mötesinspelning-läget: kort för status, och en högerpanel med inställningarna.
-struct MeetingModeView: View {
-    var onCreated: (Transcript) -> Void
-
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 24) {
-                RecordingPanel(onCreated: onCreated)
-            }
-            .frame(maxWidth: 560)
-            .padding(32)
-            .frame(maxWidth: .infinity)
-        }
-        .inspector(isPresented: .constant(true)) { MeetingInspector() }
-        .navigationTitle("Mötesinspelning")
-    }
-}

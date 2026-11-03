@@ -29,14 +29,23 @@ class LayoutTests(unittest.TestCase):
 class MeetingModeTests(unittest.TestCase):
     def test_no_live_text_during_recording(self):
         # Beslut: möte = inspelningsstatus, texten skapas först när inspelningen stoppas.
-        for name in ("Home/RecordingPanel.swift", "Home/FileModeEmptyView.swift"):
+        for name in ("Home/MeetingModeView.swift", "Home/MeetingControls.swift", "Home/FileModeEmptyView.swift"):
             text = (VIEWS / name).read_text(encoding="utf-8")
             self.assertNotIn("liveText", text, name)
 
-    def test_microphone_toggle_lives_in_the_inspector(self):
-        inspector = (VIEWS / "Home" / "MeetingInspector.swift").read_text(encoding="utf-8")
-        self.assertIn("Spela även in min mikrofon", inspector)
-        self.assertIn(".inspector(", (VIEWS / "Home" / "FileModeEmptyView.swift").read_text(encoding="utf-8"))
+    def test_meeting_settings_replace_the_drop_area_and_lock_while_recording(self):
+        # Pianissimo (Nicklas 2026-11-03): man gör en sak i taget. Inställningarna ersätter släppytan
+        # i sidopanelen och är låsta under inspelning; Starta/Stoppa ligger i panelen.
+        sidebar = (VIEWS / "Sidebar" / "SidebarView.swift").read_text(encoding="utf-8")
+        self.assertRegex(sidebar, r"if appState\.mode == \.meeting \{\s*MeetingControls\(\)\s*\} else \{\s*dropArea")
+        controls = (VIEWS / "Home" / "MeetingControls.swift").read_text(encoding="utf-8")
+        self.assertIn("Spela även in min mikrofon", controls)
+        self.assertIn("Skilj på vem som pratar", controls)
+        self.assertIn(".disabled(recorder.isBusy)", controls)
+        self.assertIn("NeutralProminentButtonStyle()", controls, "Stoppa är en neutral svart knapp")
+        self.assertIn(".tint(Color.accentColor)", controls, "Starta är appens uppmaning (accent)")
+        self.assertNotIn(".inspector(", (VIEWS / "Home" / "MeetingModeView.swift").read_text(encoding="utf-8"))
+        self.assertFalse((VIEWS / "Home" / "MeetingInspector.swift").exists())
 
 
 class MinimumOSTests(unittest.TestCase):

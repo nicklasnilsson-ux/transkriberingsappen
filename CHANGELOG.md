@@ -7,6 +7,9 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 ## [Kommande]
 
 ### Ändrat
+- Mötesinspelning: inställningarna (mikrofon, skilj på talare, antal talare) och knapparna Starta och Stoppa inspelning ligger i sidopanelen i stället för släppytan. Under inspelning är inställningarna låsta, och huvudytan visar bara tid och status. Högerpanelen är borttagen.
+
+### Ändrat
 - Frågan "Vem av talarna är du?" ligger i en tonad ruta. När du har valt visas "Klart. Talare 1 är intervjuare." med Ångra, som återställer talarna exakt som de var.
 
 ### Ändrat
