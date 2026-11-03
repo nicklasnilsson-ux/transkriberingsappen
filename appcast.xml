@@ -6,6 +6,24 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.9.0</title>
+      <pubDate>Tue, 03 Nov 2026 23:14:43 GMT</pubDate>
+      <sparkle:version>37</sparkle:version>
+      <sparkle:shortVersionString>0.9.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.0</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Ändrat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Redigering per stycke: klicka i texten för att rätta just det stycket. Spara och Avbryt (Esc förkastar) ligger i titelbaren, och Redigera öppnar stycket överst i bild. Ett klick utanför, Retur eller ⌘Retur sparar. Efter sparning visas &amp;quot;Sparat · Ångra&amp;quot; tills du öppnar ett nytt stycke, och Ångra ger tillbaka både texten och ordtiderna. Ett osparat stycke sparas automatiskt vid byte av version, kopiering, export och Transkribera igen.&lt;/li&gt;
+&lt;li&gt;Mötesinspelning: inställningarna (mikrofon, skilj på talare, antal talare) och knapparna Starta och Stoppa inspelning ligger i sidopanelen i stället för släppytan. Under inspelning är inställningarna låsta, och huvudytan visar bara tid och status. Högerpanelen är borttagen.&lt;/li&gt;
+&lt;li&gt;Frågan &amp;quot;Vem av talarna är du?&amp;quot; ligger i en tonad ruta. När du har valt visas &amp;quot;Klart. Talare 1 är intervjuare.&amp;quot; med Ångra, som återställer talarna exakt som de var.&lt;/li&gt;
+&lt;li&gt;Transkribera igen ligger nu inne i rutan med modell, språk och talare, tillsammans med Återställ. Ändrade val kastas om man stänger rutan utan att transkribera igen. Klar visas med en grön bock, och en äldre version märks även i titelbaren.&lt;/li&gt;
+&lt;li&gt;Ny uppställning av fönstret: Fil/Mötesinspelning ligger överst i sidopanelen. Titelbaren har alltid Sök i texten (⌘F), Redigera och en ⋯-meny med verktygen. Spelaren ligger fast under titelbaren, och version, modell, verktygsrad och text skrollar tillsammans. Titelkortet fälls inte längre ihop. Exportera är en svart knapp. Namnet på transkriberingen byts i titelbaren.&lt;/li&gt;
+&lt;li&gt;Ny, vitare och stramare färgpalett i hela appen (ljust, mörkt och Öka kontrast), i stället för systemets bakgrunder. Accentfärgen är densamma. Stoppa inspelning är nu en neutral svart knapp, Starta inspelning behåller accentfärgen.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.0/Transkribera-v0.9.0.zip" length="14445265" type="application/octet-stream" sparkle:edSignature="L+nrGdld04HCWjKkW9ZicJyXd7sDMdM7yBqHbIq7z+aGzdHS9SFAMBadP2UGmIDi2O29y416EhUKy66ZN1G/DQ==" />
+    </item>
+    <item>
       <title>Version 0.8.1</title>
       <pubDate>Tue, 03 Nov 2026 08:45:35 GMT</pubDate>
       <sparkle:version>36</sparkle:version>
@@ -477,35 +495,6 @@
 &lt;li&gt;Namnet Joy döljs vid anonymisering.&lt;/li&gt;
 &lt;/ul&gt;</description>
       <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.5.1/Transkribera-v0.5.1.zip" length="13792791" type="application/octet-stream" sparkle:edSignature="45XZtpdS+3cfuIv53hlsUtjwv4Y/YDZUGSGDatnb3rPinXEr/Q7a/oL7wTiPf708QtJOAtYXTc7Chaax1vpHAA==" />
-    </item>
-    <item>
-      <title>Version 0.5.0</title>
-      <pubDate>Wed, 28 Oct 2026 23:38:35 GMT</pubDate>
-      <sparkle:version>7</sparkle:version>
-      <sparkle:shortVersionString>0.5.0</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.5.0</sparkle:fullReleaseNotesLink>
-      <description>&lt;h3&gt;Nytt&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Talare sätts per ord, så att ett kort svar direkt efter en fråga hamnar hos rätt talare.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;Du kan ange antal talare om du vet det.&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Ordlista med namn och fackord som hjälper modellen att stava rätt.&lt;/li&gt;
-&lt;li&gt;KB-Whisper Medium finns i en mer ordagrann variant som stryker mindre.&lt;/li&gt;
-&lt;li&gt;Pianissimo (KlangAI) som modellval för svenska.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h3&gt;Förbättrat&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Färre tappade meningar när någon talar svagt.&lt;/li&gt;
-&lt;li&gt;Anonymiseringen döljer personer och platser men inte organisationer eller vanliga ord,&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;och du kan ange ord som alltid eller aldrig ska döljas.&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Appen säkerhetskopierar dina transkriberingar innan en ny version öppnar dem, och kraschar&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;inte längre om databasen inte går att läsa. Då sparas den undan och du får veta var.&lt;/p&gt;</description>
-      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.5.0/Transkribera-v0.5.0.zip" length="13776876" type="application/octet-stream" sparkle:edSignature="Z02kGdW4xWFbpXgv70gA+xwWT1Ket0DapkQDaO4rTolaWwmCfirY/mLnCoIS2jaRn9yOUkSmuS9lr+WqGB8uAA==" />
     </item>
   </channel>
 </rss>
