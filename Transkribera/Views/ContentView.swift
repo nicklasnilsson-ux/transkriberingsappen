@@ -71,6 +71,9 @@ struct ContentView: View {
             }
         }
         .frame(minWidth: 820, minHeight: 540)
+        // Appens egen vita palett i stället för systemets bakgrunder (se Theme.swift).
+        .background(Color.appBackground)
+        .foregroundStyle(Color.textPrimary)
         // macOS-standard: ⌘-klick avmarkerar en rad i listan, Esc avmarkerar allt och tömmer vyn.
         .onExitCommand { appState.clearSelection() }
         .toolbar {

@@ -13,7 +13,7 @@ struct RerunSettingsPopover: View {
             Text("Inställningar för den här filen").font(.headline)
             Text("Gäller bara nästa omtagning av den här transkriberingen. Dina vanliga inställningar ändras inte.")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
             LabeledContent("Modell") {
                 ModelPicker(selection: Binding(

@@ -154,8 +154,8 @@ struct TranscriptDetailView: View {
         content()
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(cardShape.fill(Color(nsColor: .controlBackgroundColor)))
-            .overlay(cardShape.strokeBorder(Color(nsColor: .separatorColor), lineWidth: 1))
+            .background(cardShape.fill(Color.surface))
+            .overlay(cardShape.strokeBorder(Color.line, lineWidth: 1))
     }
 
     /// 1. Modell, språk och antal talare som transkriberingen gjordes med, och Transkribera igen.
@@ -223,7 +223,7 @@ struct TranscriptDetailView: View {
             .font(.callout)
             .padding(.horizontal, 10)
             .padding(.vertical, 4)
-            .background(.quaternary.opacity(0.5), in: Capsule())
+            .background(Color.chip, in: Capsule())
             .overlay(Capsule().strokeBorder(overrides.isEmpty ? Color.clear : Color.accentColor, lineWidth: 1))
         }
         .buttonStyle(.plain)
@@ -306,7 +306,7 @@ struct TranscriptDetailView: View {
     private var metaLine: some View {
         HStack(spacing: 6) {
             Text(statusText)
-                .foregroundStyle(transcript.status == .failed ? AnyShapeStyle(Color.warning) : AnyShapeStyle(.secondary))
+                .foregroundStyle(transcript.status == .failed ? AnyShapeStyle(Color.warning) : AnyShapeStyle(Color.textSecondary))
             Text("·")
             Text(transcript.liveVersionDate.formatted(date: .long, time: .shortened))
             Text("·")
@@ -314,7 +314,7 @@ struct TranscriptDetailView: View {
             versionPicker
         }
         .font(.callout)
-        .foregroundStyle(.secondary)
+        .foregroundStyle(Color.textSecondary)
         .lineLimit(1)
     }
 
@@ -455,7 +455,7 @@ struct TranscriptDetailView: View {
 
     private var searchRow: some View {
         HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+            Image(systemName: "magnifyingglass").foregroundStyle(Color.textSecondary)
             TextField("Sök i transkriberingen", text: $query)
                 .textFieldStyle(.plain)
                 .focused($searchFocused)
@@ -470,7 +470,7 @@ struct TranscriptDetailView: View {
                 let count = searchHits.count
                 Text(TextSearch.positionLabel(index: hitIndex, count: count))
                     .font(.callout.monospacedDigit())
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.textSecondary)
                     .fixedSize()
                 HStack(spacing: 2) {
                     Button { stepHit(forward: false) } label: {
@@ -492,7 +492,7 @@ struct TranscriptDetailView: View {
                 .buttonStyle(.link)
         }
         .padding(8)
-        .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .background(Color.chip, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
     private func openSearch() {
@@ -746,8 +746,8 @@ struct TranscriptDetailView: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
         // Kloss mot vyns överkant med raka hörn upptill, så att ingen text syns ovanför raden.
-        .background(.regularMaterial, in: barShape)
-        .overlay(barShape.strokeBorder(Color(nsColor: .separatorColor), lineWidth: 1))
+        .background(Color.surface, in: barShape)
+        .overlay(barShape.strokeBorder(Color.line, lineWidth: 1))
         .padding(.horizontal, 20)
         .frame(maxWidth: 860)
     }
@@ -805,7 +805,7 @@ struct TranscriptDetailView: View {
             .help(player.isPlaying ? "Pausa" : "Spela")
             Text(TimeFormatting.short(player.currentTime))
                 .font(.system(.callout, design: .monospaced))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.textSecondary)
         }
     }
 
@@ -1053,7 +1053,7 @@ struct TranscriptDetailView: View {
                          ? "Anonymiserad: 1 uppgift är dold."
                          : "Anonymiserad: \(result.replacementCount) uppgifter är dolda.")
                     Text("Originaltexten finns kvar.")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.textSecondary)
                 } else {
                     Text("Anonymiserar…")
                 }
@@ -1288,10 +1288,10 @@ private struct RerunButtonStyle: ButtonStyle {
             .font(.callout)
             .padding(.horizontal, 12)
             .padding(.vertical, 5)
-            .foregroundStyle(isEmphasized ? AnyShapeStyle(Color.white) : AnyShapeStyle(.primary))
+            .foregroundStyle(isEmphasized ? AnyShapeStyle(Color.white) : AnyShapeStyle(Color.textPrimary))
             .background(
                 RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(isEmphasized ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.quaternary.opacity(0.6)))
+                    .fill(isEmphasized ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(Color.chip))
             )
             .opacity(isEnabled ? (configuration.isPressed ? 0.8 : 1) : 0.5)
     }

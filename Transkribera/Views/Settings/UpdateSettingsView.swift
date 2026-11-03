@@ -12,7 +12,7 @@ struct UpdateSettingsView: View {
                     .disabled(!updater.automaticallyChecks)
             } footer: {
                 Text("Transkribera kollar en gång om dagen om det finns en ny version. Nya versioner laddas ner i bakgrunden och installeras när du avslutar appen.")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.textSecondary)
             }
 
             Section {
@@ -21,7 +21,7 @@ struct UpdateSettingsView: View {
                 Text("Betaversioner")
             } footer: {
                 Text("Testa nya funktioner innan de släpps till alla. Betor kan innehålla fel. Stänger du av får du nästa stabila version när den kommer.")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.textSecondary)
             }
 
             Section {

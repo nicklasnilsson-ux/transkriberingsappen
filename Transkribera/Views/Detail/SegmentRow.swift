@@ -370,7 +370,7 @@ struct EditSurface: ViewModifier {
                     .padding(.vertical, -3)
             }
             .overlay {
-                shape.strokeBorder(Color.secondary.opacity(0.45), lineWidth: 1)
+                shape.strokeBorder(Color.line, lineWidth: 1)
                     .padding(.horizontal, -8)
                     .padding(.vertical, -3)
             }
@@ -404,7 +404,7 @@ struct SpeakerLabel: View {
                 .accessibilityHidden(true)
             Text(name)
                 .font(font)
-                .foregroundStyle(.primary)
+                .foregroundStyle(Color.textPrimary)
         }
     }
 }
@@ -452,7 +452,7 @@ struct TimecodeButton: View {
                     .opacity(hovering ? 1 : 0)
                     .accessibilityHidden(true)
             }
-            .foregroundStyle(emphasized ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.secondary))
+            .foregroundStyle(emphasized ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(Color.textSecondary))
             .frame(minWidth: minWidth, alignment: .leading)
             .padding(.horizontal, 6)
             .padding(.vertical, 2)

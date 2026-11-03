@@ -24,7 +24,7 @@ struct RetranscribeSheet: View {
                 .font(.headline)
                 .fixedSize(horizontal: false, vertical: true)
             Text(RetranscribeDialog.message(kind))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
             slots
@@ -44,7 +44,7 @@ struct RetranscribeSheet: View {
                         Text(RetranscribeDialog.suppressLabel)
                         Text(RetranscribeDialog.suppressHint)
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.textSecondary)
                     }
                 }
                 .toggleStyle(.checkbox)
@@ -74,7 +74,7 @@ struct RetranscribeSheet: View {
             }
             Text(slotCaption)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.textSecondary)
                 .padding(.leading, 4)
         }
         .accessibilityElement(children: .ignore)
@@ -100,7 +100,7 @@ struct RetranscribeSheet: View {
             shape.fill(Color.accentColor)
                 .frame(width: 44, height: 18)
         case .roomLeft(let versions) where index > versions:
-            shape.strokeBorder(Color(nsColor: .separatorColor), style: StrokeStyle(lineWidth: 1.5, dash: [3]))
+            shape.strokeBorder(Color.line, style: StrokeStyle(lineWidth: 1.5, dash: [3]))
                 .frame(width: 44, height: 18)
         default:
             shape.fill(Color.accentColor.opacity(0.15))

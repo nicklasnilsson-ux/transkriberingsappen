@@ -20,7 +20,7 @@ struct TranscriptionProgressView: View {
                     if let step = transcriber.stepText {
                         Text(step)
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.textSecondary)
                             .monospacedDigit()
                     }
                     Text(transcriber.statusText)
@@ -41,7 +41,7 @@ struct TranscriptionProgressView: View {
                     Text("”\(transcriber.liveText)”")
                         .font(.callout)
                         .italic()
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.textSecondary)
                         .multilineTextAlignment(.center)
                         .lineLimit(3)
                         .frame(maxWidth: 480)
@@ -52,7 +52,7 @@ struct TranscriptionProgressView: View {
                     .font(.headline)
                 Text("Startar automatiskt när filerna före är klara.")
                     .font(.callout)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.textSecondary)
             }
 
             Button(isCurrent ? "Avbryt transkriberingen" : "Ta bort från kön", role: .cancel) {

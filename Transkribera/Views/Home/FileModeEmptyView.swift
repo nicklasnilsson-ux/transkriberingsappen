@@ -36,7 +36,7 @@ struct NextTranscriptionChips: View {
         HStack(spacing: 8) {
             Text("Ny transkribering:")
                 .font(.callout)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.textSecondary)
             chip("Modell", value: WhisperModel.resolved(modelRaw).displayName) {
                 ModelPicker(selection: $modelRaw).frame(width: 260)
             }
@@ -83,14 +83,14 @@ private struct ChipButton<Content: View>: View {
     var body: some View {
         Button { isOpen.toggle() } label: {
             HStack(spacing: 4) {
-                Text(title).foregroundStyle(.secondary)
+                Text(title).foregroundStyle(Color.textSecondary)
                 Text(value).fontWeight(.medium)
-                Image(systemName: "chevron.down").font(.caption2).foregroundStyle(.secondary)
+                Image(systemName: "chevron.down").font(.caption2).foregroundStyle(Color.textSecondary)
             }
             .font(.callout)
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
-            .background(.quaternary.opacity(0.5), in: Capsule())
+            .background(Color.chip, in: Capsule())
         }
         .buttonStyle(.plain)
         .help("Ändra \(title.lowercased()) för en ny transkribering")
@@ -116,7 +116,7 @@ struct NextTranscriptionSettingsForm: View {
             LabeledContent("Modell") { ModelPicker(selection: $modelRaw).frame(width: 240) }
             Text(queue.transcriber.isDownloaded(model) ? "Finns på datorn" : "Laddas ner automatiskt första gången")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.textSecondary)
             Picker("Språk", selection: $language) {
                 ForEach(Language.all) { Text($0.name).tag($0.id) }
             }
