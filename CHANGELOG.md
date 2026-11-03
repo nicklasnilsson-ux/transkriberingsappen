@@ -6,22 +6,14 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.9.0] – 2026-11-03
+
 ### Ändrat
 - Redigering per stycke: klicka i texten för att rätta just det stycket. Spara och Avbryt (Esc förkastar) ligger i titelbaren, och Redigera öppnar stycket överst i bild. Ett klick utanför, Retur eller ⌘Retur sparar. Efter sparning visas "Sparat · Ångra" tills du öppnar ett nytt stycke, och Ångra ger tillbaka både texten och ordtiderna. Ett osparat stycke sparas automatiskt vid byte av version, kopiering, export och Transkribera igen.
-
-### Ändrat
 - Mötesinspelning: inställningarna (mikrofon, skilj på talare, antal talare) och knapparna Starta och Stoppa inspelning ligger i sidopanelen i stället för släppytan. Under inspelning är inställningarna låsta, och huvudytan visar bara tid och status. Högerpanelen är borttagen.
-
-### Ändrat
 - Frågan "Vem av talarna är du?" ligger i en tonad ruta. När du har valt visas "Klart. Talare 1 är intervjuare." med Ångra, som återställer talarna exakt som de var.
-
-### Ändrat
 - Transkribera igen ligger nu inne i rutan med modell, språk och talare, tillsammans med Återställ. Ändrade val kastas om man stänger rutan utan att transkribera igen. Klar visas med en grön bock, och en äldre version märks även i titelbaren.
-
-### Ändrat
 - Ny uppställning av fönstret: Fil/Mötesinspelning ligger överst i sidopanelen. Titelbaren har alltid Sök i texten (⌘F), Redigera och en ⋯-meny med verktygen. Spelaren ligger fast under titelbaren, och version, modell, verktygsrad och text skrollar tillsammans. Titelkortet fälls inte längre ihop. Exportera är en svart knapp. Namnet på transkriberingen byts i titelbaren.
-
-### Ändrat
 - Ny, vitare och stramare färgpalett i hela appen (ljust, mörkt och Öka kontrast), i stället för systemets bakgrunder. Accentfärgen är densamma. Stoppa inspelning är nu en neutral svart knapp, Starta inspelning behåller accentfärgen.
 
 ## [0.8.1] – 2026-11-03
