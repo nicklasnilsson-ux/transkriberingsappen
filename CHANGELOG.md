@@ -6,6 +6,8 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.8.1] – 2026-11-03
+
 ### Ändrat
 - Modell, språk och antal talare ovanför titelkortet är nu en enda knapp, till exempel "KB Large ordagrann · Svenska · 3 talare". De tre knapparna öppnade förut samma ruta. Klicka på knappen för att ändra valen till nästa omtagning.
 
