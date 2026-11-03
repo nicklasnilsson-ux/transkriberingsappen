@@ -41,6 +41,8 @@ struct TranscriptDetailView: View {
     @AppStorage(SettingsKey.askBeforeRetranscribe) private var askBeforeRetranscribe = true
     @State private var overrides = TranscriptionOverrides()
     @State private var showRerunSettings = false
+    /// Valen i rutan ska leva kvar när Transkribera igen väntar på bekräftelse.
+    @State private var keepOverridesOnClose = false
     @AppStorage(MiniPlayerSize.storageKey) private var miniSizeRaw = MiniPlayerSize.small.rawValue
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -126,14 +128,13 @@ struct TranscriptDetailView: View {
             .overlay(cardShape.strokeBorder(Color.line, lineWidth: 1))
     }
 
-    /// Överst i texten: version, modell/språk/talare och Transkribera igen, och metadatan till höger.
+    /// Överst i texten: version och modell/språk/talare (där Transkribera igen finns), och metadatan till höger.
     /// Får de inte plats på en rad hamnar metadatan under.
     private var headerRow: some View {
         ViewThatFits(in: .horizontal) {
             HStack(spacing: 8) {
                 versionPicker
                 settingsPill
-                rerunButton
                 Spacer(minLength: 12)
                 metaLine.fixedSize()
             }
@@ -141,23 +142,11 @@ struct TranscriptDetailView: View {
                 HStack(spacing: 8) {
                     versionPicker
                     settingsPill
-                    rerunButton
                     Spacer(minLength: 0)
                 }
                 metaLine
             }
         }
-    }
-
-    private var rerunButton: some View {
-        Button {
-            requestRetranscribe()
-        } label: {
-            Label("Transkribera igen", systemImage: "arrow.clockwise")
-        }
-        .buttonStyle(RerunButtonStyle(isEmphasized: rerunSettingsChanged))
-        .disabled(isWorking)
-        .help("Transkribera filen igen med valen i knappen till vänster. Den nuvarande versionen sparas.")
     }
 
     /// Verktygen för hela texten. Finns också i ⋯-menyn i titelbaren, så att de går att nå
@@ -229,12 +218,35 @@ struct TranscriptDetailView: View {
         .disabled(isWorking)
         .help("Modell, språk och talare. Klicka för att välja andra till nästa omtagning.")
         .popover(isPresented: $showRerunSettings, arrowEdge: .bottom) {
-            RerunSettingsPopover(overrides: $overrides, file: fileBaseline)
+            RerunSettingsPopover(
+                overrides: $overrides,
+                file: fileBaseline,
+                isChanged: rerunSettingsChanged,
+                isWorking: isWorking,
+                onRerun: {
+                    keepOverridesOnClose = true
+                    requestRetranscribe()
+                }
+            )
+        }
+        // Ändrade val kastas om rutan stängs utan att transkribera igen.
+        .onChange(of: showRerunSettings) { _, isOpen in
+            guard !isOpen else { return }
+            if !keepOverridesOnClose { overrides = TranscriptionOverrides() }
+            keepOverridesOnClose = false
         }
     }
 
     private var settingsSummary: String {
         [modelChipText, languageChipText, speakersChipText].compactMap { $0 }.joined(separator: " · ")
+    }
+
+    private var statusStyle: AnyShapeStyle {
+        switch transcript.status {
+        case .completed: AnyShapeStyle(Color.success)
+        case .failed: AnyShapeStyle(Color.warning)
+        default: AnyShapeStyle(Color.textSecondary)
+        }
     }
 
     private var statusText: String {
@@ -249,8 +261,13 @@ struct TranscriptDetailView: View {
     /// Status · datum · längd.
     private var metaLine: some View {
         HStack(spacing: 6) {
-            Text(statusText)
-                .foregroundStyle(transcript.status == .failed ? AnyShapeStyle(Color.warning) : AnyShapeStyle(Color.textSecondary))
+            HStack(spacing: 4) {
+                if transcript.status == .completed {
+                    Image(systemName: "checkmark.circle").accessibilityHidden(true)
+                }
+                Text(statusText)
+            }
+            .foregroundStyle(statusStyle)
             Text("·")
             Text(transcript.liveVersionDate.formatted(date: .long, time: .shortened))
             Text("·")
@@ -438,10 +455,26 @@ struct TranscriptDetailView: View {
     @ToolbarContentBuilder
     private var detailToolbar: some ToolbarContent {
         ToolbarItemGroup(placement: .primaryAction) {
+            olderVersionBadge
             if hasText { toolbarSearch }
             editStateLabel
             editToggle
             moreMenu
+        }
+    }
+
+    /// Märke i titelbaren när en äldre version visas, så att det syns även när raden överst har skrollat bort.
+    @ViewBuilder
+    private var olderVersionBadge: some View {
+        if transcript.isViewingOlderVersion, let label = transcript.versionShortLabel {
+            Label(label, systemImage: "clock")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color.accentColor)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(Color.accentColor.opacity(0.12), in: Capsule())
+                .fixedSize()
+                .help("Du tittar på en äldre version. Rättningar sparas i den här versionen.")
         }
     }
 
@@ -1163,7 +1196,7 @@ private struct DetailDialogs: ViewModifier {
 }
 
 /// "Transkribera igen": grå som standard, blå (accent) när valen skiljer sig från filens.
-private struct RerunButtonStyle: ButtonStyle {
+struct RerunButtonStyle: ButtonStyle {
     let isEmphasized: Bool
     @Environment(\.isEnabled) private var isEnabled
 

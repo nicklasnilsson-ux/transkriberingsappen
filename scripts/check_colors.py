@@ -14,7 +14,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 ASSETS = ROOT / "Transkribera" / "Resources" / "Assets.xcassets"
 LIGHT_BG, DARK_BG = (1.0, 1.0, 1.0), (0x1C / 255, 0x1C / 255, 0x21 / 255)
-TEXT = ["AccentColor", "WarningColor", "TextPrimary", "TextSecondary", "TextTertiary"]
+TEXT = ["AccentColor", "WarningColor", "SuccessColor", "TextPrimary", "TextSecondary", "TextTertiary"]
 BACKGROUNDS = ["AppBackground", "SidebarBackground", "SurfaceBackground", "ChipBackground"]
 THEME = ROOT / "Transkribera" / "Views" / "Theme.swift"
 

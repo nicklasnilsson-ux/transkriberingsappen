@@ -57,7 +57,7 @@ class VersionTests(unittest.TestCase):
 
     def test_version_picker_sits_first_in_the_header_and_older_versions_say_so(self):
         text = read("Views/Detail/TranscriptDetailView.swift")
-        header = text[text.index("private var headerRow"):text.index("private var rerunButton")]
+        header = text[text.index("private var headerRow"):text.index("private var toolsRow")]
         self.assertIn("versionPicker", header)
         strip = text[text.index("private var olderVersionStrip"):][:900]
         self.assertIn("isViewingOlderVersion", strip)

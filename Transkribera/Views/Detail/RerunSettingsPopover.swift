@@ -7,6 +7,12 @@ struct RerunSettingsPopover: View {
     @Binding var overrides: TranscriptionOverrides
     /// Utgångsläget är det filen har, inte dina standardinställningar.
     let file: FileBaseline
+    /// Blå knapp först när något val skiljer sig från det filen transkriberades med.
+    let isChanged: Bool
+    let isWorking: Bool
+    let onRerun: () -> Void
+
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -38,9 +44,21 @@ struct RerunSettingsPopover: View {
                     set: { overrides.speakerCount = SpeakerCount(rawValue: $0) }
                 ))
             }
-            if !overrides.isEmpty {
-                Button("Återställ till det filen har") { overrides = TranscriptionOverrides() }
+            HStack {
+                Button("Återställ") { overrides = TranscriptionOverrides() }
                     .buttonStyle(.link)
+                    .disabled(overrides.isEmpty)
+                    .help("Tillbaka till det filen transkriberades med")
+                Spacer()
+                Button {
+                    onRerun()
+                    dismiss()
+                } label: {
+                    Label("Transkribera igen", systemImage: "arrow.clockwise")
+                }
+                .buttonStyle(RerunButtonStyle(isEmphasized: isChanged))
+                .disabled(isWorking)
+                .help("Transkribera filen igen med valen ovan. Den nuvarande versionen sparas.")
             }
         }
         .frame(width: 340)

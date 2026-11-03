@@ -68,7 +68,7 @@ class EditModeTests(unittest.TestCase):
         # redigeringen står före knappen, så att ingenting annat flyttar sig när den visas.
         text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
         bar = text[text.index("private var detailToolbar"):text.index("private var moreMenu")]
-        order = ["toolbarSearch", "editStateLabel", "editToggle", "moreMenu"]
+        order = ["olderVersionBadge", "toolbarSearch", "editStateLabel", "editToggle", "moreMenu"]
         positions = [bar.index(t) for t in order]
         self.assertEqual(positions, sorted(positions))
         self.assertIn(".toolbar { detailToolbar }", text)
@@ -85,8 +85,8 @@ class EditModeTests(unittest.TestCase):
         order = ["headerRow", "olderVersionStrip", "toolsRow", "noticeCard", "textArea("]
         positions = [scroll.index(t) for t in order]
         self.assertEqual(positions, sorted(positions))
-        header = text[text.index("private var headerRow"):text.index("private var rerunButton")]
-        order = ["versionPicker", "settingsPill", "rerunButton"]
+        header = text[text.index("private var headerRow"):text.index("private var toolsRow")]
+        order = ["versionPicker", "settingsPill"]
         positions = [header.index(t) for t in order]
         self.assertEqual(positions, sorted(positions))
         self.assertNotIn("interviewerPill", text, "Intervjuaren väljs under Talare, inget märke efter titeln")
