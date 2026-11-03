@@ -103,7 +103,7 @@ struct SidebarView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Ny transkribering")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.textSecondary)
                 .padding(.leading, 2)
             settingsButton
             dropArea
@@ -111,11 +111,11 @@ struct SidebarView: View {
         .padding(10)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.quaternary.opacity(0.35))
+                .fill(Color.chip)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 1)
+                .strokeBorder(Color.line, lineWidth: 1)
         )
         .padding(.horizontal, 12)
         .padding(.top, 10)
@@ -132,14 +132,14 @@ struct SidebarView: View {
                         .lineLimit(1)
                     Text(queue.transcriber.isDownloaded(model) ? "Finns på datorn" : "Laddas ner automatiskt första gången")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.textSecondary)
                 }
                 Spacer(minLength: 4)
-                Image(systemName: "slider.horizontal.3").foregroundStyle(.secondary)
+                Image(systemName: "slider.horizontal.3").foregroundStyle(Color.textSecondary)
             }
             .padding(10)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .background(Color.chip, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
         .buttonStyle(.plain)
         .help("Inställningar för en ny transkribering: modell, språk, antal talare och ordlista")
@@ -153,7 +153,7 @@ struct SidebarView: View {
         VStack(spacing: 8) {
             Image(systemName: appState.isDropTargeted ? "arrow.down.circle.fill" : "square.and.arrow.down")
                 .font(.system(size: 22, weight: .light))
-                .foregroundStyle(appState.isDropTargeted ? Color.accentColor : Color.secondary)
+                .foregroundStyle(appState.isDropTargeted ? Color.accentColor : Color.textSecondary)
             Text("Släpp ljud- eller videofiler här")
                 .font(.callout)
                 .multilineTextAlignment(.center)
@@ -165,7 +165,7 @@ struct SidebarView: View {
         .overlay {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .strokeBorder(
-                    appState.isDropTargeted ? Color.accentColor : Color.secondary.opacity(0.5),
+                    appState.isDropTargeted ? Color.accentColor : Color.textSecondary.opacity(0.5),
                     style: StrokeStyle(lineWidth: appState.isDropTargeted ? 2 : 1, dash: appState.isDropTargeted ? [] : [6, 4])
                 )
         }
@@ -176,19 +176,19 @@ struct SidebarView: View {
             Text("Transkriberingar (\(transcripts.count))")
                 .font(.headline)
             HStack(spacing: 6) {
-                Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+                Image(systemName: "magnifyingglass").foregroundStyle(Color.textSecondary)
                 TextField("Sök på titel", text: $filter)
                     .textFieldStyle(.plain)
                 if !filter.isEmpty {
                     Button { filter = "" } label: { Image(systemName: "xmark.circle.fill") }
                         .buttonStyle(.plain)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.textSecondary)
                         .help("Rensa sökningen")
                 }
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 5)
-            .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .background(Color.chip, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
         .padding(.horizontal, 14)
         .padding(.top, 14)
@@ -200,7 +200,7 @@ struct SidebarView: View {
             if transcripts.isEmpty {
                 Text("Inga transkriberingar än. Släpp en fil eller spela in ett möte så hamnar resultatet här.")
                     .font(.callout)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.textSecondary)
                     .padding(.top, 8)
             }
 
@@ -215,6 +215,8 @@ struct SidebarView: View {
             }
         }
         .listStyle(.sidebar)
+        .scrollContentBackground(.hidden)
+        .background(Color.sidebarBackground)
     }
 
     /// Frågar först när något ska sparas eller raderas (se `RetranscribeDialog`).
@@ -254,11 +256,11 @@ private struct SidebarRow: View {
                     .font(.body.weight(.medium))
                 Text(detail)
                     .font(.system(.caption, design: .monospaced))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.textSecondary)
                     .lineLimit(1)
                 Text(statusLabel.text)
                     .font(.caption)
-                    .foregroundStyle(statusLabel.isWarning ? AnyShapeStyle(Color.warning) : AnyShapeStyle(.secondary))
+                    .foregroundStyle(statusLabel.isWarning ? AnyShapeStyle(Color.warning) : AnyShapeStyle(Color.textSecondary))
             }
         }
         .padding(.vertical, 3)
@@ -276,7 +278,7 @@ private struct SidebarRow: View {
                 ProgressView().controlSize(.small)
             }
         case .queued, .transcribing:
-            Image(systemName: "clock").foregroundStyle(.secondary)
+            Image(systemName: "clock").foregroundStyle(Color.textSecondary)
         case .failed:
             Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Color.warning)
         case .completed:

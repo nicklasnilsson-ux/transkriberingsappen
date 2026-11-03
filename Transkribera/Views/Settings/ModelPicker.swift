@@ -15,14 +15,14 @@ struct ModelPicker: View {
         } label: {
             HStack(spacing: 6) {
                 Text(current.displayName)
-                Text("· \(current.downloadSize)").foregroundStyle(.secondary)
+                Text("· \(current.downloadSize)").foregroundStyle(Color.textSecondary)
                 if let replaced {
                     Text("(ersätter \(replaced.displayName))").foregroundStyle(Color.warning)
                 }
                 Spacer(minLength: 8)
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.textSecondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -50,7 +50,7 @@ private struct ModelList: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(family.title)
                             .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.textSecondary)
                             .padding(.horizontal, 8)
                         ForEach(family.models) { model in
                             Button { onSelect(model) } label: {
@@ -90,15 +90,15 @@ struct ModelInfoRow: View {
                 Spacer(minLength: 4)
                 Text(model.downloadSize)
                     .font(.callout.monospacedDigit())
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.textSecondary)
             }
             Text(model.characteristic)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
             Text(model.swedishErrorText)
                 .font(.caption.monospacedDigit())
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.textSecondary)
             if let warning = model.memoryWarning {
                 Label(warning, systemImage: "memorychip")
                     .font(.caption)
@@ -113,7 +113,7 @@ struct ModelInfoRow: View {
                 Label(isDownloaded ? "Finns på datorn" : "Laddas ner automatiskt första gången",
                       systemImage: isDownloaded ? "checkmark.circle.fill" : "arrow.down.circle")
                     .font(.caption2)
-                    .foregroundStyle(isDownloaded ? .green : .secondary)
+                    .foregroundStyle(isDownloaded ? Color.green : Color.textSecondary)
             }
         }
         .accessibilityElement(children: .combine)
@@ -130,7 +130,7 @@ private struct ModelAdvice: View {
                 Text("Pratas det svenska? Välj Pianissimo.").font(.callout.weight(.medium))
                 Text("Pianissimo är snabbast och ger en komplett text. Välj KB Large ordagrann när varje ord måste stämma, t.ex. för citat, namn och facktermer. Andra språk än svenska: välj Large v3 Turbo.")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
                 Button("Vilken modell ska jag välja?") { showsGuide = true }
                     .buttonStyle(.link)
@@ -142,7 +142,7 @@ private struct ModelAdvice: View {
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .background(Color.chip, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 }
 
@@ -154,7 +154,7 @@ struct ModelSourceNote: View {
             Link("Källa: KBLab, Kungliga biblioteket", destination: URL(string: "https://kb-labb.github.io/posts/2025-03-07-welcome-KB-Whisper/")!)
         }
         .font(.caption2)
-        .foregroundStyle(.tertiary)
+        .foregroundStyle(Color.textTertiary)
         .fixedSize(horizontal: false, vertical: true)
     }
 }
@@ -180,11 +180,11 @@ private struct Meter: View {
 
     var body: some View {
         HStack(spacing: 4) {
-            Text(label).font(.caption2).foregroundStyle(.secondary)
+            Text(label).font(.caption2).foregroundStyle(Color.textSecondary)
             HStack(spacing: 2) {
                 ForEach(1...5, id: \.self) { index in
                     Circle()
-                        .fill(index <= value ? Color.accentColor : Color.secondary.opacity(0.25))
+                        .fill(index <= value ? Color.accentColor : Color.textSecondary.opacity(0.25))
                         .frame(width: 6, height: 6)
                 }
             }
@@ -226,7 +226,7 @@ struct ModelGuideView: View {
                                 bar(for: model)
                                 Text(Self.format(model.swedishWordErrorRate ?? 0))
                                     .monospacedDigit()
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(Color.textSecondary)
                                     .gridColumnAlignment(.trailing)
                             }
                             .font(.callout)
@@ -236,13 +236,13 @@ struct ModelGuideView: View {
                             bar(rate: 7.8, highlighted: false)
                             Text(Self.format(7.8))
                                 .monospacedDigit()
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Color.textSecondary)
                         }
                         .font(.callout)
                     }
                     Text("OpenAI Large v3 är den modell som Large v3 Turbo bygger på. Turbo är snabbare men brukar göra något fler fel.")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
@@ -258,7 +258,7 @@ struct ModelGuideView: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title).font(.headline)
             Text(text)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -271,9 +271,9 @@ struct ModelGuideView: View {
     private func bar(rate: Double, highlighted: Bool) -> some View {
         let width = 180.0
         return ZStack(alignment: .leading) {
-            Capsule().fill(Color.secondary.opacity(0.15)).frame(width: width, height: 8)
+            Capsule().fill(Color.textSecondary.opacity(0.15)).frame(width: width, height: 8)
             Capsule()
-                .fill(highlighted ? Color.accentColor : Color.secondary.opacity(0.6))
+                .fill(highlighted ? Color.accentColor : Color.textSecondary.opacity(0.6))
                 .frame(width: max(4, width * min(rate, 60) / 60), height: 8)
         }
     }

@@ -26,8 +26,8 @@ enum SegmentText {
         if let placeholderRegex {
             for match in placeholderRegex.matches(in: text, range: NSRange(text.startIndex..., in: text)) {
                 if let range = Range(match.range, in: text), let attributedRange = Range(range, in: attributed) {
-                    attributed[attributedRange].foregroundColor = .secondary
-                    attributed[attributedRange].backgroundColor = Color.secondary.opacity(0.15)
+                    attributed[attributedRange].foregroundColor = Color.textSecondary
+                    attributed[attributedRange].backgroundColor = Color.textSecondary.opacity(0.15)
                 }
             }
         }

@@ -187,7 +187,7 @@ class SearchTests(unittest.TestCase):
     def test_collapsed_bar_is_flush_with_the_top(self):
         bar = self.text[self.text.index("private func collapsedBar"):self.text.index("private func miniPlayer")]
         self.assertNotIn(".padding(.top", bar)
-        self.assertIn(".background(.regularMaterial, in: barShape)", bar)
+        self.assertIn(".background(Color.surface, in: barShape)", bar)
         self.assertIn("topLeading: 0", self.text)
         self.assertIn("topTrailing: 0", self.text)
 

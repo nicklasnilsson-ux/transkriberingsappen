@@ -28,8 +28,8 @@ struct RecordingPanel: View {
         content()
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(cardShape.fill(Color(nsColor: .controlBackgroundColor)))
-            .overlay(cardShape.strokeBorder(Color(nsColor: .separatorColor), lineWidth: 1))
+            .background(cardShape.fill(Color.surface))
+            .overlay(cardShape.strokeBorder(Color.line, lineWidth: 1))
     }
 
     /// Överst: inspelningsstatus och knappen. Under inspelning en röd tid och "Spelar in".
@@ -48,7 +48,7 @@ struct RecordingPanel: View {
                         Text("Mötesinspelning").font(.headline)
                         Text("Spelar in allt ljud som hörs på datorn tills du stoppar.")
                             .font(.callout)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.textSecondary)
                     }
                 }
                 Spacer()
@@ -58,8 +58,7 @@ struct RecordingPanel: View {
                     Text(recorder.isRecording ? "Stoppa och transkribera" : "Starta inspelning")
                         .frame(minWidth: 170)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(recorder.isRecording ? Color.red : Color.accentColor)
+                .modifier(RecordingButtonStyle(isRecording: recorder.isRecording))
                 .controlSize(.large)
                 .disabled(recorder.state == .starting || recorder.state == .finishing)
                 .help(recorder.isRecording
@@ -75,20 +74,20 @@ struct RecordingPanel: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 8) {
                     Circle()
-                        .fill(recorder.isRecording ? Color.red : Color.secondary)
+                        .fill(recorder.isRecording ? Color.red : Color.textSecondary)
                         .frame(width: 8, height: 8)
                         .accessibilityHidden(true)
                     statusText.font(.headline)
                 }
                 Text("Texten skapas när du stoppar inspelningen.")
                     .font(.callout)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.textSecondary)
                 if recorder.isBusy, waitingCount > 0 {
                     Text(waitingCount == 1
                          ? "1 fil väntar och transkriberas när inspelningen är sparad."
                          : "\(waitingCount) filer väntar och transkriberas när inspelningen är sparad.")
                         .font(.callout)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.textSecondary)
                 }
 
                 if let error = recorder.errorMessage {
@@ -127,6 +126,20 @@ struct RecordingPanel: View {
             }
         } else {
             await recorder.start(includeMicrophone: recordMicrophone && MeetingRecorder.supportsMicrophone)
+        }
+    }
+}
+
+/// Starta inspelning är appens uppmaning (accent). Stoppa är en neutral svart knapp.
+private struct RecordingButtonStyle: ViewModifier {
+    let isRecording: Bool
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if isRecording {
+            content.buttonStyle(NeutralProminentButtonStyle())
+        } else {
+            content.buttonStyle(.borderedProminent).tint(Color.accentColor)
         }
     }
 }

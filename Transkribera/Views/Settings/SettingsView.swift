@@ -52,7 +52,7 @@ private struct TranscriptionSettingsView: View {
                 Text("Språk")
             } footer: {
                 Text("Välj språket som talas. Automatiskt fungerar oftast, men ett angivet språk ger säkrare resultat. Inställningarna gäller nya transkriberingar.")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.textSecondary)
             }
 
             Section {
@@ -68,7 +68,7 @@ private struct TranscriptionSettingsView: View {
                 Text(ShortReplyDiarizer.isSupported
                      ? "Märker texten med Talare 1, Talare 2 … som du kan byta namn på. Vet du hur många som pratar blir uppdelningen säkrare. Nemotron 3 är på som standard men gäller bara med automatiskt antal talare, och laddar ner en modell på några hundra MB första gången. Går det inte används den vanliga talaridentifieringen (cirka 30 MB)."
                      : "Märker texten med Talare 1, Talare 2 … som du kan byta namn på. Vet du hur många som pratar blir uppdelningen säkrare. Laddar ner en extra modell (cirka 30 MB) första gången och tar lite längre tid. Nemotron 3 kräver macOS 15 eller senare.")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.textSecondary)
             }
 
             Section {
@@ -78,7 +78,7 @@ private struct TranscriptionSettingsView: View {
                 Text("Ordlista")
             } footer: {
                 Text("Namn och fackord som brukar förekomma, med komma emellan. Modellen får dem som ledtråd och stavar dem oftare rätt. Namn (med stor bokstav) som ändå hörs nästan rätt, t.ex. ”Fotnox”, rättas i efterhand. Håll listan kort.")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.textSecondary)
             }
 
             Section {
@@ -89,7 +89,7 @@ private struct TranscriptionSettingsView: View {
                 Text("Ordträff")
             } footer: {
                 Text("Är på som standard och gäller KB-Whisper och andra Whisper-modeller. Pianissimo jämnar ut volymen själv.")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.textSecondary)
             }
 
             Section {
@@ -98,7 +98,7 @@ private struct TranscriptionSettingsView: View {
                 Text("Tidsstämplar")
             } footer: {
                 Text("Gör att ordet som spelas upp markeras i texten och att långa undertexter delas upp bättre vid export.")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.textSecondary)
             }
 
             if MeetingRecorder.supportsMicrophone {
@@ -108,7 +108,7 @@ private struct TranscriptionSettingsView: View {
                     Text("Mötesinspelning")
                 } footer: {
                     Text("Ta med din egen röst. Annars spelas bara datorns ljud in, alltså de andra deltagarna.")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.textSecondary)
                 }
             }
 
@@ -120,7 +120,7 @@ private struct TranscriptionSettingsView: View {
                 Text("Experiment")
             } footer: {
                 Text("Ännu inte bevisat bättre. Gäller bara Pianissimo och tar 10–50 % längre tid. Det som användes står efter modellens namn i transkriberingen.")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.textSecondary)
             }
 
             Section {
@@ -129,7 +129,7 @@ private struct TranscriptionSettingsView: View {
                 Text("Transkribera igen")
             } footer: {
                 Text("Den nuvarande versionen sparas, och appen behåller de \(VersionHistory.capacity) senaste versionerna. Frågan visas alltid när den äldsta versionen skulle raderas, även om du har stängt av den här.")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.textSecondary)
             }
         }
         .formStyle(.grouped)
@@ -152,7 +152,7 @@ private struct PrivacySettingsView: View {
                 Toggle("Anonymisera känsliga uppgifter", isOn: $anonymize)
             } footer: {
                 Text("Uppgifterna ersätts med t.ex. [PERSON 1] när du läser, kopierar och exporterar. Originaltexten sparas och visas igen om du stänger av det här. Allt sker lokalt på datorn.")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.textSecondary)
             }
 
             Section {
@@ -167,7 +167,7 @@ private struct PrivacySettingsView: View {
                 Text("Vad som döljs")
             } footer: {
                 Text("Hälsa, religion och liknande hittas bara delvis, via en ordlista. Ingen automatisk anonymisering är helt säker, så läs igenom texten innan du delar den.")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.textSecondary)
             }
             .disabled(!anonymize)
 
@@ -180,7 +180,7 @@ private struct PrivacySettingsView: View {
                 Text("Egna undantag")
             } footer: {
                 Text("Skriv ord med komma emellan. Namnen under Dölj alltid döljs som personer även när de är felstavade på samma sätt eller skrivna med liten bokstav.")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.textSecondary)
             }
             .disabled(!anonymize)
         }
@@ -218,7 +218,7 @@ private struct ModelSettingsView: View {
                     }
             } footer: {
                 Text("Pianissimo är snabbast och bäst som förstaval för svenska. Välj Large v3 Turbo för andra språk. Modellen laddas ner automatiskt första gången den används.")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.textSecondary)
             }
 
             ForEach(WhisperModel.Family.allCases) { family in
@@ -264,7 +264,7 @@ private struct ModelSettingsView: View {
             } footer: {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Modellerna sparas på din Mac. Ta bort dem du inte använder för att frigöra utrymme.")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.textSecondary)
                     ModelSourceNote()
                 }
             }

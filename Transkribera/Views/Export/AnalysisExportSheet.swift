@@ -30,12 +30,12 @@ struct AnalysisExportSheet: View {
                 .font(.title2.weight(.semibold))
             Text("Varje session blir en Markdown-fil med datum, längd och talare överst och ett stycke per talarbyte med tidskod. Byt gärna namn på talarna först, t.ex. till ”Moderator” och ”Deltagare”.")
                 .font(.callout)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
             if exportable.isEmpty {
                 Text("Det finns inga färdiga transkriberingar att exportera.")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.textSecondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 List(exportable) { transcript in
@@ -44,7 +44,7 @@ struct AnalysisExportSheet: View {
                             Text(transcript.title).lineLimit(1)
                             Text("\(transcript.createdAt.formatted(date: .abbreviated, time: .shortened)) · \(TimeFormatting.duration(transcript.duration))")
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Color.textSecondary)
                         }
                     }
                 }

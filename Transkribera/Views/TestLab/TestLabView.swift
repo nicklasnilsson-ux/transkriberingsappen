@@ -27,7 +27,7 @@ struct TestLabView: View {
                 .disabled(lab.isRunning)
             } footer: {
                 Text("Samma inspelning körs med varje markerad inställning. Varje körning sparas som en textfil (som Exportera för analys) och en logg utan text. Talarna identifieras en gång och används i alla körningar. Vanliga transkriberingar påverkas inte, men nya filer väntar i kön tills labbet är klart.")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.textSecondary)
             }
 
             Section("Körningar") {
@@ -38,7 +38,7 @@ struct TestLabView: View {
                                 Text(run.title)
                                 Text(run.differences.isEmpty ? "som i dag" : run.differences.joined(separator: ", "))
                                     .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(Color.textSecondary)
                             }
                         }
                         .disabled(lab.isRunning)
@@ -59,7 +59,7 @@ struct TestLabView: View {
                     }
                 }
                 if let message = lab.message {
-                    Text(message).foregroundStyle(.secondary)
+                    Text(message).foregroundStyle(Color.textSecondary)
                 }
                 HStack {
                     if lab.folder != nil {
@@ -80,7 +80,7 @@ struct TestLabView: View {
                 }
             } footer: {
                 Text("Datorn hålls vaken medan labbet kör. Låt den stå på laddning.")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.textSecondary)
             }
         }
         .formStyle(.grouped)
@@ -121,9 +121,9 @@ private struct StatusLabel: View {
                 .foregroundStyle(Color.warning)
                 .help(error)
         case .cancelled:
-            Text("Avbruten").foregroundStyle(.secondary)
+            Text("Avbruten").foregroundStyle(Color.textSecondary)
         case .waiting:
-            Text("Väntar").foregroundStyle(.secondary)
+            Text("Väntar").foregroundStyle(Color.textSecondary)
         case .skipped, nil:
             EmptyView()
         }

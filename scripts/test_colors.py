@@ -19,6 +19,19 @@ class ColorTests(unittest.TestCase):
     def test_color_sets_are_readable(self):
         self.assertEqual(check_colors.check_colorsets(), [])
 
+    def test_theme_colors_exist(self):
+        self.assertEqual(check_colors.check_theme_names(), [])
+
+    def test_low_contrast_text_is_caught(self):
+        colors = check_colors.load_all()
+        key = ("TextTertiary", "light", False)
+        saved = colors[key]
+        try:
+            colors[key] = (0.8, 0.8, 0.8)
+            self.assertLess(check_colors.contrast(colors[key], colors[("AppBackground", "light", False)]), 4.5)
+        finally:
+            colors[key] = saved
+
     def test_no_orange_text(self):
         self.assertEqual(check_colors.check_orange(), [])
 

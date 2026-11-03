@@ -30,7 +30,7 @@ struct MultiSelectionView: View {
                     Spacer()
                     Text(transcript.status == .completed ? TimeFormatting.duration(transcript.duration) : "")
                         .font(.system(.caption, design: .monospaced))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.textSecondary)
                 }
             }
             .listStyle(.inset)
@@ -39,7 +39,7 @@ struct MultiSelectionView: View {
                 Label(BulkRetranscribe.message(count: count, atCapacity: atCapacity),
                       systemImage: atCapacity > 0 ? "exclamationmark.triangle" : "info.circle")
                     .font(.callout)
-                    .foregroundStyle(atCapacity > 0 ? AnyShapeStyle(Color.warning) : AnyShapeStyle(.secondary))
+                    .foregroundStyle(atCapacity > 0 ? AnyShapeStyle(Color.warning) : AnyShapeStyle(Color.textSecondary))
             }
 
             HStack(spacing: 10) {
