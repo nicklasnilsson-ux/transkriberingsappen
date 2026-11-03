@@ -85,12 +85,8 @@ class CollapseAndPlayerTests(unittest.TestCase):
         self.assertIn("boundsDidChangeNotification", probe)
         self.assertIn("postsBoundsChangedNotifications = true", probe)
 
-    def test_scroll_offset_measured_on_whole_content(self):
-        self.assertRegex(detail, r"\.background\(GeometryReader[\s\S]{0,200}ScrollOffsetKey")
-        self.assertNotIn("scrollOffsetProbe", detail)
-
-    def test_mini_player_in_collapsed_bar_with_three_sizes(self):
-        bar = detail[detail.index("func collapsedBar"):detail.index("func miniPlayer")]
+    def test_mini_player_in_the_fixed_player_bar_with_three_sizes(self):
+        bar = detail[detail.index("private var playerBar"):detail.index("private var showsRolesBanner")]
         self.assertIn("miniPlayer(", bar)
         self.assertIn("MiniPlayerSize.allCases", detail)
 

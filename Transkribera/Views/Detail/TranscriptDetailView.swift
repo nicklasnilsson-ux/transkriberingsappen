@@ -15,8 +15,6 @@ struct TranscriptDetailView: View {
     @State private var hitIndex = 0
     /// Ökar varje gång texten ska skrollas till aktuell träff, även när det är samma träff igen.
     @State private var searchJump = 0
-    /// Senaste skrollpositionen, så att raden kan fällas ut när sökfältet stängs.
-    @State private var lastOffset = OffsetMemory()
     @State private var isEditing = false
     /// Håller stycket du läser kvar på skärmen när redigeringsläget växlar.
     @State private var scrollAnchor = ScrollAnchor()
@@ -38,9 +36,7 @@ struct TranscriptDetailView: View {
     @AppStorage(SettingsKey.anonymizeNeverHide) private var neverHide = ""
     @State private var anonymized: AnonymizedState?
 
-    @State private var showSearch = false
     @FocusState private var searchFocused: Bool
-    @State private var isCollapsed = false
     @State private var confirmRetranscribe = false
     @AppStorage(SettingsKey.askBeforeRetranscribe) private var askBeforeRetranscribe = true
     @State private var overrides = TranscriptionOverrides()
@@ -52,17 +48,17 @@ struct TranscriptDetailView: View {
     private static let topID = "detailTop"
 
     var body: some View {
-        ScrollViewReader { proxy in
-            ZStack(alignment: .top) {
+        VStack(spacing: 0) {
+            // Spelaren ligger fast under titelbaren; resten skrollar med texten.
+            playerBar
+            ScrollViewReader { proxy in
                 mainScroll(proxy: proxy)
-                if isCollapsed {
-                    collapsedBar(proxy: proxy)
-                        .transition(reduceMotion ? .identity : .move(edge: .top).combined(with: .opacity))
-                }
             }
         }
-        // Fönstrets titel behålls för Fönster-menyn; macOS 14 kan inte dölja den (kräver macOS 15).
-        .navigationTitle(transcript.title)
+        .toolbar { detailToolbar }
+        .background { searchShortcut }
+        // Titeln står i titelbaren och byts namn på där (macOS 14 kan inte dölja fönstertiteln).
+        .navigationTitle($transcript.title)
         .modifier(DetailLifecycle(
             transcript: transcript,
             player: $player,
@@ -82,9 +78,12 @@ struct TranscriptDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 Color.clear.frame(height: 1).id(Self.topID)
-                chipsRow
-                titleCard
-                playerCard
+                headerRow
+                olderVersionStrip
+                if hasText {
+                    toolsRow
+                    Divider()
+                }
                 noticeCard
                 textArea(proxy: proxy)
             }
@@ -92,24 +91,17 @@ struct TranscriptDetailView: View {
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 20)
             .padding(.vertical, 14)
-            // Hela innehållet mäts, så att skrollpositionen alltid rapporteras.
-            .background(ScrollOffsetObserver(onChange: { updateCollapse(offset: $0) }, anchor: scrollAnchor))
-            .background(GeometryReader { geo in
-                Color.clear.preference(
-                    key: ScrollOffsetKey.self,
-                    value: -geo.frame(in: .named(Self.scrollSpace)).minY
-                )
-            })
+            // Skrollvyn läses av, så att stycket du läser kan stå kvar när läget växlar.
+            .background(ScrollOffsetObserver(onChange: { _ in }, anchor: scrollAnchor))
         }
         .coordinateSpace(name: Self.scrollSpace)
-        .onPreferenceChange(ScrollOffsetKey.self) { updateCollapse(offset: $0) }
         // Stycket vid fönstrets överkant står kvar på samma plats när läget växlar.
         .onChange(of: isEditing) { _, _ in
             if let anchor = scrollAnchor.currentAnchor() { scrollAnchor.restore(anchor) }
         }
         // Esc stänger redigeringsläget. Fälten sparar när de tappar fokus.
         .onExitCommand { if isEditing { isEditing = false } }
-        // Sökfältet stegar till en träff: den hamnar mitt i fönstret, under den hopfällda raden.
+        // Sökfältet stegar till en träff: den hamnar mitt i fönstret.
         .onChange(of: searchJump) { _, _ in scrollToCurrentHit(proxy: proxy) }
         .background {
             if isEditing {
@@ -120,36 +112,12 @@ struct TranscriptDetailView: View {
         }
     }
 
-    private func updateCollapse(offset: Double) {
-        lastOffset.value = offset
-        // Medan sökfältet är öppet fälls raden inte ut igen. Annars försvinner fältet (och fokus)
-        // när en träff ligger nära toppen.
-        let next = TitleCardCollapse.isCollapsed(offset: offset, wasCollapsed: isCollapsed, keepCollapsed: showSearch)
-        guard next != isCollapsed else { return }
-        // Sökfältet flyttar från titelkortet till den hopfällda raden; skrivandet ska fortsätta där.
-        let refocus = showSearch && searchFocused
-        if reduceMotion {
-            isCollapsed = next
-        } else {
-            withAnimation(.easeInOut(duration: 0.15)) { isCollapsed = next }
-        }
-        if refocus { focusSearchKeepingText() }
-    }
-
     // MARK: - Kort
 
     private var hasText: Bool { !transcript.segments.isEmpty }
     private var isWorking: Bool { transcript.status == .queued || transcript.status == .transcribing }
 
     private var cardShape: RoundedRectangle { RoundedRectangle(cornerRadius: 12, style: .continuous) }
-    /// Den hopfällda raden: raka hörn upptill där den möter vyns överkant.
-    private var barShape: UnevenRoundedRectangle {
-        UnevenRoundedRectangle(
-            cornerRadii: .init(topLeading: 0, bottomLeading: 12, bottomTrailing: 12, topTrailing: 0),
-            style: .continuous
-        )
-    }
-
     private func card<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
         content()
             .padding(14)
@@ -158,19 +126,50 @@ struct TranscriptDetailView: View {
             .overlay(cardShape.strokeBorder(Color.line, lineWidth: 1))
     }
 
-    /// 1. Modell, språk och antal talare som transkriberingen gjordes med, och Transkribera igen.
-    private var chipsRow: some View {
-        HStack(spacing: 8) {
-            settingsPill
-            Spacer()
-            Button {
-                requestRetranscribe()
-            } label: {
-                Label("Transkribera igen", systemImage: "arrow.clockwise")
+    /// Överst i texten: version, modell/språk/talare och Transkribera igen, och metadatan till höger.
+    /// Får de inte plats på en rad hamnar metadatan under.
+    private var headerRow: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 8) {
+                versionPicker
+                settingsPill
+                rerunButton
+                Spacer(minLength: 12)
+                metaLine.fixedSize()
             }
-            .buttonStyle(RerunButtonStyle(isEmphasized: rerunSettingsChanged))
-            .disabled(isWorking)
-            .help("Transkribera filen igen med valen i knappen till vänster. Den nuvarande versionen sparas.")
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    versionPicker
+                    settingsPill
+                    rerunButton
+                    Spacer(minLength: 0)
+                }
+                metaLine
+            }
+        }
+    }
+
+    private var rerunButton: some View {
+        Button {
+            requestRetranscribe()
+        } label: {
+            Label("Transkribera igen", systemImage: "arrow.clockwise")
+        }
+        .buttonStyle(RerunButtonStyle(isEmphasized: rerunSettingsChanged))
+        .disabled(isWorking)
+        .help("Transkribera filen igen med valen i knappen till vänster. Den nuvarande versionen sparas.")
+    }
+
+    /// Verktygen för hela texten. Finns också i ⋯-menyn i titelbaren, så att de går att nå
+    /// när raden har skrollats bort.
+    private var toolsRow: some View {
+        HStack(spacing: 8) {
+            layoutPicker
+            speakersMenu
+            anonymizeToggle
+            Spacer(minLength: 8)
+            copyButton
+            exportMenu()
         }
     }
 
@@ -247,61 +246,6 @@ struct TranscriptDetailView: View {
         }
     }
 
-    /// 3. Titelkortet: titel och metadata, verktygen för hela texten, och under avdelaren Sök och
-    /// Redigera, som ligger på samma plats i den hopfällda raden.
-    private var titleCard: some View {
-        card {
-            VStack(alignment: .leading, spacing: 10) {
-                titleRow
-
-                HStack(spacing: 8) {
-                    speakersMenu
-                    anonymizeToggle
-                    if hasText { layoutPicker }
-                    Spacer(minLength: 8)
-                    copyButton
-                    exportMenu()
-                }
-
-                Divider()
-                searchAndEditRow(inCollapsedBar: false)
-
-                if showSearch && !isCollapsed { searchRow }
-
-                olderVersionStrip
-            }
-        }
-    }
-
-    /// Titeln till vänster och metadatan till höger. Får titeln inte plats på samma rad hamnar
-    /// metadatan under den, och titeln får brytas.
-    private var titleRow: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(alignment: .firstTextBaseline, spacing: 10) {
-                Text(transcript.title.isEmpty ? "Titel" : transcript.title)
-                    .font(.title2.weight(.semibold))
-                    .lineLimit(1)
-                    .fixedSize()
-                    .hidden()
-                    .overlay(alignment: .leading) { titleField(lines: 1) }
-                Spacer(minLength: 16)
-                metaLine.fixedSize()
-            }
-            VStack(alignment: .leading, spacing: 4) {
-                titleField(lines: 3)
-                metaLine
-            }
-        }
-    }
-
-    private func titleField(lines: Int) -> some View {
-        TextField("Titel", text: $transcript.title, axis: .vertical)
-            .lineLimit(1...lines)
-            .textFieldStyle(.plain)
-            .font(.title2.weight(.semibold))
-            .help("Klicka för att byta namn")
-    }
-
     /// Status · datum · längd.
     private var metaLine: some View {
         HStack(spacing: 6) {
@@ -311,7 +255,6 @@ struct TranscriptDetailView: View {
             Text(transcript.liveVersionDate.formatted(date: .long, time: .shortened))
             Text("·")
             Text(TimeFormatting.duration(transcript.duration)).monospacedDigit()
-            versionPicker
         }
         .font(.callout)
         .foregroundStyle(Color.textSecondary)
@@ -333,7 +276,7 @@ struct TranscriptDetailView: View {
     // MARK: - Versioner
 
     /// Versionsvalet, t.ex. "Version 2 av 4". Datumet och klockslaget bredvid är den visade versionens. Finns först när det finns fler än en
-    /// version, och finns bara i det utfällda titelkortet. Indigo bakgrund när en äldre version visas.
+    /// version. Indigo bakgrund när en äldre version visas.
     @ViewBuilder
     private var versionPicker: some View {
         if let label = transcript.versionShortLabel {
@@ -410,34 +353,6 @@ struct TranscriptDetailView: View {
         }
     }
 
-    /// Sök i texten, Redigera/Klar och vilken text som rättas. Samma rad i titelkortet och i den
-    /// hopfällda raden. Texten om redigeringen kommer sist, så att ingenting annat flyttar sig.
-    private func searchAndEditRow(inCollapsedBar: Bool) -> some View {
-        HStack(spacing: 8) {
-            searchButton(inCollapsedBar: inCollapsedBar)
-            editToggle
-            editStateLabel
-        }
-    }
-
-    @ViewBuilder
-    private func searchButton(inCollapsedBar: Bool) -> some View {
-        // Sökfältet öppnas där man är: i titelkortet eller i den hopfällda raden.
-        let button = Button {
-            openSearch()
-        } label: {
-            Label("Sök i texten", systemImage: "magnifyingglass")
-        }
-        .disabled(!hasText)
-        .help("Sök i transkriberingen (⌘F)")
-        // Kortkommandot finns bara en gång; titelkortet finns kvar i vyn när det är hopfällt.
-        if inCollapsedBar {
-            button
-        } else {
-            button.keyboardShortcut("f")
-        }
-    }
-
     /// Säger vilken text som rättas. Ligger sist på raden efter Klar, så att ingenting flyttar sig
     /// när den visas.
     @ViewBuilder
@@ -453,10 +368,20 @@ struct TranscriptDetailView: View {
         }
     }
 
-    private var searchRow: some View {
-        HStack(spacing: 10) {
+    private func openSearch() {
+        searchFocused = true
+    }
+
+    private func closeSearch() {
+        query = ""
+        searchFocused = false
+    }
+
+    /// Sökfältet i titelbaren. Det är alltid synligt och krymper när fönstret är smalt.
+    private var toolbarSearch: some View {
+        HStack(spacing: 6) {
             Image(systemName: "magnifyingglass").foregroundStyle(Color.textSecondary)
-            TextField("Sök i transkriberingen", text: $query)
+            TextField("Sök i texten", text: $query)
                 .textFieldStyle(.plain)
                 .focused($searchFocused)
                 // Retur: nästa träff. Esc: stäng.
@@ -466,7 +391,7 @@ struct TranscriptDetailView: View {
                     hitIndex = 0
                     searchJump += 1
                 }
-            if !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            if showSearch {
                 let count = searchHits.count
                 Text(TextSearch.positionLabel(index: hitIndex, count: count))
                     .font(.callout.monospacedDigit())
@@ -486,39 +411,69 @@ struct TranscriptDetailView: View {
                     .help("Nästa träff (Retur eller ⌘G)")
                     .accessibilityLabel("Nästa träff")
                 }
+                .buttonStyle(.plain)
                 .disabled(count == 0)
+                Button("Stäng") { closeSearch() }
+                    .buttonStyle(.link)
             }
-            Button("Stäng") { closeSearch() }
-                .buttonStyle(.link)
         }
-        .padding(8)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .frame(minWidth: 140, idealWidth: 240, maxWidth: 360)
         .background(Color.chip, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
-    private func openSearch() {
-        showSearch = true
-        // Fältet finns inte i vyn förrän nästa varv.
-        Task { @MainActor in searchFocused = true }
+    /// Sökfältet är aktivt när det står något i det.
+    private var showSearch: Bool { !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+
+    /// ⌘F flyttar skrivmarkören till sökfältet i titelbaren.
+    private var searchShortcut: some View {
+        Button("Sök i texten") { openSearch() }
+            .keyboardShortcut("f")
+            .hidden()
+            .disabled(!hasText)
     }
 
-    private func closeSearch() {
-        query = ""
-        showSearch = false
-        searchFocused = false
-        // Raden hölls hopfälld medan man sökte; nu följer den skrollpositionen igen.
-        updateCollapse(offset: lastOffset.value)
-    }
-
-    /// Ger sökfältet fokus igen när det har flyttat, med markören sist i stället för att hela
-    /// sökordet markeras (då skulle nästa bokstav ersätta det).
-    private func focusSearchKeepingText() {
-        Task { @MainActor in
-            searchFocused = true
-            await Task.yield()
-            if let editor = NSApp.keyWindow?.firstResponder as? NSTextView {
-                editor.setSelectedRange(NSRange(location: (editor.string as NSString).length, length: 0))
-            }
+    /// Titelbaren: sök, Redigera och ⋯-menyn. Redigera ligger alltid kvar här.
+    @ToolbarContentBuilder
+    private var detailToolbar: some ToolbarContent {
+        ToolbarItemGroup(placement: .primaryAction) {
+            if hasText { toolbarSearch }
+            editStateLabel
+            editToggle
+            moreMenu
         }
+    }
+
+    /// Samma åtgärder som verktygsraden, så att de går att nå även när den har skrollats bort.
+    private var moreMenu: some View {
+        Menu {
+            if hasText {
+                Picker("Visning", selection: $layout) {
+                    ForEach(TranscriptLayout.allCases) { layout in
+                        Text(layout.displayName).tag(layout)
+                    }
+                }
+                .pickerStyle(.inline)
+                Toggle(isOn: $anonymize) {
+                    Label("Anonymisera", systemImage: anonymize ? "eye.slash" : "eye")
+                }
+                if !transcript.speakers.isEmpty {
+                    Menu("Talare") { speakersMenuContent }
+                }
+                Divider()
+                Button("Kopiera text") { copyText() }
+                Menu("Exportera") { exportMenuContent }
+                Divider()
+                Toggle("Följ uppspelning", isOn: $followPlayback)
+            }
+            Button("Transkribera igen") { requestRetranscribe() }
+                .disabled(isWorking)
+        } label: {
+            Image(systemName: "ellipsis").accessibilityLabel("Fler val")
+        }
+        .menuIndicator(.hidden)
+        .help("Fler val")
     }
 
     /// Alla träffar i den text som visas, i läsordning.
@@ -586,22 +541,7 @@ struct TranscriptDetailView: View {
     private var speakersMenu: some View {
         if !transcript.speakers.isEmpty {
             Menu {
-                ForEach(transcript.speakers, id: \.self) { speaker in
-                    Button("Byt namn på \(speaker)…") { beginRename(speaker) }
-                }
-                Divider()
-                Section("Intervjuare") {
-                    ForEach(transcript.speakers, id: \.self) { speaker in
-                        Toggle(speaker, isOn: Binding(
-                            get: { SpeakerRoles.isInterviewer(speaker) },
-                            set: { transcript.setInterviewer(speaker, to: $0) }
-                        ))
-                    }
-                }
-                Divider()
-                Button("Visa talarturer i Finder (för felsökning)") {
-                    NSWorkspace.shared.open(AppPaths.speakerTurnsDirectory)
-                }
+                speakersMenuContent
             } label: {
                 Label("Talare", systemImage: "person.2")
             }
@@ -611,14 +551,39 @@ struct TranscriptDetailView: View {
         }
     }
 
+    /// Innehållet i Talare-menyn, också som undermeny i ⋯-menyn.
+    @ViewBuilder
+    private var speakersMenuContent: some View {
+        ForEach(transcript.speakers, id: \.self) { speaker in
+            Button("Byt namn på \(speaker)…") { beginRename(speaker) }
+        }
+        Divider()
+        Section("Intervjuare") {
+            ForEach(transcript.speakers, id: \.self) { speaker in
+                Toggle(speaker, isOn: Binding(
+                    get: { SpeakerRoles.isInterviewer(speaker) },
+                    set: { transcript.setInterviewer(speaker, to: $0) }
+                ))
+            }
+        }
+        Divider()
+        Button("Visa talarturer i Finder (för felsökning)") {
+            NSWorkspace.shared.open(AppPaths.speakerTurnsDirectory)
+        }
+    }
+
+    private func copyText() {
+        copyToPasteboard(TranscriptExporter.fullText(outputSegments))
+        copied = true
+        Task {
+            try? await Task.sleep(for: .seconds(1.5))
+            copied = false
+        }
+    }
+
     private var copyButton: some View {
         Button {
-            copyToPasteboard(TranscriptExporter.fullText(outputSegments))
-            copied = true
-            Task {
-                try? await Task.sleep(for: .seconds(1.5))
-                copied = false
-            }
+            copyText()
         } label: {
             Label(copied ? "Kopierat!" : "Kopiera text", systemImage: copied ? "checkmark" : "doc.on.doc")
         }
@@ -626,47 +591,64 @@ struct TranscriptDetailView: View {
         .disabled(!hasText)
     }
 
+    /// Exportera är en neutral svart primärknapp (Pianissimo), ingen växel.
     private func exportMenu() -> some View {
         Menu {
-            ForEach(ExportFormat.allCases) { format in
-                Button(format.displayName) { export(as: format) }
-            }
-            Divider()
-            Button("Exportera för analys…") { appState.isAnalysisExportPresented = true }
-                .help("En Markdown-fil per session, anpassad för analys i t.ex. Claude")
-            Divider()
-            Toggle("Ta med tidsstämplar (.txt och .md)", isOn: $exportTimestamps)
+            exportMenuContent
         } label: {
-            Label("Exportera", systemImage: "square.and.arrow.up")
+            HStack(spacing: 6) {
+                Image(systemName: "square.and.arrow.up")
+                Text("Exportera")
+                Image(systemName: "chevron.down").font(.caption2)
+            }
+            .font(.body.weight(.medium))
+            .foregroundStyle(Color.neutralButtonText)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 5)
+            .background(Color.neutralButton, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
-        .menuStyle(.button)
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
         .fixedSize()
         .help("Spara som text, Markdown, undertexter eller JSON")
         .disabled(!hasText)
     }
 
-    /// 4. Spelaren i ett eget kort, med Följ uppspelning.
     @ViewBuilder
-    private var playerCard: some View {
-        if hasText {
-            card {
-                VStack(alignment: .leading, spacing: 8) {
-                    Group {
-                        if let player {
-                            PlayerView(player: player.player, isVideo: transcript.isVideo)
-                        } else {
-                            Color.black.opacity(0.05)
-                        }
-                    }
-                    .frame(height: transcript.isVideo ? 300 : 44)
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    Toggle(isOn: $followPlayback) {
-                        Label("Följ uppspelning", systemImage: "text.line.first.and.arrowtriangle.forward")
-                    }
-                    .toggleStyle(.checkbox)
-                    .help("Håll stycket som spelas upp i bild")
+    private var exportMenuContent: some View {
+        ForEach(ExportFormat.allCases) { format in
+            Button(format.displayName) { export(as: format) }
+        }
+        Divider()
+        Button("Exportera för analys…") { appState.isAnalysisExportPresented = true }
+            .help("En Markdown-fil per session, anpassad för analys i t.ex. Claude")
+        Divider()
+        Toggle("Ta med tidsstämplar (.txt och .md)", isOn: $exportTimestamps)
+    }
+
+    /// Spelaren, fast under titelbaren: bild (video), spela, tid, reglage och Följ uppspelning.
+    @ViewBuilder
+    private var playerBar: some View {
+        if hasText, let player {
+            HStack(spacing: 14) {
+                if transcript.isVideo { miniPlayer(player) }
+                playPauseAndTime(player)
+                positionSlider(player, maxWidth: .infinity)
+                Text(TimeFormatting.short(transcript.duration))
+                    .font(.system(.callout, design: .monospaced))
+                    .foregroundStyle(Color.textSecondary)
+                if transcript.isVideo { sizeMenu }
+                Toggle(isOn: $followPlayback) {
+                    Text("Följ uppspelning")
                 }
+                .toggleStyle(.checkbox)
+                .help("Håll stycket som spelas upp i bild")
             }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity)
+            .background(Color.surface)
+            .overlay(alignment: .bottom) { Rectangle().fill(Color.line).frame(height: 1) }
         }
     }
 
@@ -689,98 +671,12 @@ struct TranscriptDetailView: View {
         }
     }
 
-    /// 7. Den hopfällda raden som ligger kvar överst som ett overlay, så att texten inte hoppar.
-    private func collapsedBar(proxy: ScrollViewProxy) -> some View {
-        let size = MiniPlayerSize.resolved(miniSizeRaw)
-        let video = transcript.isVideo ? player : nil
-        // Med mellanstor och stor bild hamnar spelkontrollerna längst ned under knapparna.
-        // Annars staplas de i en smal kolumn bredvid bilden, så att raden med Sök och
-        // Redigera får plats för texten om redigeringen (Nicklas skiss 2026-11-02, v4).
-        let controlsUnderTitle = video != nil && size != .small
-        return VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: controlsUnderTitle ? .top : .center, spacing: 16) {
-                // Ljud och video längst till vänster.
-                if let video {
-                    miniPlayer(video)
-                }
-                if let player, !controlsUnderTitle {
-                    playbackColumn(player, withSizeMenu: video != nil)
-                        .frame(height: video != nil ? size.height : nil)
-                }
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack(spacing: 8) {
-                        Button {
-                            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
-                                proxy.scrollTo(Self.topID, anchor: .top)
-                            }
-                        } label: {
-                            Text(transcript.title).font(.headline).lineLimit(1)
-                        }
-                        .buttonStyle(.plain)
-                        .help("Till början")
-                        // Versionsvalet är dolt när kortet är hopfällt. Bara det här märket syns,
-                        // och bara när en äldre version visas.
-                        if transcript.isViewingOlderVersion {
-                            Text("Äldre version")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(Color.accentColor)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 2)
-                                .overlay(Capsule().strokeBorder(Color.accentColor, lineWidth: 1))
-                                .fixedSize()
-                        }
-                    }
-                    searchAndEditRow(inCollapsedBar: true)
-                    if controlsUnderTitle, let player {
-                        Spacer(minLength: 8)
-                        playbackRow(player, withSizeMenu: true)
-                    }
-                }
-                .frame(height: controlsUnderTitle ? size.height : nil)
-                .layoutPriority(1)
-                Spacer(minLength: 0)
-            }
-            // Sökfältet följer med när titelkortet är hopfällt.
-            if showSearch { searchRow }
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        // Kloss mot vyns överkant med raka hörn upptill, så att ingen text syns ovanför raden.
-        .background(Color.surface, in: barShape)
-        .overlay(barShape.strokeBorder(Color.line, lineWidth: 1))
-        .padding(.horizontal, 20)
-        .frame(maxWidth: 860)
-    }
-
-    /// Videobilden i den hopfällda raden. Liten som standard; Bildstorlek väljer mellan tre.
+    /// Videobilden i spelarraden. Liten som standard; Bildstorlek väljer mellan tre.
     private func miniPlayer(_ player: PlayerController) -> some View {
         let size = MiniPlayerSize.resolved(miniSizeRaw)
         return PlayerView(player: player.player, isVideo: true, compact: true)
             .frame(width: size.width, height: size.height)
             .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-    }
-
-    /// Bildstorlek (bara video), spela/pausa, tid och reglage på en rad (mellanstor och stor bild).
-    private func playbackRow(_ player: PlayerController, withSizeMenu: Bool) -> some View {
-        HStack(spacing: 10) {
-            if withSizeMenu { sizeMenu }
-            playPauseAndTime(player)
-            positionSlider(player)
-        }
-    }
-
-    /// Samma kontroller staplade: bildstorlek överst, spela och tid, reglaget nederst.
-    private func playbackColumn(_ player: PlayerController, withSizeMenu: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            if withSizeMenu {
-                sizeMenu
-                Spacer(minLength: 0)
-            }
-            playPauseAndTime(player)
-            if withSizeMenu { Spacer(minLength: 0) }
-            positionSlider(player)
-        }
-        .frame(width: 150, alignment: .leading)
     }
 
     private var sizeMenu: some View {
@@ -809,7 +705,7 @@ struct TranscriptDetailView: View {
         }
     }
 
-    private func positionSlider(_ player: PlayerController) -> some View {
+    private func positionSlider(_ player: PlayerController, maxWidth: CGFloat = 200) -> some View {
         Slider(
             value: Binding(
                 get: { player.currentTime },
@@ -817,7 +713,7 @@ struct TranscriptDetailView: View {
             ),
             in: 0...max(transcript.duration, 1)
         )
-        .frame(minWidth: 80, maxWidth: 200)
+        .frame(minWidth: 80, maxWidth: maxWidth)
         .help("Hoppa i inspelningen")
     }
 
@@ -1197,11 +1093,6 @@ private struct AnonymizedState {
 }
 
 /// Ett segment som det visas: anonymiserad eller original text och talare.
-/// Senaste skrollpositionen. En klass, så att skrollningen inte ritar om vyn.
-final class OffsetMemory {
-    var value: Double = 0
-}
-
 struct DisplaySegment: Identifiable {
     let segment: TranscriptSegment
     let text: String
@@ -1210,13 +1101,6 @@ struct DisplaySegment: Identifiable {
     var isAnonymized = false
 
     var id: PersistentIdentifier { segment.persistentModelID }
-}
-
-/// Hur långt texten har skrollats förbi toppen, för det hopfällda titelkortet
-/// (i macOS 14 finns inget färdigt API för skrollposition).
-private struct ScrollOffsetKey: PreferenceKey {
-    static let defaultValue: Double = 0
-    static func reduce(value: inout Double, nextValue: () -> Double) { value = nextValue() }
 }
 
 /// Spelaren startas när vyn visas och stängs när den försvinner; anonymiseringen räknas om vid ändring.

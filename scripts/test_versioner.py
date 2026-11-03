@@ -55,12 +55,13 @@ class VersionTests(unittest.TestCase):
         for name in ("Detail/TranscriptDetailView.swift", "Sidebar/SidebarView.swift"):
             self.assertIn("RetranscribeDialog.needsDialog(", read("Views/" + name), name)
 
-    def test_collapsed_bar_hides_the_picker_but_shows_the_older_version_badge(self):
+    def test_version_picker_sits_first_in_the_header_and_older_versions_say_so(self):
         text = read("Views/Detail/TranscriptDetailView.swift")
-        bar = text[text.index("private func collapsedBar"):text.index("private func miniPlayer")]
-        self.assertNotIn("versionPicker", bar)
-        self.assertIn("Äldre version", bar)
-        self.assertIn("isViewingOlderVersion", bar)
+        header = text[text.index("private var headerRow"):text.index("private var rerunButton")]
+        self.assertIn("versionPicker", header)
+        strip = text[text.index("private var olderVersionStrip"):][:900]
+        self.assertIn("isViewingOlderVersion", strip)
+        self.assertIn("äldre version", strip)
 
     def test_title_card_date_is_the_shown_versions_not_the_first_transcription(self):
         # Felet 0.8.0: raden visade createdAt (första transkriberingen) även när en annan version visades.
