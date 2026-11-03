@@ -4,6 +4,8 @@ extension Color {
     /// Varningsfärg för text och ikoner. Systemets orange ger bara 2,2:1 mot vitt;
     /// den här har minst 4,5:1 i ljust och mörkt läge (kontrolleras av scripts/check_colors.py).
     static let warning = Color("WarningColor")
+    /// Klar. Grön med minst 4,5:1 mot alla bakgrunder (kontrolleras av scripts/check_colors.py).
+    static let success = Color("SuccessColor")
 
     // Appens egen palett (vit och stram, ljust och mörkt, med varianter för Öka kontrast).
     // Alla textfärger kontrolleras mot alla bakgrunder av scripts/check_colors.py.

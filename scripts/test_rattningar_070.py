@@ -93,7 +93,10 @@ class CollapseAndPlayerTests(unittest.TestCase):
 
 class RerunButtonTests(unittest.TestCase):
     def test_button_is_emphasized_only_when_settings_changed(self):
-        self.assertIn("RerunButtonStyle(isEmphasized: rerunSettingsChanged)", detail)
+        self.assertIn("isChanged: rerunSettingsChanged", detail)
+        popover = (V / "Views/Detail/RerunSettingsPopover.swift").read_text(encoding="utf-8")
+        self.assertIn("RerunButtonStyle(isEmphasized: isChanged)", popover)
+        self.assertIn("Transkribera igen", popover, "Transkribera igen ligger inne i inställningsrutan (Pianissimo)")
         self.assertIn("RerunChange.isChanged(", detail)
 
 
