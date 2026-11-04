@@ -382,3 +382,26 @@ class DropDuringRecordingTests(unittest.TestCase):
         self.assertNotIn("        state = .", recorder, "Tillståndet ska bytas via setState så att kön får veta")
         queue = (ROOT / "Transkribera" / "Services" / "TranscriptionQueue.swift").read_text(encoding="utf-8")
         self.assertIn("!self.isHeld", queue, "Arbetstråden ska stanna när kön hålls")
+
+
+class MeetingViewHeightTests(unittest.TestCase):
+    """Felet i Mötesinspelning 0.9.0–0.9.5: en text med fixedSize(vertical: true) i detaljvyn gjorde
+    splitvyn ca 1340 pt hög, så sidopanelen hamnade ovanför appens överkant. Apptestet
+    WindowLayoutTests mäter det på CI; här stoppas mönstret redan i källkoden."""
+
+    def test_meeting_view_has_no_vertically_fixed_text(self):
+        # Chipsraden i Fil-läget har en enradig fixedSize och mättes som oskyldig (626 pt); bara mötesvyn har löpande text.
+        for name in ("Home/MeetingModeView.swift",):
+            text = (VIEWS / name).read_text(encoding="utf-8")
+            code = "\n".join(l for l in text.splitlines() if not l.strip().startswith("//"))
+            self.assertNotIn("fixedSize(horizontal: false, vertical: true)", code, name)
+
+    def test_window_layout_test_covers_both_modes(self):
+        text = (ROOT / "TranskriberaAppTests" / "WindowLayoutTests.swift").read_text(encoding="utf-8")
+        self.assertIn("mode: .meeting", text)
+        self.assertIn("mode: .file", text)
+        self.assertNotIn("XCTFail", text, "Diagnosen ska vara en riktig kontroll")
+
+
+if __name__ == "__main__":
+    unittest.main()
