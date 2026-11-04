@@ -6,6 +6,9 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+### Rättat
+- En inspelning utan tal (till exempel en tyst mötesinspelning) fastnar inte längre på "Anonymiserar…". Du får i stället beskedet "Ingen text hittades".
+
 ## [0.9.3] – 2026-11-04
 
 ### Ändrat

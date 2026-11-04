@@ -911,7 +911,14 @@ struct TranscriptDetailView: View {
     @ViewBuilder
     private func textRows(proxy: ScrollViewProxy) -> some View {
         let segments = transcript.sortedSegments
-        if let rows = displaySegments(segments) {
+        if segments.isEmpty {
+            ContentUnavailableView {
+                Label("Ingen text hittades", icon: .warning)
+            } description: {
+                Text("Inspelningen innehöll inget tal som gick att skriva ut.")
+            }
+            .frame(maxWidth: .infinity, minHeight: 120)
+        } else if let rows = displaySegments(segments) {
             let currentTime = player?.currentTime ?? 0
             let activeID = Self.activeSegment(in: segments, at: currentTime)?.persistentModelID
             switch layout {
@@ -920,7 +927,7 @@ struct TranscriptDetailView: View {
             case .segments:
                 segmentRows(rows: rows, currentTime: currentTime, activeID: activeID, proxy: proxy)
             }
-        } else {
+        } else if AnonymizationWait.isWaiting(segmentCount: segments.count, hasCurrentResult: false) {
             ProgressView("Anonymiserar…")
                 .frame(maxWidth: .infinity, minHeight: 120)
         }
