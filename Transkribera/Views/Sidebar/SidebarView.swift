@@ -53,17 +53,10 @@ struct SidebarView: View {
     }
 
     var body: some View {
-        // Som en webbsida: allt läggs ut uppifrån och ned och börjar alltid i överkanten. Rutan högst upp har sin
-        // naturliga höjd (den centreras eller mäts aldrig), och resten tar det som blir kvar. Är fönstret för lågt
-        // beskärs det nederst, aldrig överst (Nicklas 2026-11-04, tre gånger).
-        VStack(spacing: 0) {
-            newTranscriptionGroup
-                .fixedSize(horizontal: false, vertical: true)
-            listHeader
-            list.frame(minHeight: 0, maxHeight: .infinity)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .clipped()
+        // Allt i panelen ligger i en enda scrollvy, uppifrån och ned som en webbsida: rutan för ny transkribering,
+        // rubriken, sökfältet och listan. Ingen mätning, ingen centrering och ingen egen höjd som kan trycka ut något
+        // ovanför fönstret (Nicklas 2026-11-04, fyra gånger).
+        list
         .navigationSplitViewColumnWidth(min: 220, ideal: 260, max: 360)
         .confirmationDialog(
             "Radera ”\(transcriptToDelete?.title ?? "")”?",
@@ -227,6 +220,9 @@ struct SidebarView: View {
 
     private var list: some View {
         List(selection: listSelection) {
+            newTranscriptionGroup.sidebarPlainRow()
+            listHeader.sidebarPlainRow()
+
             if transcripts.isEmpty {
                 Text("Inga transkriberingar än. Släpp en fil eller spela in ett möte så hamnar resultatet här.")
                     .font(.callout)
@@ -346,5 +342,17 @@ private struct RecordingDotLabelStyle: LabelStyle {
             }
             configuration.title
         }
+    }
+}
+
+private extension View {
+    /// En rad i sidopanelens lista som inte är en transkribering: ingen markering, ingen bakgrund, inga marginaler
+    /// eller avdelare. Innehållet bestämmer själv sina marginaler.
+    func sidebarPlainRow() -> some View {
+        self
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            .selectionDisabled()
     }
 }

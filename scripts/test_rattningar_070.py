@@ -13,7 +13,8 @@ body = sidebar[sidebar.index("var body: some View"):sidebar.index(".navigationSp
 
 class SidebarOrderTests(unittest.TestCase):
     def test_order_settings_dropzone_heading_search_list(self):
-        order = [body.index(x) for x in ("newTranscriptionGroup", "listHeader", "list")]
+        rows = sidebar[sidebar.index("private var list: some View"):]
+        order = [rows.index(x) for x in ("newTranscriptionGroup", "listHeader", "ForEach(groups)")]
         self.assertEqual(order, sorted(order))
 
     def test_settings_and_dropzone_are_grouped(self):

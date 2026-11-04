@@ -220,17 +220,21 @@ class EditModeTests(unittest.TestCase):
         self.assertIn("autofocus", row)
         self.assertIn("editSession.autofocus = false", text, "Alla fält får inte ta fokus på en gång")
 
-    def test_sidebar_lays_out_from_the_top_like_a_web_page(self):
-        # Nicklas 2026-11-04: panelen centrerades vertikalt, hoppade vid lägesbyte och tryckte sig ut ur fönstret.
-        # Ingen mätning (ViewThatFits, GeometryReader) och ingen centrering: rutan har naturlig höjd, förankrad i toppen.
+    def test_sidebar_is_one_scroll_view_from_the_top(self):
+        # Nicklas 2026-11-04 (fyra gånger): panelen centrerades, hoppade och tryckte sig ut ovanför fönstret.
+        # Allt ligger nu som rader i en enda lista: ingen mätning, ingen centrering, ingen egen höjd.
         side = (VIEWS / "Sidebar/SidebarView.swift").read_text(encoding="utf-8")
         body = side[side.index("var body: some View"):side.index(".navigationSplitViewColumnWidth")]
-        self.assertNotIn("ViewThatFits", body)
-        self.assertNotIn("GeometryReader", body)
-        self.assertNotIn("ScrollView", body)
-        self.assertIn(".fixedSize(horizontal: false, vertical: true)", body, "Rutan har sin naturliga höjd")
-        self.assertIn("alignment: .top)", body, "Förankrad i överkanten, aldrig centrerad")
-        self.assertIn(".clipped()", body)
+        for forbidden in ("ViewThatFits", "GeometryReader", "ScrollView", "VStack", "fixedSize", ".frame("):
+            self.assertNotIn(forbidden, body, f"{forbidden} i panelens body kan flytta innehållet")
+        lst = side[side.index("private var list: some View"):side.index("/// Frågar först")]
+        self.assertIn("newTranscriptionGroup.sidebarPlainRow()", lst, "Rutan är första raden i samma lista")
+        self.assertIn("listHeader.sidebarPlainRow()", lst, "Rubrik och sökfält scrollar med")
+        self.assertLess(lst.index("newTranscriptionGroup"), lst.index("listHeader"))
+        self.assertLess(lst.index("listHeader"), lst.index("ForEach(groups)"))
+        helper = side[side.index("func sidebarPlainRow"):]
+        self.assertIn(".selectionDisabled()", helper)
+        self.assertIn(".listRowInsets(EdgeInsets())", helper)
 
     def test_meeting_controls_use_full_width_with_air_between_rows(self):
         text = (VIEWS / "Home/MeetingControls.swift").read_text(encoding="utf-8")
