@@ -64,6 +64,9 @@ struct SegmentRow: View {
     @AppStorage(SettingsKey.readingTextSize) private var readingSize = ReadingTextSize.standard
     @State private var hovering = false
 
+    /// Samma bredd som i styckevisningen.
+    private var textWidth: CGFloat { ReadingTextSize.columnWidth(for: readingSize) }
+
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
             TimecodeButton(time: segment.start, isActive: isActive, minWidth: 52, action: onSeek)
@@ -81,6 +84,7 @@ struct SegmentRow: View {
                 if isEditing {
                     SegmentEditor(segment: segment, displayText: displayText, isAnonymized: isAnonymized, lineSpacing: 3, session: session)
                         .id(isAnonymized)
+                        .frame(maxWidth: textWidth, alignment: .leading)
                         .modifier(EditSurface())
                 } else {
                     // Ordtidsstämplarna hör till originaltexten.
@@ -95,7 +99,7 @@ struct SegmentRow: View {
                     .font(.system(size: ReadingTextSize.clamped(readingSize)))
                     .lineSpacing(3)
                     .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(maxWidth: textWidth, alignment: .leading)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)

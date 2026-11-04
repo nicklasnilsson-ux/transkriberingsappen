@@ -239,6 +239,15 @@ class EditModeTests(unittest.TestCase):
         self.assertIn(".frame(maxWidth: .infinity)", text)
         self.assertIn("spacing: 16", text)
 
+    def test_rows_and_paragraphs_have_the_same_text_width(self):
+        # Nicklas 2026-11-04: texten var smalare i styckevisningen än i radvisningen.
+        para = (self.DETAIL / "ParagraphRow.swift").read_text(encoding="utf-8")
+        row = (self.DETAIL / "SegmentRow.swift").read_text(encoding="utf-8")
+        self.assertIn("ReadingTextSize.columnWidth(for: readingSize)", para)
+        seg = row[row.index("struct SegmentRow"):row.index("struct RowEditActions")]
+        self.assertIn("ReadingTextSize.columnWidth(for: readingSize)", seg)
+        self.assertEqual(seg.count("maxWidth: textWidth"), 2, "Både visning och redigering har spaltbredden")
+
     def test_hover_edit_button_matches_cancel_and_save(self):
         row = (self.DETAIL / "SegmentRow.swift").read_text(encoding="utf-8")
         hover = row[row.index("struct EditHoverButton"):][:900]

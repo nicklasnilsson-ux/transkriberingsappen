@@ -13,6 +13,7 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 - Mötesinspelning: reglagen ligger längst till höger över hela bredden, antal talare har en egen rad med en väljare över hela bredden, och raderna har mer luft emellan.
 
 ### Rättat
+- Texten är lika bred i radvisningen som i styckevisningen, även när du redigerar.
 - Helskärmen: knappen Tillbaka till appen lämnar helskärmen och stänger videofönstret, så att du är tillbaka i appens läge.
 - Vänsterpanelen ligger fast i toppen. Är fönstret för lågt för Mötesinspelning scrollar rutan i stället för att tryckas ut ovanför fönstret.
 

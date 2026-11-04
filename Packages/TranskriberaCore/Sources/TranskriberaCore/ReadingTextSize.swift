@@ -21,4 +21,10 @@ public enum ReadingTextSize {
         let current = clamped(size)
         return steps.last { $0 < current } ?? current
     }
+
+    /// Högsta bredd på textspalten, cirka 72 tecken per rad. Gäller både stycken och rader, så att
+    /// texten är lika bred i båda visningarna och i redigeringsläget (Nicklas 2026-11-04).
+    public static func columnWidth(for size: Double) -> Double {
+        clamped(size) * 40
+    }
 }
