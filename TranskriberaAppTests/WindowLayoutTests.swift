@@ -71,18 +71,8 @@ final class WindowLayoutTests: XCTestCase {
         let size = CGSize(width: 1000, height: 650)
         let file = measure(mode: .file, size: size)
         let meeting = measure(mode: .meeting, size: size)
-        let report = """
-        FIL ideal \(file.ideal), utanför: \(file.outside)
-        MÖTE ideal \(meeting.ideal), utanför: \(meeting.outside)
-        FIL-vyer:
-        \(file.frames.joined(separator: "\n"))
-        MÖTE-vyer:
-        \(meeting.frames.joined(separator: "\n"))
-        """
-        print(report)
-        XCTAssertTrue(file.outside.isEmpty, "Fil-läget har vyer utanför fönstret.\n\(report)")
-        XCTAssertTrue(meeting.outside.isEmpty, "Mötesläget har vyer utanför fönstret.\n\(report)")
-        XCTAssertLessThanOrEqual(meeting.ideal.height, file.ideal.height + 1, "Mötesläget kräver ett högre fönster.\n\(report)")
-        XCTFail("DIAGNOS (tas bort före merge)\n\(report)")
+        // En enda rad: testutskriften visar bara första raden av ett felmeddelande.
+        let report = "FIL ideal \(file.ideal) utanför \(file.outside) ¦ MÖTE ideal \(meeting.ideal) utanför \(meeting.outside) ¦ FIL-vyer \(file.frames.joined(separator: " ¦ ")) ¦ MÖTE-vyer \(meeting.frames.joined(separator: " ¦ "))"
+        XCTFail("DIAGNOS \(report)")
     }
 }
