@@ -26,6 +26,6 @@ final class ReadingTextSizeTests: XCTestCase {
         XCTAssertEqual(ReadingTextSize.columnWidth(for: 15), 600)
         XCTAssertEqual(ReadingTextSize.columnWidth(for: 20), 800)
         // Ett trasigt sparat värde ger bredden för närmaste giltiga steg.
-        XCTAssertEqual(ReadingTextSize.columnWidth(for: 14.2), ReadingTextSize.columnWidth(for: 13))
+        XCTAssertEqual(ReadingTextSize.columnWidth(for: 13.5), ReadingTextSize.columnWidth(for: 13))
     }
 }
