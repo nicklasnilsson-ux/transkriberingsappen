@@ -6,6 +6,19 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.9.5</title>
+      <pubDate>Wed, 04 Nov 2026 21:59:12 GMT</pubDate>
+      <sparkle:version>42</sparkle:version>
+      <sparkle:shortVersionString>0.9.5</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.5</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Rättat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Vänsterpanelen är en enda scrollvy: rutan för ny transkribering, rubriken, sökfältet och listan ligger efter varandra uppifrån och ned och scrollar tillsammans. Inget kan längre hamna ovanför appens yta.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.5/Transkribera-v0.9.5.zip" length="14506361" type="application/octet-stream" sparkle:edSignature="I5RqvuoNz0sh+QjoxBJ03eSpItMLNV+BgA2QMjntwdLx/RG+GAlLpdllqXEThGxqXxwk/OxFwE1qmt4wAM8RBg==" />
+    </item>
+    <item>
       <title>Version 0.9.4</title>
       <pubDate>Wed, 04 Nov 2026 20:46:00 GMT</pubDate>
       <sparkle:version>41</sparkle:version>
@@ -477,19 +490,6 @@
 &lt;li&gt;Under Talare finns nu &amp;quot;Visa talarturer i Finder (för felsökning)&amp;quot;. Där sparas, för de 20 senaste transkriberingarna, när talaridentifieringen tycker att varje talare hörs och hur orden delades mellan dem. Filerna innehåller bara tider och talarnummer, ingen text, så de går att skicka när talarna blir fel.&lt;/li&gt;
 &lt;/ul&gt;</description>
       <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.5.6/Transkribera-v0.5.6.zip" length="13874476" type="application/octet-stream" sparkle:edSignature="lBMfaNUb+0WE4gUsXOJrXoUleqpP8E9/CuEwlpnLIw9Egejdk5BLoxduVLETV1gzk/4X48TRNJbILVqbxA1NDQ==" />
-    </item>
-    <item>
-      <title>Version 0.5.5</title>
-      <pubDate>Thu, 29 Oct 2026 23:14:36 GMT</pubDate>
-      <sparkle:version>12</sparkle:version>
-      <sparkle:shortVersionString>0.5.5</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.5.5</sparkle:fullReleaseNotesLink>
-      <description>&lt;h3&gt;Nytt&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Volymen jämnas nu ut som standard för KB-Whisper, så att svaga röster hörs lika bra som starka. I två intervjuer gav det 2–3 procentenheter färre ordfel jämfört med Klang. Pianissimo påverkas inte, eftersom den jämnar ut volymen själv. Du kan stänga av det under Inställningar → Transkribering → Experiment.&lt;/li&gt;
-&lt;/ul&gt;</description>
-      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.5.5/Transkribera-v0.5.5.zip" length="13849526" type="application/octet-stream" sparkle:edSignature="SZIkubjky3us0/+VRKExgREFuwPCBe2w9/X99DveVwCqdWxl+7zbHWzsyAD32yrz8YCT3XbHTbTC1dtpH3wiDw==" />
     </item>
   </channel>
 </rss>
