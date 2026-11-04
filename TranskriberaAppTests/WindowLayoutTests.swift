@@ -79,10 +79,49 @@ final class WindowLayoutTests: XCTestCase {
         return host.fittingSize
     }
 
+    /// Höjden på NSSplitView för en navigationsyta med given sidopanel och detaljvy.
+    private func splitHeight<D: View>(mode: AppMode, sidebar: Bool, @ViewBuilder detail: () -> D) -> Int {
+        let appState = AppState()
+        appState.mode = mode
+        let queue = TranscriptionQueue(transcriber: TranscriberService(), context: container.mainContext)
+        let detailView = detail()
+        let root = NavigationSplitView {
+            if sidebar {
+                SidebarView(selection: .constant(nil), multiSelection: .constant([]))
+            } else {
+                Text("sidopanel")
+            }
+        } detail: { detailView }
+            .frame(minWidth: 820, minHeight: 540)
+            .environment(appState).environment(queue).environment(MeetingRecorder())
+            .modelContainer(container)
+        let host = NSHostingView(rootView: root)
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1000, height: 650),
+                              styleMask: [.titled, .resizable, .closable], backing: .buffered, defer: false)
+        window.contentView = host
+        host.frame = NSRect(x: 0, y: 0, width: 1000, height: 650)
+        host.layoutSubtreeIfNeeded()
+        RunLoop.main.run(until: Date().addingTimeInterval(0.4))
+        host.layoutSubtreeIfNeeded()
+        var result = -1
+        func walk(_ v: NSView) {
+            if v is NSSplitView, result < 0 { result = Int(v.frame.height) }
+            v.subviews.forEach(walk)
+        }
+        walk(host)
+        window.contentView = nil
+        return result
+    }
+
     func testMeetingModeDoesNotNeedAHigherWindowThanFileMode() {
-        let meeting = measure(mode: .meeting, size: CGSize(width: 1000, height: 650))
-        let detail = meeting.frames.filter { $0.contains("ContainerStyleContext") || $0.contains("NSSplitView ") }
-        let report = "DETALJ \(fitting(MeetingModeView(), width: 739)) ¦ KONTROLLER \(fitting(MeetingControls(), width: 228)) ¦ FILTOM \(fitting(FileModeEmptyView(), width: 739)) ¦ RAMAR \(detail.joined(separator: " ¦ "))"
-        XCTFail(report)
+        var out: [String] = []
+        for mode in [AppMode.file, .meeting] {
+            for sidebar in [true, false] {
+                out.append("\(mode.rawValue)/sidopanel=\(sidebar)/tomdetalj=\(splitHeight(mode: mode, sidebar: sidebar) { Color.clear })")
+                out.append("\(mode.rawValue)/sidopanel=\(sidebar)/möte=\(splitHeight(mode: mode, sidebar: sidebar) { MeetingModeView() })")
+                out.append("\(mode.rawValue)/sidopanel=\(sidebar)/fil=\(splitHeight(mode: mode, sidebar: sidebar) { FileModeEmptyView() })")
+            }
+        }
+        XCTFail("HÖJDER " + out.joined(separator: " ¦ "))
     }
 }
