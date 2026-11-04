@@ -33,9 +33,6 @@ struct SidebarView: View {
         )
     }
 
-    /// Så mycket plats får rubriken och listan alltid behålla under rutan.
-    private static let minimumListHeight: CGFloat = 130
-
     private var filtered: [Transcript] {
         guard !filter.isEmpty else { return transcripts }
         return transcripts.filter { TextSearch.matches($0.title, query: filter) }
@@ -56,22 +53,17 @@ struct SidebarView: View {
     }
 
     var body: some View {
-        // Rutan högst upp är fast och resten tar det som blir kvar. Är fönstret för lågt för rutan scrollar rutan
-        // i stället för att trycka panelen uppåt, ut ur fönstret (Nicklas 2026-11-04, två gånger).
-        GeometryReader { geometry in
-            VStack(spacing: 0) {
-                ViewThatFits(in: .vertical) {
-                    newTranscriptionGroup
-                    ScrollView { newTranscriptionGroup }
-                }
-                .frame(maxHeight: max(140, geometry.size.height - Self.minimumListHeight))
-                listHeader
-                list.frame(minHeight: 0)
-            }
-            // Fast mot överkanten: får innehållet inte plats beskärs det nederst, aldrig överst.
-            .frame(width: geometry.size.width, height: geometry.size.height, alignment: .top)
-            .clipped()
+        // Som en webbsida: allt läggs ut uppifrån och ned och börjar alltid i överkanten. Rutan högst upp har sin
+        // naturliga höjd (den centreras eller mäts aldrig), och resten tar det som blir kvar. Är fönstret för lågt
+        // beskärs det nederst, aldrig överst (Nicklas 2026-11-04, tre gånger).
+        VStack(spacing: 0) {
+            newTranscriptionGroup
+                .fixedSize(horizontal: false, vertical: true)
+            listHeader
+            list.frame(minHeight: 0, maxHeight: .infinity)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .clipped()
         .navigationSplitViewColumnWidth(min: 220, ideal: 260, max: 360)
         .confirmationDialog(
             "Radera ”\(transcriptToDelete?.title ?? "")”?",
