@@ -5,6 +5,10 @@ import TranskriberaCore
 
 /// Mötesinspelning i huvudytan: bara status. Knapparna och inställningarna ligger i sidopanelen
 /// (`MeetingControls`). Texten skapas när inspelningen stoppas, inte under tiden.
+///
+/// Ingen text här får ha `fixedSize(vertical: true)`: i en NavigationSplitView räknar SwiftUI då ut den
+/// höjd texten får när den bryts på nästan ingen bredd (cirka 1300 pt), splitvyn blir högre än fönstret
+/// och sidopanelen hamnar ovanför appens överkant. Det var felet i Mötesinspelning (0.9.0–0.9.5).
 struct MeetingModeView: View {
     @Environment(MeetingRecorder.self) private var recorder
     @Query private var allTranscripts: [Transcript]
@@ -31,7 +35,6 @@ struct MeetingModeView: View {
                 .font(.callout)
                 .foregroundStyle(Color.textSecondary)
                 .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
             if recorder.isBusy, waitingCount > 0 {
                 Text(waitingCount == 1
                      ? "1 fil väntar och transkriberas när inspelningen är sparad."
@@ -43,7 +46,6 @@ struct MeetingModeView: View {
                 Label(error, icon: .warning)
                     .font(.callout)
                     .foregroundStyle(Color.warning)
-                    .fixedSize(horizontal: false, vertical: true)
                 if error == RecordingError.permissionDenied.errorDescription {
                     Button("Öppna Systeminställningar") {
                         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {

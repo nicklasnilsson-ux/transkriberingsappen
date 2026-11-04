@@ -6,6 +6,11 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.9.6] – 2026-11-04
+
+### Rättat
+- Mötesinspelning: sidopanelen försvinner inte längre uppåt utanför appen. Orsaken var en text i huvudytan som gjorde hela fönstrets inre högre än fönstret. Det hade inget med sidopanelens uppbyggnad att göra.
+
 ## [0.9.5] – 2026-11-04
 
 ### Rättat
