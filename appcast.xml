@@ -6,6 +6,25 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.9.1</title>
+      <pubDate>Wed, 04 Nov 2026 09:06:20 GMT</pubDate>
+      <sparkle:version>38</sparkle:version>
+      <sparkle:shortVersionString>0.9.1</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.1</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Ändrat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Alla ikoner är nya (Material Design Icons, stilen Rounded). Appikonen är oförändrad.&lt;/li&gt;
+&lt;li&gt;Knapparna i titelbaren har text: Redigera, Sparat och märket för äldre version visar nu både ikon och text. Play/Pause är dubbelt så stor.&lt;/li&gt;
+&lt;li&gt;Bildstorlek för videon ligger nu närmast bilden, och bredvid den finns en ny knapp för helskärm. Esc lämnar helskärmen.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Rättat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Redigering per stycke gick inte att öppna med ett klick i texten. Håll nu musen över ett stycke eller en rad och välj Redigera. Texten går att markera och kopiera som vanligt. Redigera i titelbaren och högerklicksmenyn fungerar som förut.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.1/Transkribera-v0.9.1.zip" length="14484576" type="application/octet-stream" sparkle:edSignature="V4Q2ubJfiZxQ8eE15XZ/Z5t5ChqihwGJuf+03gFxs8vgJcibhA8Wnh/uhkyLMtsxYxbF15yvnPPMfvz3w92sAw==" />
+    </item>
+    <item>
       <title>Version 0.9.0</title>
       <pubDate>Tue, 03 Nov 2026 23:14:43 GMT</pubDate>
       <sparkle:version>37</sparkle:version>
@@ -475,26 +494,6 @@
 &lt;li&gt;En mening som fortsätter i nästa stycke delas inte längre mellan två talare.&lt;/li&gt;
 &lt;/ul&gt;</description>
       <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.5.2/Transkribera-v0.5.2.zip" length="13806252" type="application/octet-stream" sparkle:edSignature="mT4rHp9gc0qMdu6zA0Q0n/2/XkWjjzaRYeiHoOQ3rfVGoOul0c2RpPsUdYdmxEd8ezrTpaXxRQJuPd14RVkIDQ==" />
-    </item>
-    <item>
-      <title>Version 0.5.1</title>
-      <pubDate>Thu, 29 Oct 2026 07:58:26 GMT</pubDate>
-      <sparkle:version>8</sparkle:version>
-      <sparkle:shortVersionString>0.5.1</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.5.1</sparkle:fullReleaseNotesLink>
-      <description>&lt;h3&gt;Nytt&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;KB-Whisper Large finns nu också i en mer ordagrann variant, för intervjuer där du vill kunna citera exakt.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h3&gt;Rättat&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Partier med tal som KB-Whisper hoppat över transkriberas om automatiskt, så att färre delar av samtalet saknas.&lt;/li&gt;
-&lt;li&gt;Trasiga interna markeringar som &amp;quot;|nospeech|&amp;gt;&amp;quot; syns inte längre i texten.&lt;/li&gt;
-&lt;li&gt;Sista eller första ordet i en replik hamnar inte längre hos fel talare, särskilt med Pianissimo. Talarbyten läggs vid meningsslut eller pauser.&lt;/li&gt;
-&lt;li&gt;Namnet Joy döljs vid anonymisering.&lt;/li&gt;
-&lt;/ul&gt;</description>
-      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.5.1/Transkribera-v0.5.1.zip" length="13792791" type="application/octet-stream" sparkle:edSignature="45XZtpdS+3cfuIv53hlsUtjwv4Y/YDZUGSGDatnb3rPinXEr/Q7a/oL7wTiPf708QtJOAtYXTc7Chaax1vpHAA==" />
     </item>
   </channel>
 </rss>
