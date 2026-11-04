@@ -128,7 +128,15 @@ class EditModeTests(unittest.TestCase):
         self.assertIn("private var isEditing: Bool { editingID != nil }", text)
         self.assertIn("editingID == paragraph.first?.segment.persistentModelID", text)
         para = (self.DETAIL / "ParagraphRow.swift").read_text(encoding="utf-8")
-        self.assertIn(".onTapGesture { onBeginEdit() }", para, "Ett klick i texten öppnar stycket")
+        row = (self.DETAIL / "SegmentRow.swift").read_text(encoding="utf-8")
+        # 0.9.0: ett klick på markerbar text öppnade aldrig redigering (Nicklas 2026-11-04). Nu öppnas det
+        # med knappen "Redigera" som visas när musen står över stycket, så att texten går att markera.
+        self.assertNotIn("onTapGesture { onBeginEdit() }", para + row, "Klick på markerbar text sväljs på macOS")
+        # Knappen finns alltid med i stycket (osynlig vid rättning), annars byter stycket höjd (CI 2026-11-04: 1 pt).
+        self.assertIn("EditHoverButton(visible: hovering && !isEditing, action: onBeginEdit)", para)
+        self.assertNotIn("if !isEditing { EditHoverButton", para)
+        self.assertIn("EditHoverButton(visible: hovering && !isEditing, action: onBeginEdit)", row)
+        self.assertIn(".textSelection(.enabled)", para, "Texten ska gå att markera och kopiera")
 
     def test_escape_discards_and_retur_or_click_outside_saves(self):
         row = (self.DETAIL / "SegmentRow.swift").read_text(encoding="utf-8")
@@ -158,6 +166,30 @@ class EditModeTests(unittest.TestCase):
         self.assertIn("lastEdit = nil", begin)
         undo = text[text.index("private func undoLastEdit"):][:500]
         self.assertIn("segment.wordsData = entry.wordsData", undo)
+
+    def test_titlebar_buttons_have_text(self):
+        # Nicklas 2026-11-04: text på alla knappar i titelbaren utom Sök och ⋯. macOS visar bara ikonen
+        # för en Label om inte labelStyle(.titleAndIcon) sätts.
+        text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
+        for anchor in ('Label("Redigera", icon: .edit)', 'Label("Sparat", icon: .check)', "Label(label, icon: .clock)"):
+            i = text.index(anchor)
+            self.assertIn(".labelStyle(.titleAndIcon)", text[i:i + 120], f"{anchor} måste visa text")
+        for anchor in ('Button("Spara")', 'Button("Avbryt")', 'Button("Ångra")'):
+            self.assertIn(anchor, text)
+
+    def test_player_controls(self):
+        text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
+        play = text[text.index("private func playPauseAndTime"):][:900]
+        self.assertIn("size: 28", play, "Play/Pause är dubbelt så stor som förut (14 -> 28)")
+        bar = text[text.index("private var playerBar"):text.index("private var showsRolesBanner")]
+        self.assertIn("videoWithControls(player)", bar)
+        self.assertNotIn("sizeMenu", bar, "Bildstorlek ligger närmast videon, inte längst till höger")
+        video = text[text.index("private func videoWithControls"):][:700]
+        self.assertLess(video.index("miniPlayer(player)"), video.index("sizeMenu"))
+        self.assertIn("VideoFullscreen.present(player: player.player)", video)
+        full = (VIEWS / "Player/VideoFullscreen.swift").read_text(encoding="utf-8")
+        self.assertIn("toggleFullScreen", full)
+        self.assertIn("didExitFullScreenNotification", full, "Esc lämnar helskärmen och stänger fönstret")
 
     def test_a_paragraph_is_edited_in_one_field(self):
         # Ett fält per segment bröt styckets löpande text i flera rader (0.7.8 hoppade).

@@ -136,7 +136,7 @@ struct SidebarView: View {
             set: { appState.mode = $0; appState.clearSelection() }
         )) {
             Text("Fil").tag(AppMode.file)
-            Label("Mötesinspelning", systemImage: "circle")
+            Label("Mötesinspelning", icon: .circle)
                 .labelStyle(RecordingDotLabelStyle(isRecording: recorder.isRecording))
                 .tag(AppMode.meeting)
         }
@@ -159,7 +159,7 @@ struct SidebarView: View {
                         .foregroundStyle(Color.textSecondary)
                 }
                 Spacer(minLength: 4)
-                Image(systemName: "slider.horizontal.3").foregroundStyle(Color.textSecondary)
+                Image(icon: .tune).foregroundStyle(Color.textSecondary)
             }
             .padding(10)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -176,8 +176,7 @@ struct SidebarView: View {
     /// Släppyta med knappen Välj filer…. Hela fönstret tar emot filer; den här visar var.
     private var dropArea: some View {
         VStack(spacing: 8) {
-            Image(systemName: appState.isDropTargeted ? "arrow.down.circle.fill" : "square.and.arrow.down")
-                .font(.system(size: 22, weight: .light))
+            Icon(appState.isDropTargeted ? .downloadCircle : .download, size: 26)
                 .foregroundStyle(appState.isDropTargeted ? Color.accentColor : Color.textSecondary)
             Text("Släpp ljud- eller videofiler här")
                 .font(.callout)
@@ -201,11 +200,11 @@ struct SidebarView: View {
             Text("Transkriberingar (\(transcripts.count))")
                 .font(.headline)
             HStack(spacing: 6) {
-                Image(systemName: "magnifyingglass").foregroundStyle(Color.textSecondary)
+                Image(icon: .search).foregroundStyle(Color.textSecondary)
                 TextField("Sök på titel", text: $filter)
                     .textFieldStyle(.plain)
                 if !filter.isEmpty {
-                    Button { filter = "" } label: { Image(systemName: "xmark.circle.fill") }
+                    Button { filter = "" } label: { Image(icon: .cancel) }
                         .buttonStyle(.plain)
                         .foregroundStyle(Color.textSecondary)
                         .help("Rensa sökningen")
@@ -303,11 +302,11 @@ private struct SidebarRow: View {
                 ProgressView().controlSize(.small)
             }
         case .queued, .transcribing:
-            Image(systemName: "clock").foregroundStyle(Color.textSecondary)
+            Image(icon: .clock).foregroundStyle(Color.textSecondary)
         case .failed:
-            Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Color.warning)
+            Image(icon: .warning).foregroundStyle(Color.warning)
         case .completed:
-            Image(systemName: transcript.isRecording ? "record.circle" : (transcript.isVideo ? "film" : "waveform"))
+            Image(icon: transcript.isRecording ? .record : (transcript.isVideo ? .movie : .waveform))
                 .foregroundStyle(.tint)
         }
     }

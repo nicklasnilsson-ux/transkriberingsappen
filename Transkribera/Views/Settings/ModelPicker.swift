@@ -20,8 +20,7 @@ struct ModelPicker: View {
                     Text("(ersätter \(replaced.displayName))").foregroundStyle(Color.warning)
                 }
                 Spacer(minLength: 8)
-                Image(systemName: "chevron.up.chevron.down")
-                    .font(.caption)
+                Icon(.unfold, size: 14)
                     .foregroundStyle(Color.textSecondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -100,7 +99,7 @@ struct ModelInfoRow: View {
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(Color.textSecondary)
             if let warning = model.memoryWarning {
-                Label(warning, systemImage: "memorychip")
+                Label(warning, icon: .memory)
                     .font(.caption)
                     .foregroundStyle(Color.warning)
                     .fixedSize(horizontal: false, vertical: true)
@@ -111,7 +110,7 @@ struct ModelInfoRow: View {
                     .help(model.swedishErrorText)
                 Spacer()
                 Label(isDownloaded ? "Finns på datorn" : "Laddas ner automatiskt första gången",
-                      systemImage: isDownloaded ? "checkmark.circle.fill" : "arrow.down.circle")
+                      icon: isDownloaded ? .checkCircle : .downloadCircle)
                     .font(.caption2)
                     .foregroundStyle(isDownloaded ? Color.green : Color.textSecondary)
             }
@@ -138,7 +137,7 @@ private struct ModelAdvice: View {
                     .popover(isPresented: $showsGuide, arrowEdge: .trailing) { ModelGuideView() }
             }
         } icon: {
-            Image(systemName: "lightbulb").foregroundStyle(.yellow)
+            Image(icon: .lightbulb).foregroundStyle(.yellow)
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)

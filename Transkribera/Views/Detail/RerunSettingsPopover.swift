@@ -54,7 +54,7 @@ struct RerunSettingsPopover: View {
                     onRerun()
                     dismiss()
                 } label: {
-                    Label("Transkribera igen", systemImage: "arrow.clockwise")
+                    Label("Transkribera igen", icon: .refresh)
                 }
                 .buttonStyle(RerunButtonStyle(isEmphasized: isChanged))
                 .disabled(isWorking)

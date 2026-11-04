@@ -87,7 +87,8 @@ class CollapseAndPlayerTests(unittest.TestCase):
 
     def test_mini_player_in_the_fixed_player_bar_with_three_sizes(self):
         bar = detail[detail.index("private var playerBar"):detail.index("private var showsRolesBanner")]
-        self.assertIn("miniPlayer(", bar)
+        self.assertIn("videoWithControls(", bar)
+        self.assertIn("miniPlayer(player)", detail)
         self.assertIn("MiniPlayerSize.allCases", detail)
 
 

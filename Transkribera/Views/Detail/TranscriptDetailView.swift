@@ -217,7 +217,7 @@ struct TranscriptDetailView: View {
                 Text(settingsSummary)
                     .lineLimit(1)
                     .truncationMode(.tail)
-                Image(systemName: "chevron.down").font(.caption2)
+                Icon(.chevronDown, size: 10)
             }
             .font(.callout)
             .padding(.horizontal, 10)
@@ -274,7 +274,7 @@ struct TranscriptDetailView: View {
         HStack(spacing: 6) {
             HStack(spacing: 4) {
                 if transcript.status == .completed {
-                    Image(systemName: "checkmark.circle").accessibilityHidden(true)
+                    Image(icon: .checkCircle).accessibilityHidden(true)
                 }
                 Text(statusText)
             }
@@ -366,7 +366,7 @@ struct TranscriptDetailView: View {
     private var olderVersionStrip: some View {
         if transcript.isViewingOlderVersion, let label = transcript.versionLabel {
             HStack(spacing: 8) {
-                Image(systemName: "clock.arrow.circlepath")
+                Image(icon: .history)
                 Text("Du tittar på en äldre version (\(label)). Rättningar sparas i den här versionen.")
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 8)
@@ -395,7 +395,8 @@ struct TranscriptDetailView: View {
                 .layoutPriority(1)
         } else if lastEdit != nil {
             HStack(spacing: 6) {
-                Label("Sparat", systemImage: "checkmark")
+                Label("Sparat", icon: .check)
+                    .labelStyle(.titleAndIcon)
                     .font(.callout.weight(.semibold))
                     .foregroundStyle(Color.success)
                     .lineLimit(1)
@@ -418,7 +419,7 @@ struct TranscriptDetailView: View {
     /// Sökfältet i titelbaren. Det är alltid synligt och krymper när fönstret är smalt.
     private var toolbarSearch: some View {
         HStack(spacing: 6) {
-            Image(systemName: "magnifyingglass").foregroundStyle(Color.textSecondary)
+            Image(icon: .search).foregroundStyle(Color.textSecondary)
             TextField("Sök i texten", text: $query)
                 .textFieldStyle(.plain)
                 .focused($searchFocused)
@@ -437,13 +438,13 @@ struct TranscriptDetailView: View {
                     .fixedSize()
                 HStack(spacing: 2) {
                     Button { stepHit(forward: false) } label: {
-                        Image(systemName: "chevron.up").frame(width: 18, height: 16)
+                        Image(icon: .chevronUp).frame(width: 18, height: 16)
                     }
                     .keyboardShortcut("g", modifiers: [.command, .shift])
                     .help("Förra träffen (⇧⌘G)")
                     .accessibilityLabel("Förra träffen")
                     Button { stepHit(forward: true) } label: {
-                        Image(systemName: "chevron.down").frame(width: 18, height: 16)
+                        Image(icon: .chevronDown).frame(width: 18, height: 16)
                     }
                     .keyboardShortcut("g", modifiers: .command)
                     .help("Nästa träff (Retur eller ⌘G)")
@@ -488,7 +489,8 @@ struct TranscriptDetailView: View {
     @ViewBuilder
     private var olderVersionBadge: some View {
         if transcript.isViewingOlderVersion, let label = transcript.versionShortLabel {
-            Label(label, systemImage: "clock")
+            Label(label, icon: .clock)
+                .labelStyle(.titleAndIcon)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(Color.accentColor)
                 .padding(.horizontal, 8)
@@ -510,7 +512,7 @@ struct TranscriptDetailView: View {
                 }
                 .pickerStyle(.inline)
                 Toggle(isOn: $anonymize) {
-                    Label("Anonymisera", systemImage: anonymize ? "eye.slash" : "eye")
+                    Label("Anonymisera", icon: anonymize ? .visibilityOff : .visibility)
                 }
                 if !transcript.speakers.isEmpty {
                     Menu("Talare") { speakersMenuContent }
@@ -524,7 +526,7 @@ struct TranscriptDetailView: View {
             Button("Transkribera igen") { requestRetranscribe() }
                 .disabled(isWorking)
         } label: {
-            Image(systemName: "ellipsis").accessibilityLabel("Fler val")
+            Image(icon: .more).accessibilityLabel("Fler val")
         }
         .menuIndicator(.hidden)
         .help("Fler val")
@@ -581,9 +583,10 @@ struct TranscriptDetailView: View {
             Button {
                 if let id = firstVisibleEditTarget() { beginEditing(id) }
             } label: {
-                Label("Redigera", systemImage: "pencil")
+                Label("Redigera", icon: .edit)
+                    .labelStyle(.titleAndIcon)
             }
-            .help("Rätta texten direkt i transkriberingen. Du kan också klicka i texten")
+            .help("Rätta texten direkt i transkriberingen. Du kan också hålla musen över ett stycke och välja Redigera")
             .disabled(!hasText)
         }
     }
@@ -646,7 +649,7 @@ struct TranscriptDetailView: View {
     /// Anonymisera. Fylld med accentfärgen när anonymiseringen är på.
     private var anonymizeToggle: some View {
         Toggle(isOn: $anonymize) {
-            Label("Anonymisera", systemImage: anonymize ? "eye.slash" : "eye")
+            Label("Anonymisera", icon: anonymize ? .visibilityOff : .visibility)
         }
         .toggleStyle(.button)
         .modifier(OnStateButtonStyle(isOn: anonymize))
@@ -661,7 +664,7 @@ struct TranscriptDetailView: View {
             Menu {
                 speakersMenuContent
             } label: {
-                Label("Talare", systemImage: "person.2")
+                Label("Talare", icon: .group)
             }
             .menuStyle(.button)
             .fixedSize()
@@ -704,7 +707,7 @@ struct TranscriptDetailView: View {
         Button {
             copyText()
         } label: {
-            Label(copied ? "Kopierat!" : "Kopiera text", systemImage: copied ? "checkmark" : "doc.on.doc")
+            Label(copied ? "Kopierat!" : "Kopiera text", icon: copied ? .check : .copy)
         }
         .help("Kopiera hela transkriberingen till urklipp")
         .disabled(!hasText)
@@ -716,9 +719,9 @@ struct TranscriptDetailView: View {
             exportMenuContent
         } label: {
             HStack(spacing: 6) {
-                Image(systemName: "square.and.arrow.up")
+                Image(icon: .share)
                 Text("Exportera")
-                Image(systemName: "chevron.down").font(.caption2)
+                Icon(.chevronDown, size: 10)
             }
             .font(.body.weight(.medium))
             .foregroundStyle(Color.neutralButtonText)
@@ -750,13 +753,12 @@ struct TranscriptDetailView: View {
     private var playerBar: some View {
         if hasText, let player {
             HStack(spacing: 14) {
-                if transcript.isVideo { miniPlayer(player) }
+                if transcript.isVideo { videoWithControls(player) }
                 playPauseAndTime(player)
                 positionSlider(player, maxWidth: .infinity)
                 Text(TimeFormatting.short(transcript.duration))
                     .font(.system(.callout, design: .monospaced))
                     .foregroundStyle(Color.textSecondary)
-                if transcript.isVideo { sizeMenu }
                 Toggle(isOn: $followPlayback) {
                     Text("Följ uppspelning")
                 }
@@ -800,6 +802,24 @@ struct TranscriptDetailView: View {
             .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
     }
 
+    /// Bilden med bildstorlek och helskärm närmast sig, till vänster om spelknapparna.
+    private func videoWithControls(_ player: PlayerController) -> some View {
+        HStack(alignment: .center, spacing: 8) {
+            miniPlayer(player)
+            VStack(spacing: 6) {
+                sizeMenu
+                Button {
+                    VideoFullscreen.present(player: player.player)
+                } label: {
+                    Icon(.fullscreen, size: 18)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Helskärm")
+                .help("Visa videon i helskärm (Esc stänger)")
+            }
+        }
+    }
+
     private var sizeMenu: some View {
         Menu {
             Picker("Bildstorlek", selection: $miniSizeRaw) {
@@ -807,7 +827,7 @@ struct TranscriptDetailView: View {
             }
             .pickerStyle(.inline)
         } label: {
-            Image(systemName: "arrow.up.left.and.arrow.down.right").accessibilityLabel("Bildstorlek")
+            Icon(.openInFull, size: 18).accessibilityLabel("Bildstorlek")
         }
         .menuStyle(.borderlessButton)
         .fixedSize()
@@ -817,8 +837,13 @@ struct TranscriptDetailView: View {
     private func playPauseAndTime(_ player: PlayerController) -> some View {
         HStack(spacing: 10) {
             Button { player.togglePlayPause() } label: {
-                Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
+                // Dubbelt så stor som förut (Nicklas 2026-11-04).
+                Icon(player.isPlaying ? .pause : .play, size: 28)
+                    .frame(width: 36, height: 36)
+                    .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel(player.isPlaying ? "Pausa" : "Spela")
             .help(player.isPlaying ? "Pausa" : "Spela")
             Text(TimeFormatting.short(player.currentTime))
                 .font(.system(.callout, design: .monospaced))
@@ -867,7 +892,7 @@ struct TranscriptDetailView: View {
         case .failed where transcript.segments.isEmpty:
             card {
                 ContentUnavailableView {
-                    Label("Transkriberingen misslyckades", systemImage: "exclamationmark.triangle")
+                    Label("Transkriberingen misslyckades", icon: .warning)
                 } description: {
                     Text(transcript.errorMessage ?? "Okänt fel.")
                 } actions: {
@@ -1031,7 +1056,7 @@ struct TranscriptDetailView: View {
         let speakers = transcript.speakers
         if !rolesDismissed, !isEditing, SpeakerRoles.needsRoles(speakers) {
             HStack(spacing: 8) {
-                Image(systemName: "person.crop.circle.badge.questionmark")
+                Image(icon: .personQuestion)
                 Text("Vem av talarna är du?")
                 ForEach(speakers, id: \.self) { speaker in
                     HStack(spacing: 2) {
@@ -1044,7 +1069,7 @@ struct TranscriptDetailView: View {
                                 player?.seek(to: first.start)
                             }
                         } label: {
-                            Image(systemName: "play.circle")
+                            Image(icon: .playCircle)
                         }
                         .buttonStyle(.borderless)
                         .help("Lyssna på \(speaker)")
@@ -1070,7 +1095,7 @@ struct TranscriptDetailView: View {
     private var roleChoiceRow: some View {
         if let choice = roleChoice {
             HStack(spacing: 8) {
-                Image(systemName: "checkmark.circle").foregroundStyle(Color.success).accessibilityHidden(true)
+                Image(icon: .checkCircle).foregroundStyle(Color.success).accessibilityHidden(true)
                 Text("Klart. \(choice.speaker) är intervjuare.")
                 Spacer(minLength: 8)
                 Button("Ångra") {
@@ -1098,7 +1123,7 @@ struct TranscriptDetailView: View {
     private var anonymizationBanner: some View {
         if anonymizationOptions != nil, !transcript.segments.isEmpty {
             HStack(spacing: 6) {
-                Image(systemName: "eye.slash")
+                Image(icon: .visibilityOff)
                 if let result = currentAnonymization(for: transcript.sortedSegments) {
                     Text(result.replacementCount == 1
                          ? "Anonymiserad: 1 uppgift är dold."
