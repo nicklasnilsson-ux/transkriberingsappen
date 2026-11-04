@@ -67,12 +67,22 @@ final class WindowLayoutTests: XCTestCase {
         return Measurement(ideal: ideal, frames: frames, outside: outside)
     }
 
+    private func fitting<V: View>(_ view: V, width: CGFloat) -> CGSize {
+        let appState = AppState()
+        appState.mode = .meeting
+        let queue = TranscriptionQueue(transcriber: TranscriberService(), context: container.mainContext)
+        let host = NSHostingView(rootView: view
+            .environment(appState).environment(queue).environment(MeetingRecorder())
+            .modelContainer(container))
+        host.frame = NSRect(x: 0, y: 0, width: width, height: 626)
+        host.layoutSubtreeIfNeeded()
+        return host.fittingSize
+    }
+
     func testMeetingModeDoesNotNeedAHigherWindowThanFileMode() {
-        let size = CGSize(width: 1000, height: 650)
-        let file = measure(mode: .file, size: size)
-        let meeting = measure(mode: .meeting, size: size)
-        // En enda rad: testutskriften visar bara första raden av ett felmeddelande.
-        let report = "FIL ideal \(file.ideal) utanför \(file.outside) ¦ MÖTE ideal \(meeting.ideal) utanför \(meeting.outside) ¦ FIL-vyer \(file.frames.joined(separator: " ¦ ")) ¦ MÖTE-vyer \(meeting.frames.joined(separator: " ¦ "))"
-        XCTFail("DIAGNOS \(report)")
+        let meeting = measure(mode: .meeting, size: CGSize(width: 1000, height: 650))
+        let detail = meeting.frames.filter { $0.contains("ContainerStyleContext") || $0.contains("NSSplitView ") }
+        let report = "DETALJ \(fitting(MeetingModeView(), width: 739)) ¦ KONTROLLER \(fitting(MeetingControls(), width: 228)) ¦ FILTOM \(fitting(FileModeEmptyView(), width: 739)) ¦ RAMAR \(detail.joined(separator: " ¦ "))"
+        XCTFail(report)
     }
 }
