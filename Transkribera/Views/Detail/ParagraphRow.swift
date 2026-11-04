@@ -13,8 +13,12 @@ struct ParagraphRow: View {
     let currentTime: Double?
     let isEditing: Bool
     var session: EditSession? = nil
-    /// Ett klick i texten öppnar stycket för rättning.
+    /// Knappen Redigera vid stycket öppnar det för rättning.
     var onBeginEdit: () -> Void = {}
+    /// Alla stycken är öppna (Redigera i titelbaren); Spara och Avbryt finns då bara i titelbaren.
+    var editsAll = false
+    var onSave: () -> Void = {}
+    var onCancel: () -> Void = {}
     let onSeek: (Double) -> Void
     /// Innehållet i ▾-menyn bredvid talarens namn.
     var speakerMenu: ((String) -> AnyView)? = nil
@@ -52,9 +56,14 @@ struct ParagraphRow: View {
                     .foregroundStyle(Color.accentColor)
             }
             Spacer(minLength: 0)
-            // Alltid med i raden (osynlig vid rättning), så att stycket har samma höjd i båda lägena.
-            EditHoverButton(visible: hovering && !isEditing, action: onBeginEdit)
+            // Alltid med i raden (Redigera osynlig vid rättning, då Avbryt och Spara i stället), så att
+            // stycket har samma höjd i båda lägena.
+            RowEditActions(
+                isEditing: isEditing, editsAll: editsAll, hovering: hovering,
+                onBeginEdit: onBeginEdit, onSave: onSave, onCancel: onCancel
+            )
         }
+        .frame(minHeight: 22)
     }
 
     @ViewBuilder

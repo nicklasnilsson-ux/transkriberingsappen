@@ -2,7 +2,7 @@ import AVKit
 import AppKit
 
 /// Visar videon i helskärm i ett eget fönster med AVKits spelkontroller (de tonar fram när musen rör sig).
-/// Samma AVPlayer som i spelarraden, så läget i filmen följer med. Esc lämnar helskärmen och stänger fönstret.
+/// Samma AVPlayer som i spelarraden, så läget i filmen följer med. Esc eller knappen i kontrollpanelen lämnar helskärmen och stänger fönstret.
 @MainActor
 enum VideoFullscreen {
     private static var window: NSWindow?
@@ -16,7 +16,8 @@ enum VideoFullscreen {
         let view = AVPlayerView()
         view.player = player
         view.controlsStyle = .floating
-        view.showsFullScreenToggleButton = false
+        // Knappen i kontrollpanelen som lämnar helskärmen (förutom Esc).
+        view.showsFullScreenToggleButton = true
         view.videoGravity = .resizeAspect
 
         let window = NSWindow(

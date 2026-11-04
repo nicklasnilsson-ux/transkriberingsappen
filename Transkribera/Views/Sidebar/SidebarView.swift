@@ -54,10 +54,17 @@ struct SidebarView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            newTranscriptionGroup
+            // Mötesläget är högre än fillägets ruta. Får den inte plats scrollar den i stället för att
+            // hamna utanför fönstrets överkant (Nicklas 2026-11-04).
+            ViewThatFits(in: .vertical) {
+                newTranscriptionGroup
+                ScrollView { newTranscriptionGroup }.frame(maxHeight: 380)
+            }
             listHeader
-            list
+            list.frame(minHeight: 0)
         }
+        // Allt får plats i panelen: inget får hamna utanför fönstrets kanter.
+        .clipped()
         .navigationSplitViewColumnWidth(min: 220, ideal: 260, max: 360)
         .confirmationDialog(
             "Radera ”\(transcriptToDelete?.title ?? "")”?",

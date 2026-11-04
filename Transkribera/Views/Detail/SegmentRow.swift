@@ -3,19 +3,39 @@ import SwiftData
 import SwiftUI
 import TranskriberaCore
 
-/// Förbinder fältet i det öppna stycket med titelbaren: Spara och Avbryt går dit, och det sparade
-/// stycket (för Ångra) går tillbaka. En vanlig klass, så att inget ritas om när fältet registrerar sig.
+/// Förbinder fälten i de öppna styckena med titelbaren: Spara och Avbryt går dit, och de sparade
+/// styckena (för Ångra) går tillbaka. Ett fält är öppet i taget, eller alla när Redigera i titelbaren
+/// används. En vanlig klass, så att inget ritas om när fälten registrerar sig.
 final class EditSession {
-    /// Sparar det som står i fältet. Sätts av fältet.
-    var save: (() -> Void)?
-    /// Förkastar det som står i fältet, så att det inte sparas när fältet försvinner. Sätts av fältet.
-    var discard: (() -> Void)?
+    /// Vad ett öppet fält kan göra.
+    struct Handlers {
+        /// Sparar det som står i fältet.
+        let save: () -> Void
+        /// Förkastar det som står i fältet, så att det inte sparas när fältet försvinner.
+        let discard: () -> Void
+    }
+
+    private var fields: [PersistentIdentifier: Handlers] = [:]
+    /// Fältet tar fokus när det öppnas. Av när alla stycken öppnas på en gång.
+    var autofocus = true
+
     /// Fältet har sparat en ändring; det som fanns före ligger i `EditUndo`.
     var onSaved: (EditUndo) -> Void = { _ in }
     /// Fältet tappade fokus eller Retur trycktes; stycket med det här id:t är klart.
     var onFinish: (PersistentIdentifier?) -> Void = { _ in }
     /// Esc trycktes i fältet.
     var onCancel: () -> Void = {}
+
+    func register(_ id: PersistentIdentifier?, _ handlers: Handlers) {
+        if let id { fields[id] = handlers }
+    }
+
+    func unregister(_ id: PersistentIdentifier?) {
+        if let id { fields[id] = nil }
+    }
+
+    func saveAll() { for handlers in fields.values { handlers.save() } }
+    func discardAll() { for handlers in fields.values { handlers.discard() } }
 }
 
 /// En rad i transkriberingen: tidsstämpel, talare och text.
@@ -33,8 +53,12 @@ struct SegmentRow: View {
     /// Texten som visas är anonymiserad; då rättas den visade texten och ändringen förs tillbaka till originalet.
     var isAnonymized = false
     var session: EditSession? = nil
-    /// Ett klick i texten öppnar raden för rättning.
+    /// Knappen Redigera vid raden öppnar den för rättning.
     var onBeginEdit: () -> Void = {}
+    /// Alla rader är öppna (Redigera i titelbaren); Spara och Avbryt finns då bara i titelbaren.
+    var editsAll = false
+    var onSave: () -> Void = {}
+    var onCancel: () -> Void = {}
     let onSeek: () -> Void
 
     @AppStorage(SettingsKey.readingTextSize) private var readingSize = ReadingTextSize.standard
@@ -80,7 +104,11 @@ struct SegmentRow: View {
         .padding(.horizontal, 12)
         .modifier(ActiveParagraphStyle(isActive: isActive))
         .overlay(alignment: .topTrailing) {
-            EditHoverButton(visible: hovering && !isEditing, action: onBeginEdit).padding(.top, 6).padding(.trailing, 8)
+            RowEditActions(
+                isEditing: isEditing, editsAll: editsAll, hovering: hovering,
+                onBeginEdit: onBeginEdit, onSave: onSave, onCancel: onCancel
+            )
+            .padding(.top, 6).padding(.trailing, 8)
         }
         .onHover { hovering = $0 }
         .contentShape(Rectangle())
@@ -134,13 +162,16 @@ struct SegmentEditor: View {
             lineSpacing: lineSpacing,
             commit: commit,
             finish: { session?.onFinish(segment.persistentModelID) },
-            cancel: { session?.onCancel() }
+            cancel: { session?.onCancel() },
+            autofocus: session?.autofocus ?? true
         )
         .onAppear {
-            session?.save = commit
-            session?.discard = { discarded = true }
+            session?.register(segment.persistentModelID, .init(save: commit, discard: { discarded = true }))
         }
-        .onDisappear(perform: commit)
+        .onDisappear {
+            commit()
+            session?.unregister(segment.persistentModelID)
+        }
     }
 
     private func commit() {
@@ -210,13 +241,16 @@ struct ParagraphEditor: View {
             lineSpacing: lineSpacing,
             commit: commit,
             finish: { session?.onFinish(rows.first?.segment.persistentModelID) },
-            cancel: { session?.onCancel() }
+            cancel: { session?.onCancel() },
+            autofocus: session?.autofocus ?? true
         )
         .onAppear {
-            session?.save = commit
-            session?.discard = { discarded = true }
+            session?.register(rows.first?.segment.persistentModelID, .init(save: commit, discard: { discarded = true }))
         }
-        .onDisappear(perform: commit)
+        .onDisappear {
+            commit()
+            session?.unregister(rows.first?.segment.persistentModelID)
+        }
     }
 
     private func entries() -> [EditUndo.Entry] {
@@ -262,6 +296,7 @@ struct EditableText: View {
     var finish: () -> Void = {}
     /// Esc trycktes: förkasta.
     var cancel: () -> Void = {}
+    var autofocus = true
 
     @State private var isFocused = false
     @AppStorage(SettingsKey.readingTextSize) private var readingSize = ReadingTextSize.standard
@@ -277,7 +312,8 @@ struct EditableText: View {
                     isFocused: $isFocused,
                     commit: commit,
                     finish: finish,
-                    cancel: cancel
+                    cancel: cancel,
+                    autofocus: autofocus
                 )
             } else {
                 Text(text)
@@ -302,6 +338,7 @@ struct ReadingTextView: NSViewRepresentable {
     let commit: () -> Void
     var finish: () -> Void = {}
     var cancel: () -> Void = {}
+    var autofocus = true
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -328,7 +365,7 @@ struct ReadingTextView: NSViewRepresentable {
         // Fältet byts in när man klickar i stycket: markören ska stå i det direkt.
         let coordinator = context.coordinator
         DispatchQueue.main.async { [weak view] in
-            guard let view, let window = view.window else { return }
+            guard autofocus, let view, let window = view.window else { return }
             window.makeFirstResponder(view)
             view.setSelectedRange(NSRange(location: 0, length: 0))
             coordinator.parent.isFocused = true
@@ -448,6 +485,33 @@ struct EditSurface: ViewModifier {
                     .padding(.horizontal, -8)
                     .padding(.vertical, -3)
             }
+    }
+}
+
+/// Knapparna vid ett stycke eller en rad: Redigera när musen står över det, och Avbryt och Spara medan det
+/// rättas (de ersätter Redigera). När alla är öppna finns Spara och Avbryt bara i titelbaren.
+struct RowEditActions: View {
+    let isEditing: Bool
+    let editsAll: Bool
+    let hovering: Bool
+    let onBeginEdit: () -> Void
+    let onSave: () -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        if isEditing && !editsAll {
+            HStack(spacing: 6) {
+                Button("Avbryt", action: onCancel)
+                    .buttonStyle(.bordered)
+                    .help("Förkasta rättningen av stycket (Esc)")
+                Button("Spara", action: onSave)
+                    .buttonStyle(.borderedProminent)
+                    .help("Spara rättningen (⌘Retur)")
+            }
+            .controlSize(.small)
+        } else {
+            EditHoverButton(visible: hovering && !isEditing, action: onBeginEdit)
+        }
     }
 }
 

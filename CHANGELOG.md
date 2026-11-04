@@ -6,6 +6,16 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.9.2] – 2026-11-04
+
+### Ändrat
+- Redigering: knappen Redigera i titelbaren öppnar nu alla stycken på en gång (Spara och Avbryt i titelbaren), och knappen Redigera som visas vid ett stycke öppnar bara det. Medan ett stycke rättas har det egna Avbryt och Spara i stället för Redigera.
+- Play/Pause ligger på en rund platta i accentfärgen.
+- Helskärm ligger i samma lilla meny som bildstorlekarna. I helskärmen finns en knapp i videons kontrollpanel som tar dig tillbaka, förutom Esc.
+
+### Rättat
+- Vänsterpanelen hamnade delvis utanför fönstrets överkant när du valde Mötesinspelning. Rutan med inställningarna scrollar nu om den inte får plats.
+
 ## [0.9.1] – 2026-11-04
 
 ### Ändrat
