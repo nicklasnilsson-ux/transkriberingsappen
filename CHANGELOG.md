@@ -6,6 +6,11 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.9.4] – 2026-11-04
+
+### Rättat
+- Vänsterpanelen läggs ut uppifrån och ned och börjar alltid i överkanten. Den centreras inte längre och hoppar inte när du byter läge eller ändrar inställningar.
+
 ## [0.9.3] – 2026-11-04
 
 ### Ändrat
