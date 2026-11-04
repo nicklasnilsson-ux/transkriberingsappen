@@ -6,6 +6,8 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.9.1] – 2026-11-04
+
 ### Ändrat
 - Alla ikoner är nya (Material Design Icons, stilen Rounded). Appikonen är oförändrad.
 - Knapparna i titelbaren har text: Redigera, Sparat och märket för äldre version visar nu både ikon och text. Play/Pause är dubbelt så stor.
