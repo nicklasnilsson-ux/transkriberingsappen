@@ -113,15 +113,34 @@ final class WindowLayoutTests: XCTestCase {
         return result
     }
 
+    private struct QueryOnly: View {
+        @Query private var all: [Transcript]
+        var body: some View { Color.clear.overlay { Text("\(all.count)").hidden() } }
+    }
+    private struct RecorderOnly: View {
+        @Environment(MeetingRecorder.self) private var recorder
+        var body: some View { Color.clear.overlay { Text("\(recorder.isBusy ? 1 : 0)").hidden() } }
+    }
+    private func wrap<V: View>(_ v: V) -> some View {
+        v.frame(maxWidth: 420).padding(32).frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
     func testMeetingModeDoesNotNeedAHigherWindowThanFileMode() {
+        let long = "Spelar in allt ljud som hörs på datorn tills du stoppar. Texten skapas när inspelningen är klar."
         var out: [String] = []
-        for mode in [AppMode.file, .meeting] {
-            for sidebar in [true, false] {
-                out.append("\(mode.rawValue)/sidopanel=\(sidebar)/tomdetalj=\(splitHeight(mode: mode, sidebar: sidebar) { Color.clear })")
-                out.append("\(mode.rawValue)/sidopanel=\(sidebar)/möte=\(splitHeight(mode: mode, sidebar: sidebar) { MeetingModeView() })")
-                out.append("\(mode.rawValue)/sidopanel=\(sidebar)/fil=\(splitHeight(mode: mode, sidebar: sidebar) { FileModeEmptyView() })")
-            }
-        }
-        XCTFail("HÖJDER " + out.joined(separator: " ¦ "))
+        func add(_ name: String, _ h: Int) { out.append("\(name)=\(h)") }
+        add("ikon", splitHeight(mode: .meeting, sidebar: false) { wrap(Icon(.record, size: 48)) })
+        add("ikonAccent", splitHeight(mode: .meeting, sidebar: false) { wrap(Icon(.record, size: 48).foregroundStyle(Color.accentColor)) })
+        add("titel2", splitHeight(mode: .meeting, sidebar: false) { wrap(Text("Redo").font(.title2.weight(.semibold))) })
+        add("callout", splitHeight(mode: .meeting, sidebar: false) {
+            wrap(Text(long).font(.callout).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true))
+        })
+        add("vstack3", splitHeight(mode: .meeting, sidebar: false) {
+            wrap(VStack(spacing: 14) { Icon(.record, size: 48); Text("Redo").font(.title2); Text(long).font(.callout).fixedSize(horizontal: false, vertical: true) })
+        })
+        add("medNavTitel", splitHeight(mode: .meeting, sidebar: false) { wrap(Icon(.record, size: 48)).navigationTitle("Mötesinspelning") })
+        add("query", splitHeight(mode: .meeting, sidebar: false) { QueryOnly() })
+        add("recorder", splitHeight(mode: .meeting, sidebar: false) { RecorderOnly() })
+        XCTFail("VARIANTER " + out.joined(separator: " ¦ "))
     }
 }
