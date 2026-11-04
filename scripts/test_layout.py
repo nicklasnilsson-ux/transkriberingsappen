@@ -132,8 +132,10 @@ class EditModeTests(unittest.TestCase):
         # 0.9.0: ett klick på markerbar text öppnade aldrig redigering (Nicklas 2026-11-04). Nu öppnas det
         # med knappen "Redigera" som visas när musen står över stycket, så att texten går att markera.
         self.assertNotIn("onTapGesture { onBeginEdit() }", para + row, "Klick på markerbar text sväljs på macOS")
-        self.assertIn("EditHoverButton(visible: hovering, action: onBeginEdit)", para)
-        self.assertIn("EditHoverButton(visible: hovering, action: onBeginEdit)", row)
+        # Knappen finns alltid med i stycket (osynlig vid rättning), annars byter stycket höjd (CI 2026-11-04: 1 pt).
+        self.assertIn("EditHoverButton(visible: hovering && !isEditing, action: onBeginEdit)", para)
+        self.assertNotIn("if !isEditing { EditHoverButton", para)
+        self.assertIn("EditHoverButton(visible: hovering && !isEditing, action: onBeginEdit)", row)
         self.assertIn(".textSelection(.enabled)", para, "Texten ska gå att markera och kopiera")
 
     def test_escape_discards_and_retur_or_click_outside_saves(self):

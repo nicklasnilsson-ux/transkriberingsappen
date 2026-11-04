@@ -52,7 +52,8 @@ struct ParagraphRow: View {
                     .foregroundStyle(Color.accentColor)
             }
             Spacer(minLength: 0)
-            if !isEditing { EditHoverButton(visible: hovering, action: onBeginEdit) }
+            // Alltid med i raden (osynlig vid rättning), så att stycket har samma höjd i båda lägena.
+            EditHoverButton(visible: hovering && !isEditing, action: onBeginEdit)
         }
     }
 

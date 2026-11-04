@@ -80,7 +80,7 @@ struct SegmentRow: View {
         .padding(.horizontal, 12)
         .modifier(ActiveParagraphStyle(isActive: isActive))
         .overlay(alignment: .topTrailing) {
-            if !isEditing { EditHoverButton(visible: hovering, action: onBeginEdit).padding(.top, 6).padding(.trailing, 8) }
+            EditHoverButton(visible: hovering && !isEditing, action: onBeginEdit).padding(.top, 6).padding(.trailing, 8)
         }
         .onHover { hovering = $0 }
         .contentShape(Rectangle())
@@ -467,6 +467,7 @@ struct EditHoverButton: View {
         }
         .buttonStyle(.plain)
         .opacity(visible ? 1 : 0)
+        .allowsHitTesting(visible)
         .accessibilityHidden(!visible)
         .help("Rätta det här stycket")
     }
