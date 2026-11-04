@@ -33,6 +33,13 @@ final class EditUndoTests: XCTestCase {
         XCTAssertNotNil(EditUndo.changes(before: [entry(0, "a", words: words)], after: [entry(0, "a", words: nil)]))
     }
 
+    func testTwoEditsMergeAndTheEarliestStateWins() {
+        let first = EditUndo(entries: [entry(1, "b", words: words)])
+        let second = EditUndo(entries: [entry(1, "B"), entry(2, "c")])
+        let merged = first.merging(second)
+        XCTAssertEqual(merged.entries, [entry(1, "b", words: words), entry(2, "c")])
+    }
+
     func testASegmentThatIsGoneFromTheAfterStateIsIgnored() {
         XCTAssertNil(EditUndo.changes(before: [entry(0, "a"), entry(1, "b")], after: [entry(0, "a")]))
     }

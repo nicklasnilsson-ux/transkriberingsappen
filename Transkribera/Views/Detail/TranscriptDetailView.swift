@@ -17,6 +17,8 @@ struct TranscriptDetailView: View {
     @State private var searchJump = 0
     /// Stycket (eller raden) som rättas just nu. Ett i taget; `nil` när inget rättas.
     @State private var editingID: PersistentIdentifier?
+    /// Redigera i titelbaren: alla stycken är öppna på en gång.
+    @State private var editsAll = false
     /// Den senaste sparade rättningen, så att den går att ångra tills ett nytt stycke öppnas.
     @State private var lastEdit: EditUndo?
     /// Kopplar fältet i det öppna stycket till titelbaren (Spara, Avbryt) och tillbaka.
@@ -127,7 +129,7 @@ struct TranscriptDetailView: View {
     // MARK: - Kort
 
     private var hasText: Bool { !transcript.segments.isEmpty }
-    private var isEditing: Bool { editingID != nil }
+    private var isEditing: Bool { editsAll || editingID != nil }
     private var isWorking: Bool { transcript.status == .queued || transcript.status == .transcribing }
 
     private var cardShape: RoundedRectangle { RoundedRectangle(cornerRadius: 12, style: .continuous) }
@@ -574,19 +576,19 @@ struct TranscriptDetailView: View {
     private var editToggle: some View {
         if isEditing {
             Button("Avbryt") { cancelEditing() }
-                .help("Förkasta rättningen av stycket (Esc)")
+                .help("Förkasta rättningen (Esc)")
             Button("Spara") { saveEditing() }
                 .buttonStyle(.borderedProminent)
                 .keyboardShortcut(.return, modifiers: .command)
-                .help("Spara rättningen (⌘Retur). Ett klick utanför stycket sparar också")
+                .help("Spara rättningen (⌘Retur)")
         } else {
             Button {
-                if let id = firstVisibleEditTarget() { beginEditing(id) }
+                beginEditingAll()
             } label: {
                 Label("Redigera", icon: .edit)
                     .labelStyle(.titleAndIcon)
             }
-            .help("Rätta texten direkt i transkriberingen. Du kan också hålla musen över ett stycke och välja Redigera")
+            .help("Rätta hela texten direkt i transkriberingen. Du kan också hålla musen över ett stycke och välja Redigera för att rätta bara det")
             .disabled(!hasText)
         }
     }
@@ -594,7 +596,7 @@ struct TranscriptDetailView: View {
     // MARK: - Rättning av ett stycke
 
     private func connectEditSession() {
-        editSession.onSaved = { lastEdit = $0 }
+        editSession.onSaved = { lastEdit = lastEdit?.merging($0) ?? $0 }
         // Bara det öppna stycket stänger sig självt. Ett som byts ut får inte stänga det nya.
         editSession.onFinish = { id in if editingID == id { editingID = nil } }
         editSession.onCancel = { cancelEditing() }
@@ -602,23 +604,36 @@ struct TranscriptDetailView: View {
 
     /// Öppnar ett stycke för rättning. Stycket som var öppet sparas först.
     private func beginEditing(_ id: PersistentIdentifier) {
-        guard editingID != id else { return }
-        editSession.save?()
+        guard !editsAll, editingID != id else { return }
+        editSession.saveAll()
         lastEdit = nil
+        editSession.autofocus = true
         editingID = id
     }
 
-    /// Sparar det öppna stycket och stänger det.
-    private func saveEditing() {
-        editSession.save?()
+    /// Redigera i titelbaren: alla stycken blir öppna. Fälten tar inte fokus själva, man klickar där man vill skriva.
+    private func beginEditingAll() {
+        editSession.saveAll()
+        lastEdit = nil
+        editSession.autofocus = false
         editingID = nil
+        editsAll = true
     }
 
-    /// Förkastar det som skrivits. Hann fältet spara först (t.ex. när det tappade fokus) läggs det tillbaka.
+    /// Sparar det som är öppet och stänger det.
+    private func saveEditing() {
+        editSession.saveAll()
+        editingID = nil
+        editsAll = false
+    }
+
+    /// Förkastar det som skrivits. Hann fälten spara först (t.ex. när ett tappade fokus eller skrollade
+    /// bort) läggs det tillbaka.
     private func cancelEditing() {
         guard isEditing else { return }
-        editSession.discard?()
+        editSession.discardAll()
         editingID = nil
+        editsAll = false
         if lastEdit != nil { undoLastEdit() }
     }
 
@@ -633,18 +648,6 @@ struct TranscriptDetailView: View {
         try? transcript.modelContext?.save()
     }
 
-    /// Stycket (eller raden) som står överst i bild.
-    private func firstVisibleEditTarget() -> PersistentIdentifier? {
-        guard let rows = displaySegments(transcript.sortedSegments) else { return nil }
-        let anchor = scrollAnchor.currentAnchor()?.id
-        if layout == .paragraphs {
-            let paragraphs = Self.paragraphs(rows)
-            let target = paragraphs.first { AnyHashable($0.first?.id) == anchor } ?? paragraphs.first
-            return target?.first?.segment.persistentModelID
-        }
-        let target = rows.first { AnyHashable($0.segment.persistentModelID) == anchor } ?? rows.first
-        return target?.segment.persistentModelID
-    }
 
     /// Anonymisera. Fylld med accentfärgen när anonymiseringen är på.
     private var anonymizeToggle: some View {
@@ -806,43 +809,42 @@ struct TranscriptDetailView: View {
     private func videoWithControls(_ player: PlayerController) -> some View {
         HStack(alignment: .center, spacing: 8) {
             miniPlayer(player)
-            VStack(spacing: 6) {
-                sizeMenu
-                Button {
-                    VideoFullscreen.present(player: player.player)
-                } label: {
-                    Icon(.fullscreen, size: 18)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Helskärm")
-                .help("Visa videon i helskärm (Esc stänger)")
-            }
+            sizeMenu(player)
         }
     }
 
-    private var sizeMenu: some View {
+    /// Bildstorlek och helskärm i samma lilla meny.
+    private func sizeMenu(_ player: PlayerController) -> some View {
         Menu {
             Picker("Bildstorlek", selection: $miniSizeRaw) {
                 ForEach(MiniPlayerSize.allCases, id: \.rawValue) { Text($0.label).tag($0.rawValue) }
             }
             .pickerStyle(.inline)
+            Divider()
+            Button {
+                VideoFullscreen.present(player: player.player)
+            } label: {
+                Label("Helskärm", icon: .fullscreen)
+            }
         } label: {
             Icon(.openInFull, size: 18).accessibilityLabel("Bildstorlek")
         }
         .menuStyle(.borderlessButton)
         .fixedSize()
-        .help("Bildstorlek: liten, mellan eller stor")
+        .help("Bildstorlek: liten, mellan eller stor, eller helskärm")
     }
 
     private func playPauseAndTime(_ player: PlayerController) -> some View {
         HStack(spacing: 10) {
             Button { player.togglePlayPause() } label: {
-                // Dubbelt så stor som förut (Nicklas 2026-11-04).
-                Icon(player.isPlaying ? .pause : .play, size: 28)
-                    .frame(width: 36, height: 36)
-                    .contentShape(Rectangle())
+                // Stor och tydlig: en rund platta i accentfärgen (Nicklas 2026-11-04).
+                Icon(player.isPlaying ? .pause : .play, size: 22)
+                    .padding(4)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.circle)
+            .controlSize(.large)
+            .tint(Color.accentColor)
             .accessibilityLabel(player.isPlaying ? "Pausa" : "Spela")
             .help(player.isPlaying ? "Pausa" : "Spela")
             Text(TimeFormatting.short(player.currentTime))
@@ -946,10 +948,13 @@ struct TranscriptDetailView: View {
                         currentOccurrence: hit?.id == row.id ? hit?.occurrence : nil,
                         isActive: segment.persistentModelID == activeID,
                         currentTime: currentTime,
-                        isEditing: editingID == segment.persistentModelID,
+                        isEditing: editsAll || editingID == segment.persistentModelID,
                         isAnonymized: row.isAnonymized,
                         session: editSession,
                         onBeginEdit: { beginEditing(segment.persistentModelID) },
+                        editsAll: editsAll,
+                        onSave: { saveEditing() },
+                        onCancel: { cancelEditing() },
                         onSeek: { player?.seek(to: segment.start) }
                     )
                     .id(segment.persistentModelID)
@@ -979,11 +984,14 @@ struct TranscriptDetailView: View {
                         currentHit: hit,
                         activeID: activeID,
                         currentTime: currentTime,
-                        isEditing: editingID == paragraph.first?.segment.persistentModelID,
+                        isEditing: editsAll || editingID == paragraph.first?.segment.persistentModelID,
                         session: editSession,
                         onBeginEdit: {
                             if let id = paragraph.first?.segment.persistentModelID { beginEditing(id) }
                         },
+                        editsAll: editsAll,
+                        onSave: { saveEditing() },
+                        onCancel: { cancelEditing() },
                         onSeek: { player?.seek(to: $0) },
                         speakerMenu: { speaker in
                             AnyView(Group {

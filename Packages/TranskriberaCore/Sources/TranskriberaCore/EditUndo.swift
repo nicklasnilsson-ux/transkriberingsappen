@@ -23,6 +23,13 @@ public struct EditUndo: Equatable, Sendable {
         self.entries = entries
     }
 
+    /// Lägger ihop två sparade rättningar. Är samma segment rättat i båda gäller läget före den första,
+    /// så att Ångra ger tillbaka det som stod där innan rättningarna började.
+    public func merging(_ later: EditUndo) -> EditUndo {
+        let known = Set(entries.map(\.index))
+        return EditUndo(entries: entries + later.entries.filter { !known.contains($0.index) })
+    }
+
     /// Jämför stycket före och efter en rättning. `nil` om ingenting ändrades (då finns inget att ångra).
     public static func changes(before: [Entry], after: [Entry]) -> EditUndo? {
         let afterByIndex = Dictionary(after.map { ($0.index, $0) }, uniquingKeysWith: { first, _ in first })

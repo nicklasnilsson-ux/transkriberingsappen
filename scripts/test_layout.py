@@ -125,7 +125,6 @@ class EditModeTests(unittest.TestCase):
         text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
         self.assertIn("@State private var editingID: PersistentIdentifier?", text)
         self.assertNotIn("@State private var isEditing", text)
-        self.assertIn("private var isEditing: Bool { editingID != nil }", text)
         self.assertIn("editingID == paragraph.first?.segment.persistentModelID", text)
         para = (self.DETAIL / "ParagraphRow.swift").read_text(encoding="utf-8")
         row = (self.DETAIL / "SegmentRow.swift").read_text(encoding="utf-8")
@@ -133,9 +132,14 @@ class EditModeTests(unittest.TestCase):
         # med knappen "Redigera" som visas när musen står över stycket, så att texten går att markera.
         self.assertNotIn("onTapGesture { onBeginEdit() }", para + row, "Klick på markerbar text sväljs på macOS")
         # Knappen finns alltid med i stycket (osynlig vid rättning), annars byter stycket höjd (CI 2026-11-04: 1 pt).
-        self.assertIn("EditHoverButton(visible: hovering && !isEditing, action: onBeginEdit)", para)
+        self.assertIn("RowEditActions(", para)
+        self.assertIn("RowEditActions(", row)
         self.assertNotIn("if !isEditing { EditHoverButton", para)
-        self.assertIn("EditHoverButton(visible: hovering && !isEditing, action: onBeginEdit)", row)
+        actions = row[row.index("struct RowEditActions"):row.index("struct EditHoverButton")]
+        self.assertIn('Button("Avbryt"', actions, "Avbryt och Spara ersätter Redigera vid stycket (Nicklas 2026-11-04)")
+        self.assertIn('Button("Spara"', actions)
+        self.assertIn("EditHoverButton(visible: hovering && !isEditing", actions)
+        self.assertIn(".frame(minHeight: 22)", para, "Raden har fast höjd, så att Spara/Avbryt inte ändrar styckets höjd")
         self.assertIn(".textSelection(.enabled)", para, "Texten ska gå att markera och kopiera")
 
     def test_escape_discards_and_retur_or_click_outside_saves(self):
@@ -179,17 +183,45 @@ class EditModeTests(unittest.TestCase):
 
     def test_player_controls(self):
         text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
-        play = text[text.index("private func playPauseAndTime"):][:900]
-        self.assertIn("size: 28", play, "Play/Pause är dubbelt så stor som förut (14 -> 28)")
+        play = text[text.index("private func playPauseAndTime"):][:1100]
+        self.assertIn(".buttonBorderShape(.circle)", play, "Play/Pause ligger på en rund platta")
+        self.assertIn(".buttonStyle(.borderedProminent)", play)
+        self.assertIn("Color.accentColor", play, "Plattan har accentfärgen")
         bar = text[text.index("private var playerBar"):text.index("private var showsRolesBanner")]
         self.assertIn("videoWithControls(player)", bar)
         self.assertNotIn("sizeMenu", bar, "Bildstorlek ligger närmast videon, inte längst till höger")
         video = text[text.index("private func videoWithControls"):][:700]
         self.assertLess(video.index("miniPlayer(player)"), video.index("sizeMenu"))
-        self.assertIn("VideoFullscreen.present(player: player.player)", video)
+        # Helskärm ligger i samma lilla meny som bildstorlekarna (Nicklas 2026-11-04).
+        menu = text[text.index("private func sizeMenu"):][:900]
+        self.assertIn("VideoFullscreen.present(player: player.player)", menu)
+        self.assertIn("Picker(\"Bildstorlek\"", menu)
         full = (VIEWS / "Player/VideoFullscreen.swift").read_text(encoding="utf-8")
         self.assertIn("toggleFullScreen", full)
         self.assertIn("didExitFullScreenNotification", full, "Esc lämnar helskärmen och stänger fönstret")
+        self.assertIn("showsFullScreenToggleButton = true", full, "Knapp i kontrollpanelen som lämnar helskärmen")
+
+    def test_edit_all_and_edit_one_both_work(self):
+        # Nicklas 2026-11-04: Redigera i titelbaren öppnar alla stycken, knappen vid ett stycke öppnar bara det.
+        text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
+        self.assertIn("@State private var editsAll", text)
+        self.assertIn("private var isEditing: Bool { editsAll || editingID != nil }", text)
+        toggle = text[text.index("private var editToggle"):][:1200]
+        self.assertIn("beginEditingAll()", toggle)
+        self.assertIn("isEditing: editsAll || editingID ==", text)
+        self.assertIn("editsAll: editsAll", text)
+        row = (self.DETAIL / "SegmentRow.swift").read_text(encoding="utf-8")
+        self.assertIn("func saveAll()", row)
+        self.assertIn("func discardAll()", row)
+        self.assertIn("autofocus", row)
+        self.assertIn("editSession.autofocus = false", text, "Alla fält får inte ta fokus på en gång")
+
+    def test_sidebar_never_pushes_its_top_out_of_the_window(self):
+        # Mötesläget är högre än fillägets ruta; panelens överdel hamnade utanför fönstret (0.9.1).
+        side = (VIEWS / "Sidebar/SidebarView.swift").read_text(encoding="utf-8")
+        self.assertIn("ViewThatFits(in: .vertical)", side)
+        self.assertIn("ScrollView { newTranscriptionGroup }", side)
+        self.assertIn(".clipped()", side)
 
     def test_a_paragraph_is_edited_in_one_field(self):
         # Ett fält per segment bröt styckets löpande text i flera rader (0.7.8 hoppade).
