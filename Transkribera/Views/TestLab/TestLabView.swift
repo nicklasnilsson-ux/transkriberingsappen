@@ -3,7 +3,7 @@ import SwiftData
 import SwiftUI
 import TranskriberaCore
 
-/// Fönstret för Testlabbet (Hjälp > Testlabb…): välj en inspelning och vilka
+/// Fönstret för Testlabbet (öppnas med ⌥⇧⌘T, finns inte i någon meny): välj en inspelning och vilka
 /// inställningar som ska provas, och få en text per körning i en mapp.
 struct TestLabView: View {
     @Environment(TestLab.self) private var lab

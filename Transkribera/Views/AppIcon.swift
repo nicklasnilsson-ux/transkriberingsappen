@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// Appens ikoner. De kommer från Material Design Icons (stilen Rounded, Apache 2.0) och ligger som
@@ -47,5 +48,35 @@ struct Icon: View {
             .scaledToFit()
             .frame(width: size, height: size)
             .accessibilityHidden(true)
+    }
+}
+
+extension AppIcon {
+    /// Ikonen som en bild som ritas om i den upplösning den visas i. Behövs där macOS gör egna bilder
+    /// av ikonen, till exempel flikraden i Inställningar: där blir en vanlig `Image(icon:)` en
+    /// bitmapp i 16 pt och suddig på Retina-skärmar. Ritningen sker först när bilden visas, med
+    /// skärmens skala, och bilden är en mall som följer förgrundsfärgen.
+    func crispImage(size: CGFloat) -> Image {
+        let source = NSImage(named: assetName)
+        let image = NSImage(size: NSSize(width: size, height: size), flipped: false) { rect in
+            source?.draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1)
+            return true
+        }
+        image.isTemplate = true
+        return Image(nsImage: image)
+    }
+}
+
+/// Fliketikett med skarp ikon (se `AppIcon.crispImage`). 24 pt är den storlek flikraden i Inställningar visar.
+struct CrispTabLabel: View {
+    let title: String
+    let icon: AppIcon
+
+    var body: some View {
+        Label {
+            Text(title)
+        } icon: {
+            icon.crispImage(size: 24)
+        }
     }
 }

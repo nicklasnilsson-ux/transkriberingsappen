@@ -6,6 +6,11 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+### Rättat
+- Ikonerna i flikraden i Inställningar är skarpa på Retina-skärmar.
+- Stänger du appens fönster går det nu att öppna det igen: klicka på appen i Dock, välj Visa huvudfönstret i Arkiv-menyn eller huvudfönstret i Fönster-menyn.
+- Testlabbet är borta ur Fönster-menyn. Genvägen ⌥⇧⌘T öppnar det som förut.
+
 ## [0.9.3] – 2026-11-04
 
 ### Ändrat

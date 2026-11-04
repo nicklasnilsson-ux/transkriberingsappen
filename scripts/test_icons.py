@@ -37,6 +37,14 @@ class IconTests(unittest.TestCase):
             self.assertTrue("<path" in svg or "<circle" in svg, name)
             self.assertIn('width="16"', svg, f"{name}: ikonen ska vara 16 pt")
 
+    def test_settings_tabs_use_crisp_icons(self):
+        # Flikraden i Inställningar gör egna bitmappar av ikonen; en vanlig Label blev suddig (Nicklas 2026-11-04).
+        settings = (APP / "Views/Settings/SettingsView.swift").read_text(encoding="utf-8")
+        tabs = re.findall(r"\.tabItem \{([^}]*)\}", settings)
+        self.assertGreaterEqual(len(tabs), 4)
+        for tab in tabs:
+            self.assertIn("CrispTabLabel(", tab, "Fliken ska använda CrispTabLabel, inte Label(_, icon:)")
+
     def test_license_is_included(self):
         folder = ROOT / "third-party/material-design-icons"
         self.assertIn("Apache License", (folder / "LICENSE").read_text(encoding="utf-8"))
