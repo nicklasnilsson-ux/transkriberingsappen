@@ -21,4 +21,11 @@ final class ReadingTextSizeTests: XCTestCase {
         XCTAssertEqual(ReadingTextSize.clamped(99), 20)
         XCTAssertEqual(ReadingTextSize.larger(than: 16), 17)
     }
+
+    func testColumnWidthFollowsTheTextSize() {
+        XCTAssertEqual(ReadingTextSize.columnWidth(for: 15), 600)
+        XCTAssertEqual(ReadingTextSize.columnWidth(for: 20), 800)
+        // Ett trasigt sparat värde ger bredden för närmaste giltiga steg.
+        XCTAssertEqual(ReadingTextSize.columnWidth(for: 13.5), ReadingTextSize.columnWidth(for: 13))
+    }
 }

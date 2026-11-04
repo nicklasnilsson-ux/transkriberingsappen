@@ -16,8 +16,8 @@ enum VideoFullscreen {
         let view = AVPlayerView()
         view.player = player
         view.controlsStyle = .floating
-        // Knappen i kontrollpanelen som lämnar helskärmen (förutom Esc).
-        view.showsFullScreenToggleButton = true
+        // AVKits egen helskärmsknapp lämnade fönstret kvar (0.9.2). Den ersätts av vår egen knapp nedan.
+        view.showsFullScreenToggleButton = false
         view.videoGravity = .resizeAspect
 
         let window = NSWindow(
@@ -27,7 +27,7 @@ enum VideoFullscreen {
             defer: false
         )
         window.title = "Video"
-        window.contentView = view
+        window.contentView = container(for: view)
         window.collectionBehavior = [.fullScreenPrimary]
         window.isReleasedWhenClosed = false
         window.center()
@@ -44,6 +44,42 @@ enum VideoFullscreen {
         ]
         window.makeKeyAndOrderFront(nil)
         window.toggleFullScreen(nil)
+    }
+
+    /// Videon med en knapp överst till vänster som lämnar helskärmen och stänger videofönstret,
+    /// så att man är tillbaka i appens läge (liten, mellan, stor). Esc gör samma sak.
+    private static func container(for playerView: AVPlayerView) -> NSView {
+        let container = NSView()
+        playerView.frame = container.bounds
+        playerView.autoresizingMask = [.width, .height]
+        container.addSubview(playerView)
+
+        let button = NSButton(title: "Tillbaka till appen", target: closeTarget, action: #selector(CloseTarget.close))
+        button.bezelStyle = .rounded
+        button.controlSize = .large
+        button.toolTip = "Lämna helskärmen och gå tillbaka till appen (Esc)"
+        button.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(button)
+        NSLayoutConstraint.activate([
+            button.topAnchor.constraint(equalTo: container.topAnchor, constant: 16),
+            button.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
+        ])
+        return container
+    }
+
+    private static let closeTarget = CloseTarget()
+
+    /// Knappens mål. Utan helskärm stänger det fönstret direkt, annars lämnas helskärmen och fönstret stängs då.
+    @MainActor
+    private final class CloseTarget: NSObject {
+        @objc func close() {
+            guard let window = VideoFullscreen.window else { return }
+            if window.styleMask.contains(.fullScreen) {
+                window.toggleFullScreen(nil)
+            } else {
+                window.close()
+            }
+        }
     }
 
     private static func cleanup() {

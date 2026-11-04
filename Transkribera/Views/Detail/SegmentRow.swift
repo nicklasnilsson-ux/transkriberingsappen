@@ -64,6 +64,9 @@ struct SegmentRow: View {
     @AppStorage(SettingsKey.readingTextSize) private var readingSize = ReadingTextSize.standard
     @State private var hovering = false
 
+    /// Samma bredd som i styckevisningen.
+    private var textWidth: CGFloat { ReadingTextSize.columnWidth(for: readingSize) }
+
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
             TimecodeButton(time: segment.start, isActive: isActive, minWidth: 52, action: onSeek)
@@ -81,6 +84,7 @@ struct SegmentRow: View {
                 if isEditing {
                     SegmentEditor(segment: segment, displayText: displayText, isAnonymized: isAnonymized, lineSpacing: 3, session: session)
                         .id(isAnonymized)
+                        .frame(maxWidth: textWidth, alignment: .leading)
                         .modifier(EditSurface())
                 } else {
                     // Ordtidsstämplarna hör till originaltexten.
@@ -95,7 +99,7 @@ struct SegmentRow: View {
                     .font(.system(size: ReadingTextSize.clamped(readingSize)))
                     .lineSpacing(3)
                     .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(maxWidth: textWidth, alignment: .leading)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -524,12 +528,11 @@ struct EditHoverButton: View {
 
     var body: some View {
         Button(action: action) {
-            Label("Redigera", icon: .edit)
-                .labelStyle(.titleAndIcon)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(Color.textSecondary)
+            Text("Redigera")
         }
-        .buttonStyle(.plain)
+        // Samma stil och storlek som Avbryt och Spara, så att knapparna hör ihop (Nicklas 2026-11-04).
+        .buttonStyle(.bordered)
+        .controlSize(.small)
         .opacity(visible ? 1 : 0)
         .allowsHitTesting(visible)
         .accessibilityHidden(!visible)

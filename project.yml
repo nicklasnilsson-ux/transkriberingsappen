@@ -10,8 +10,8 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "0.9.2"
-    CURRENT_PROJECT_VERSION: "39"
+    MARKETING_VERSION: "0.9.3"
+    CURRENT_PROJECT_VERSION: "40"
     DEVELOPMENT_LANGUAGE: sv
 
 packages:

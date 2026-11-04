@@ -30,7 +30,7 @@ struct ParagraphRow: View {
     private var isActive: Bool { rows.contains { $0.id == activeID } }
 
     /// Högst cirka 72 tecken per rad: bredden följer textstorleken.
-    private var textWidth: CGFloat { ReadingTextSize.clamped(readingSize) * 40 }
+    private var textWidth: CGFloat { ReadingTextSize.columnWidth(for: readingSize) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {

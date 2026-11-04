@@ -199,7 +199,11 @@ class EditModeTests(unittest.TestCase):
         full = (VIEWS / "Player/VideoFullscreen.swift").read_text(encoding="utf-8")
         self.assertIn("toggleFullScreen", full)
         self.assertIn("didExitFullScreenNotification", full, "Esc lämnar helskärmen och stänger fönstret")
-        self.assertIn("showsFullScreenToggleButton = true", full, "Knapp i kontrollpanelen som lämnar helskärmen")
+        # AVKits egen knapp lämnade fönstret kvar (Nicklas 2026-11-04): egen knapp som lämnar helskärmen och stänger fönstret.
+        self.assertIn("showsFullScreenToggleButton = false", full)
+        self.assertIn("Tillbaka till appen", full)
+        self.assertIn("window.toggleFullScreen(nil)", full[full.index("class CloseTarget"):])
+        self.assertIn("window.close()", full[full.index("class CloseTarget"):], "Knappen stänger videofönstret")
 
     def test_edit_all_and_edit_one_both_work(self):
         # Nicklas 2026-11-04: Redigera i titelbaren öppnar alla stycken, knappen vid ett stycke öppnar bara det.
@@ -222,6 +226,33 @@ class EditModeTests(unittest.TestCase):
         self.assertIn("ViewThatFits(in: .vertical)", side)
         self.assertIn("ScrollView { newTranscriptionGroup }", side)
         self.assertIn(".clipped()", side)
+        # Fast mot överkanten: ett för högt innehåll får aldrig centreras och tryckas ut ovanför fönstret.
+        self.assertIn("GeometryReader", side)
+        self.assertIn("alignment: .top)", side)
+        self.assertIn("geometry.size.height - Self.minimumListHeight", side)
+
+    def test_meeting_controls_use_full_width_with_air_between_rows(self):
+        text = (VIEWS / "Home/MeetingControls.swift").read_text(encoding="utf-8")
+        self.assertIn("struct SwitchRow", text)
+        self.assertIn('SwitchRow("Skilj på vem som pratar"', text)
+        self.assertNotIn(".fixedSize()", text[:text.index("private struct SwitchRow")], "Talarväljaren sträcks över hela bredden")
+        self.assertIn(".frame(maxWidth: .infinity)", text)
+        self.assertIn("spacing: 16", text)
+
+    def test_rows_and_paragraphs_have_the_same_text_width(self):
+        # Nicklas 2026-11-04: texten var smalare i styckevisningen än i radvisningen.
+        para = (self.DETAIL / "ParagraphRow.swift").read_text(encoding="utf-8")
+        row = (self.DETAIL / "SegmentRow.swift").read_text(encoding="utf-8")
+        self.assertIn("ReadingTextSize.columnWidth(for: readingSize)", para)
+        seg = row[row.index("struct SegmentRow"):row.index("struct RowEditActions")]
+        self.assertIn("ReadingTextSize.columnWidth(for: readingSize)", seg)
+        self.assertEqual(seg.count("maxWidth: textWidth"), 2, "Både visning och redigering har spaltbredden")
+
+    def test_hover_edit_button_matches_cancel_and_save(self):
+        row = (self.DETAIL / "SegmentRow.swift").read_text(encoding="utf-8")
+        hover = row[row.index("struct EditHoverButton"):][:900]
+        self.assertIn(".buttonStyle(.bordered)", hover, "Samma stil som Avbryt")
+        self.assertIn(".controlSize(.small)", hover)
 
     def test_a_paragraph_is_edited_in_one_field(self):
         # Ett fält per segment bröt styckets löpande text i flera rader (0.7.8 hoppade).
