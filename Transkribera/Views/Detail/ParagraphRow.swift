@@ -20,6 +20,7 @@ struct ParagraphRow: View {
     var speakerMenu: ((String) -> AnyView)? = nil
 
     @AppStorage(SettingsKey.readingTextSize) private var readingSize = ReadingTextSize.standard
+    @State private var hovering = false
 
     private var start: Double { rows.first?.segment.start ?? 0 }
     private var isActive: Bool { rows.contains { $0.id == activeID } }
@@ -36,6 +37,7 @@ struct ParagraphRow: View {
         .padding(.vertical, 12)
         .padding(.horizontal, 12)
         .modifier(ActiveParagraphStyle(isActive: isActive))
+        .onHover { hovering = $0 }
     }
 
     private var headerLine: some View {
@@ -49,6 +51,8 @@ struct ParagraphRow: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Color.accentColor)
             }
+            Spacer(minLength: 0)
+            if !isEditing { EditHoverButton(visible: hovering, action: onBeginEdit) }
         }
     }
 
@@ -59,7 +63,7 @@ struct ParagraphRow: View {
             Menu {
                 speakerMenu(speaker)
             } label: {
-                Image(systemName: "chevron.down").font(.caption)
+                Icon(.chevronDown, size: 12)
             }
             .menuStyle(.borderlessButton)
             .menuIndicator(.hidden)
@@ -91,8 +95,6 @@ struct ParagraphRow: View {
                 .lineSpacing(4)
                 .textSelection(.enabled)
                 .frame(maxWidth: textWidth, alignment: .leading)
-                .contentShape(Rectangle())
-                .onTapGesture { onBeginEdit() }
         }
     }
 

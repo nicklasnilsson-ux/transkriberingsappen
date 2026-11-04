@@ -1,0 +1,51 @@
+import SwiftUI
+
+/// Appens ikoner. De kommer från Material Design Icons (stilen Rounded, Apache 2.0) och ligger som
+/// ikonuppsättningar i resurskatalogen under `Icons`. Hämtas med `scripts/material_icons.py`.
+/// SF Symbols används inte; `scripts/test_icons.py` stoppar det.
+///
+/// Namnen här är samma som i skriptet. Varje fall har en uppsättning `icon-<namn>`.
+enum AppIcon: String, CaseIterable {
+    case check, checkCircle, cancel, chevronDown, chevronUp, unfold, circle, clock, copy, chip
+    case download, downloadCircle, edit, fullscreen, fullscreenExit, group, hand, history, info
+    case lightbulb, memory, more, movie, openInFull, pause, personQuestion, play, playCircle
+    case record, refresh, search, share, sync, tune, visibility, visibilityOff, warning, waveform
+
+    var assetName: String { "icon-\(rawValue)" }
+}
+
+extension Image {
+    /// Ikonen i sin egen storlek (16 pt), målad i förgrundsfärgen. För andra storlekar: `Icon`.
+    init(icon: AppIcon) {
+        self.init(icon.assetName)
+    }
+}
+
+extension Label where Title == Text, Icon == Image {
+    init<S: StringProtocol>(_ title: S, icon: AppIcon) {
+        self.init {
+            Text(title)
+        } icon: {
+            Image(icon: icon)
+        }
+    }
+}
+
+/// En ikon i vald storlek. Följer förgrundsfärgen.
+struct Icon: View {
+    let icon: AppIcon
+    var size: CGFloat = 16
+
+    init(_ icon: AppIcon, size: CGFloat = 16) {
+        self.icon = icon
+        self.size = size
+    }
+
+    var body: some View {
+        Image(icon: icon)
+            .resizable()
+            .scaledToFit()
+            .frame(width: size, height: size)
+            .accessibilityHidden(true)
+    }
+}

@@ -20,8 +20,7 @@ struct MeetingModeView: View {
                         .font(.system(size: 44, weight: .semibold, design: .monospaced))
                 }
             } else {
-                Image(systemName: "record.circle")
-                    .font(.system(size: 44, weight: .light))
+                Icon(.record, size: 48)
                     .foregroundStyle(Color.accentColor)
                     .accessibilityHidden(true)
             }
@@ -41,7 +40,7 @@ struct MeetingModeView: View {
                     .foregroundStyle(Color.textSecondary)
             }
             if let error = recorder.errorMessage {
-                Label(error, systemImage: "exclamationmark.triangle.fill")
+                Label(error, icon: .warning)
                     .font(.callout)
                     .foregroundStyle(Color.warning)
                     .fixedSize(horizontal: false, vertical: true)

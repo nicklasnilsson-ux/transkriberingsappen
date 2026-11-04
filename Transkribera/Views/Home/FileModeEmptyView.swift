@@ -12,7 +12,7 @@ struct FileModeEmptyView: View {
                 .fixedSize(horizontal: false, vertical: true)
             Divider()
             ContentUnavailableView {
-                Label("Ingen transkribering vald", systemImage: "waveform")
+                Label("Ingen transkribering vald", icon: .waveform)
             } description: {
                 Text("Släpp ljud- eller videofiler i fönstret, eller välj Välj filer… i sidopanelen. Allt transkriberas lokalt, inget lämnar din Mac.")
             }
@@ -85,7 +85,7 @@ private struct ChipButton<Content: View>: View {
             HStack(spacing: 4) {
                 Text(title).foregroundStyle(Color.textSecondary)
                 Text(value).fontWeight(.medium)
-                Image(systemName: "chevron.down").font(.caption2).foregroundStyle(Color.textSecondary)
+                Icon(.chevronDown, size: 10).foregroundStyle(Color.textSecondary)
             }
             .font(.callout)
             .padding(.horizontal, 10)

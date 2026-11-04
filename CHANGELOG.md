@@ -6,6 +6,14 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+### Ändrat
+- Alla ikoner är nya (Material Design Icons, stilen Rounded). Appikonen är oförändrad.
+- Knapparna i titelbaren har text: Redigera, Sparat och märket för äldre version visar nu både ikon och text. Play/Pause är dubbelt så stor.
+- Bildstorlek för videon ligger nu närmast bilden, och bredvid den finns en ny knapp för helskärm. Esc lämnar helskärmen.
+
+### Rättat
+- Redigering per stycke gick inte att öppna med ett klick i texten. Håll nu musen över ett stycke eller en rad och välj Redigera. Texten går att markera och kopiera som vanligt. Redigera i titelbaren och högerklicksmenyn fungerar som förut.
+
 ## [0.9.0] – 2026-11-03
 
 ### Ändrat

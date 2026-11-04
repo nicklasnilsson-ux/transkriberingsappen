@@ -9,8 +9,7 @@ struct TranscriptionProgressView: View {
 
     var body: some View {
         VStack(spacing: 18) {
-            Image(systemName: isCurrent ? "waveform" : "clock")
-                .font(.system(size: 44, weight: .light))
+            Icon(isCurrent ? .waveform : .clock, size: 44)
                 .foregroundStyle(.tint)
                 .symbolEffect(.variableColor.iterative, isActive: isCurrent)
 

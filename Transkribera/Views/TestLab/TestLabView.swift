@@ -114,10 +114,10 @@ private struct StatusLabel: View {
         case .running:
             ProgressView().controlSize(.small)
         case .done(let seconds):
-            Label("\(Int((seconds / 60).rounded())) min", systemImage: "checkmark.circle.fill")
+            Label("\(Int((seconds / 60).rounded())) min", icon: .checkCircle)
                 .foregroundStyle(.green)
         case .failed(let error):
-            Label("Fel", systemImage: "exclamationmark.triangle.fill")
+            Label("Fel", icon: .warning)
                 .foregroundStyle(Color.warning)
                 .help(error)
         case .cancelled:

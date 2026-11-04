@@ -38,6 +38,7 @@ struct SegmentRow: View {
     let onSeek: () -> Void
 
     @AppStorage(SettingsKey.readingTextSize) private var readingSize = ReadingTextSize.standard
+    @State private var hovering = false
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
@@ -71,8 +72,6 @@ struct SegmentRow: View {
                     .lineSpacing(3)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
-                    .onTapGesture { onBeginEdit() }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -80,6 +79,10 @@ struct SegmentRow: View {
         .padding(.vertical, 8)
         .padding(.horizontal, 12)
         .modifier(ActiveParagraphStyle(isActive: isActive))
+        .overlay(alignment: .topTrailing) {
+            if !isEditing { EditHoverButton(visible: hovering, action: onBeginEdit).padding(.top, 6).padding(.trailing, 8) }
+        }
+        .onHover { hovering = $0 }
         .contentShape(Rectangle())
         .onTapGesture(count: 1) {
             if !isEditing { onSeek() }
@@ -448,6 +451,27 @@ struct EditSurface: ViewModifier {
     }
 }
 
+/// "Redigera" som visas när musen står över ett stycke eller en rad. Ett klick öppnar det för rättning.
+/// Ett klick direkt i texten gör det inte, så att man kan markera och kopiera text som vanligt.
+/// Knappen tar alltid plats (osynlig när musen är borta), så att ingenting flyttar sig.
+struct EditHoverButton: View {
+    let visible: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Label("Redigera", icon: .edit)
+                .labelStyle(.titleAndIcon)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color.textSecondary)
+        }
+        .buttonStyle(.plain)
+        .opacity(visible ? 1 : 0)
+        .accessibilityHidden(!visible)
+        .help("Rätta det här stycket")
+    }
+}
+
 /// Aktivt stycke: en accentlinje på 3 pt till vänster och accent med 10 % opacitet som bakgrund.
 struct ActiveParagraphStyle: ViewModifier {
     let isActive: Bool
@@ -493,8 +517,7 @@ enum SpeakerPalette {
 /// ⚠ bredvid talaren när det är osäkert vem som sa repliken.
 struct UncertainSpeakerMark: View {
     var body: some View {
-        Image(systemName: "exclamationmark.triangle.fill")
-            .font(.caption)
+        Icon(.warning, size: 12)
             .foregroundStyle(Color.warning)
             .help("Osäkert vem som sa det här, t.ex. vid ett talarbyte utan paus. Lyssna för att kontrollera.")
             .accessibilityLabel("Osäker talare")
@@ -518,8 +541,7 @@ struct TimecodeButton: View {
             HStack(spacing: 4) {
                 Text(TimeFormatting.short(time))
                     .font(.system(.callout, design: .monospaced))
-                Image(systemName: "play.fill")
-                    .font(.system(size: 9))
+                Icon(.play, size: 10)
                     .opacity(hovering ? 1 : 0)
                     .accessibilityHidden(true)
             }

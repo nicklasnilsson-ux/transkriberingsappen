@@ -37,7 +37,7 @@ struct MultiSelectionView: View {
 
             if anyText {
                 Label(BulkRetranscribe.message(count: count, atCapacity: atCapacity),
-                      systemImage: atCapacity > 0 ? "exclamationmark.triangle" : "info.circle")
+                      icon: atCapacity > 0 ? .warning : .info)
                     .font(.callout)
                     .foregroundStyle(atCapacity > 0 ? AnyShapeStyle(Color.warning) : AnyShapeStyle(Color.textSecondary))
             }
