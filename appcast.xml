@@ -6,6 +6,19 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.9.4</title>
+      <pubDate>Wed, 04 Nov 2026 20:46:00 GMT</pubDate>
+      <sparkle:version>41</sparkle:version>
+      <sparkle:shortVersionString>0.9.4</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.4</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Rättat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Vänsterpanelen läggs ut uppifrån och ned och börjar alltid i överkanten. Den centreras inte längre och hoppar inte när du byter läge eller ändrar inställningar.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.4/Transkribera-v0.9.4.zip" length="14499620" type="application/octet-stream" sparkle:edSignature="6K3Y50HJULNVB62dEHv/uLP6Tgje1Eih7YPVB/7Kwp0LmrBPNqhpN9IwOHLzLfVfuO/ufM3RqaWCEW7aII0NAg==" />
+    </item>
+    <item>
       <title>Version 0.9.3</title>
       <pubDate>Wed, 04 Nov 2026 14:19:12 GMT</pubDate>
       <sparkle:version>40</sparkle:version>
@@ -477,22 +490,6 @@
 &lt;li&gt;Volymen jämnas nu ut som standard för KB-Whisper, så att svaga röster hörs lika bra som starka. I två intervjuer gav det 2–3 procentenheter färre ordfel jämfört med Klang. Pianissimo påverkas inte, eftersom den jämnar ut volymen själv. Du kan stänga av det under Inställningar → Transkribering → Experiment.&lt;/li&gt;
 &lt;/ul&gt;</description>
       <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.5.5/Transkribera-v0.5.5.zip" length="13849526" type="application/octet-stream" sparkle:edSignature="SZIkubjky3us0/+VRKExgREFuwPCBe2w9/X99DveVwCqdWxl+7zbHWzsyAD32yrz8YCT3XbHTbTC1dtpH3wiDw==" />
-    </item>
-    <item>
-      <title>Version 0.5.4</title>
-      <pubDate>Thu, 29 Oct 2026 19:33:31 GMT</pubDate>
-      <sparkle:version>11</sparkle:version>
-      <sparkle:shortVersionString>0.5.4</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.5.4</sparkle:fullReleaseNotesLink>
-      <description>&lt;h3&gt;Nytt&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Experiment: ny talaridentifiering (pyannote community-1) under Inställningar → Transkribering. Den körs lokalt, som den nuvarande, och kräver macOS 15. Slå på den och transkribera samma fil två gånger för att jämföra vem som får vilka repliker.&lt;/li&gt;
-&lt;li&gt;Antal talare kan nu vara ett spann, t.ex. 2–4, när du inte vet hur många som är med. Automatiskt betyder nu minst 2 talare med den nya talaridentifieringen.&lt;/li&gt;
-&lt;li&gt;Ange vem som är intervjuaren: efter en transkribering med talare frågar appen vem av talarna du är. Då heter talarna Intervjuare, Kund 1, Kund 2 och så vidare. Det går också att välja under Talare i verktygsfältet eller genom att högerklicka.&lt;/li&gt;
-&lt;li&gt;⚠ bredvid talaren där det är osäkert vem som sa repliken, till exempel vid ett talarbyte utan paus eller när två pratar samtidigt. Markeringen följer med i Exportera för analys, så att ett korrekturpass vet var det ska titta.&lt;/li&gt;
-&lt;/ul&gt;</description>
-      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.5.4/Transkribera-v0.5.4.zip" length="13849740" type="application/octet-stream" sparkle:edSignature="fptam03tSW3a9Eal2rh7IB3iSPwKJXV/7zq3irqinMjRHucZzT5gf4O41kl5jgXRtR8wqfZMzRUMqdpB3xvbBg==" />
     </item>
   </channel>
 </rss>
