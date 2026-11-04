@@ -6,6 +6,11 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.9.5] – 2026-11-04
+
+### Rättat
+- Vänsterpanelen är en enda scrollvy: rutan för ny transkribering, rubriken, sökfältet och listan ligger efter varandra uppifrån och ned och scrollar tillsammans. Inget kan längre hamna ovanför appens yta.
+
 ## [0.9.4] – 2026-11-04
 
 ### Rättat
