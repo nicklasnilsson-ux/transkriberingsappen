@@ -524,12 +524,11 @@ struct EditHoverButton: View {
 
     var body: some View {
         Button(action: action) {
-            Label("Redigera", icon: .edit)
-                .labelStyle(.titleAndIcon)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(Color.textSecondary)
+            Text("Redigera")
         }
-        .buttonStyle(.plain)
+        // Samma stil och storlek som Avbryt och Spara, så att knapparna hör ihop (Nicklas 2026-11-04).
+        .buttonStyle(.bordered)
+        .controlSize(.small)
         .opacity(visible ? 1 : 0)
         .allowsHitTesting(visible)
         .accessibilityHidden(!visible)

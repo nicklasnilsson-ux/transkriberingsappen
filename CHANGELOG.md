@@ -6,6 +6,16 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.9.3] – 2026-11-04
+
+### Ändrat
+- Knappen Redigera vid ett stycke är en vanlig knapp med kant, som Avbryt och Spara.
+- Mötesinspelning: reglagen ligger längst till höger över hela bredden, antal talare har en egen rad med en väljare över hela bredden, och raderna har mer luft emellan.
+
+### Rättat
+- Helskärmen: knappen Tillbaka till appen lämnar helskärmen och stänger videofönstret, så att du är tillbaka i appens läge.
+- Vänsterpanelen ligger fast i toppen. Är fönstret för lågt för Mötesinspelning scrollar rutan i stället för att tryckas ut ovanför fönstret.
+
 ## [0.9.2] – 2026-11-04
 
 ### Ändrat

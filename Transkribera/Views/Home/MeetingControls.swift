@@ -14,22 +14,24 @@ struct MeetingControls: View {
     @AppStorage(SettingsKey.speakers) private var speakers = SpeakerCount.automatic.rawValue
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 16) {
                 if MeetingRecorder.supportsMicrophone {
-                    Toggle("Spela även in min mikrofon", isOn: $recordMicrophone)
+                    SwitchRow("Spela även in min mikrofon", isOn: $recordMicrophone)
                         .help("Ta med din egen röst. Annars spelas bara datorns ljud in, alltså de andra deltagarna.")
                 }
-                Toggle("Skilj på vem som pratar", isOn: $identifySpeakers)
+                SwitchRow("Skilj på vem som pratar", isOn: $identifySpeakers)
                     .help("Märker texten med Talare 1, Talare 2 … som du sedan kan byta namn på. Tar lite längre tid.")
                 if identifySpeakers {
-                    LabeledContent("Antal talare") {
-                        SpeakerCountPicker(selection: $speakers).labelsHidden().fixedSize()
+                    // Rubrik ovanför och väljaren över hela bredden: den är lätt att träffa och får plats med "Automatiskt, minst 2".
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Antal talare")
+                        SpeakerCountPicker(selection: $speakers)
+                            .labelsHidden()
+                            .frame(maxWidth: .infinity)
                     }
                 }
             }
-            .toggleStyle(.switch)
-            .controlSize(.small)
             // Låst läge under inspelning.
             .disabled(recorder.isBusy)
             .opacity(recorder.isBusy ? 0.55 : 1)
@@ -80,6 +82,29 @@ struct MeetingControls: View {
         } else {
             await recorder.start(includeMicrophone: recordMicrophone && MeetingRecorder.supportsMicrophone)
         }
+    }
+}
+
+/// En rad med en reglage: texten till vänster och reglaget längst till höger, över hela bredden.
+private struct SwitchRow: View {
+    let title: String
+    @Binding var isOn: Bool
+
+    init(_ title: String, isOn: Binding<Bool>) {
+        self.title = title
+        self._isOn = isOn
+    }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Text(title)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Toggle(title, isOn: $isOn)
+                .labelsHidden()
+                .toggleStyle(.switch)
+        }
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
     }
 }
 
