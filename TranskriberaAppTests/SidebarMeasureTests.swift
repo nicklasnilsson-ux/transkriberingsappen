@@ -78,6 +78,7 @@ final class SidebarMeasureTests: XCTestCase {
             out.append("SIDEBAR-MEASURE band y \(Int(Double(b.y0) / scale))…\(Int(Double(b.y1) / scale)) x \(Int(Double(b.minX) / scale))…\(Int(Double(b.maxX) / scale))")
         }
         window.contentView = nil
-        XCTFail("MÄTNING (felet är avsiktligt, tas bort före merge):\n" + out.prefix(160).joined(separator: "\n"))
+        // Varje rad som eget fel: CI-loggen (xcbeautify) visar bara första raden av ett felmeddelande.
+        for line in out.prefix(160) { XCTFail(line) }
     }
 }
