@@ -6,6 +6,20 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.9.10</title>
+      <pubDate>Thu, 05 Nov 2026 17:34:22 GMT</pubDate>
+      <sparkle:version>47</sparkle:version>
+      <sparkle:shortVersionString>0.9.10</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.10</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Rättat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Markerad rad i listan: texten är nu vit mot den mörka markeringen (0.9.7 rättade det inte).&lt;/li&gt;
+&lt;li&gt;Rutan för ny transkribering, rubriken och sökfältet har samma kanter som markeringen av en rad.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.10/Transkribera-v0.9.10.zip" length="14532334" type="application/octet-stream" sparkle:edSignature="Nf8Gmdua8NOGYTnnqzYp+4YAyNVgoMX5u2m27IiQfqS++o5UdRwJmI8Nbglz8yoVjwQGwqPSdtPXPHfMN0NBBA==" />
+    </item>
+    <item>
       <title>Version 0.9.9</title>
       <pubDate>Thu, 05 Nov 2026 12:56:49 GMT</pubDate>
       <sparkle:version>46</sparkle:version>
@@ -468,23 +482,6 @@
 &lt;li&gt;Testlabbet har en ny körlista. Första omgången visade att spärrarna, fönsterklippet och omkörningarna inte spelar någon roll, och att KB-Whisper inte skriver ut &amp;quot;eh&amp;quot; och &amp;quot;mm&amp;quot; alls (facit har ungefär 60 på 18 minuter). Nu provas en ledtråd med fyllnadsord, som lista och som löpande text, med och utan i luckkontrollen, plus Pianissimo som jämförelse. Vanliga transkriberingar påverkas inte.&lt;/li&gt;
 &lt;/ul&gt;</description>
       <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.6.1/Transkribera-v0.6.1.zip" length="14003621" type="application/octet-stream" sparkle:edSignature="yx1fkSDW98MYPOsy0bsbMXA43kxYvU1DPKBKnb22Jp3K+Z20HFAGhaSiqhbxRkQk4PryN5/ako2F1660bseCCQ==" />
-    </item>
-    <item>
-      <title>Version 0.6.0</title>
-      <pubDate>Sat, 31 Oct 2026 08:09:16 GMT</pubDate>
-      <sparkle:version>17</sparkle:version>
-      <sparkle:shortVersionString>0.6.0</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.6.0</sparkle:fullReleaseNotesLink>
-      <description>&lt;h3&gt;Nytt&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Testlabb under Hjälp → Testlabb…, för att jämföra inställningar. Välj en inspelning så körs den med KB Large ordagrann och Pianissimo med ett antal olika inställningar efter varandra (t.ex. utan spärrarna som kastar text modellen är osäker på). Varje körning sparas som en textfil och en logg i en mapp. Vanliga transkriberingar påverkas inte; nya filer väntar i kön medan labbet kör.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h3&gt;Ändrat&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Valet &amp;quot;Hitta fler luckor med Pianissimo&amp;quot; är borta. I en testintervju gav det 14,5 % ordfel mot 14,7 % utan, och två körningar med samma inställningar skiljer sig lika mycket, så det syns ingen vinst. Det krävde också en extra modell och längre tid.&lt;/li&gt;
-&lt;/ul&gt;</description>
-      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.6.0/Transkribera-v0.6.0.zip" length="13996089" type="application/octet-stream" sparkle:edSignature="qujSMhLbE7lB+QoWHZNAeNSRFig3UT/0hl6pPjqSTQRqf9L07bOcq1nW//tN1lZseNnPrAkz09dd2TlASgJpAg==" />
     </item>
   </channel>
 </rss>
