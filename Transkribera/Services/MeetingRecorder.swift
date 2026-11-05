@@ -1,12 +1,15 @@
 import AVFoundation
+import CoreGraphics
 import Foundation
 import Observation
 import ScreenCaptureKit
+import TranskriberaCore
 
 enum RecordingError: LocalizedError {
     case noDisplay
     case nothingRecorded
     case permissionDenied
+    case startFailed(detail: String)
 
     var errorDescription: String? {
         switch self {
@@ -15,7 +18,9 @@ enum RecordingError: LocalizedError {
         case .nothingRecorded:
             return "Inget ljud spelades in. Kontrollera att ljud faktiskt spelades upp på datorn under inspelningen."
         case .permissionDenied:
-            return "Transkribera behöver tillåtelse att spela in datorns ljud. Slå på Transkribera under Systeminställningar › Integritet och säkerhet › Skärm- och systemljudsinspelning och försök igen."
+            return "Transkribera behöver tillåtelse att spela in datorns ljud. Slå på Transkribera under Systeminställningar › Integritet och säkerhet › Skärm- och systemljudsinspelning och försök igen.\n\nStår Transkribera redan påslaget? Efter en uppdatering kan macOS ha tappat kopplingen. Ta bort Transkribera ur listan med − och lägg till den igen med +, och starta sedan om appen."
+        case .startFailed(let detail):
+            return "Inspelningen kunde inte starta: \(detail)"
         }
     }
 }
@@ -72,7 +77,7 @@ final class MeetingRecorder: NSObject {
             do {
                 content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
             } catch {
-                throw RecordingError.permissionDenied
+                throw Self.startError(for: error)
             }
             guard let display = content.displays.first else { throw RecordingError.noDisplay }
 
@@ -112,7 +117,11 @@ final class MeetingRecorder: NSObject {
                 }
             }
 
-            try await stream.startCapture()
+            do {
+                try await stream.startCapture()
+            } catch {
+                throw Self.startError(for: error)
+            }
             self.stream = stream
             self.output = output
             setState(.recording(since: Date()))
@@ -121,6 +130,25 @@ final class MeetingRecorder: NSObject {
             setState(.idle)
             stream = nil
             output = nil
+        }
+    }
+
+    /// Skiljer nekad tillåtelse från andra fel. Vid nekad tillåtelse registrerar
+    /// `CGRequestScreenCaptureAccess` appen i listan över skärminspelning.
+    private static func startError(for error: Error) -> RecordingError {
+        let nsError = error as NSError
+        let diagnosis = RecordingStartDiagnosis.classify(
+            errorDomain: nsError.domain,
+            errorCode: nsError.code,
+            errorDescription: nsError.localizedDescription,
+            preflightGranted: CGPreflightScreenCaptureAccess()
+        )
+        switch diagnosis {
+        case .permissionDenied:
+            _ = CGRequestScreenCaptureAccess()
+            return .permissionDenied
+        case .other(let detail):
+            return .startFailed(detail: detail)
         }
     }
 

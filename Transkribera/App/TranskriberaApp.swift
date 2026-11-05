@@ -1,3 +1,4 @@
+import AppKit
 import SwiftData
 import SwiftUI
 import TranskriberaCore
@@ -10,6 +11,7 @@ struct TranskriberaApp: App {
     @State private var recorder: MeetingRecorder
     @State private var lab = TestLab()
     @StateObject private var updater = AppUpdater()
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @AppStorage(SettingsKey.readingTextSize) private var readingSize = ReadingTextSize.standard
 
     init() {
@@ -29,12 +31,14 @@ struct TranskriberaApp: App {
     }
 
     var body: some Scene {
-        WindowGroup {
+        // Ett enda huvudfönster. Det kan stängas och öppnas igen (Dock, Fönster-menyn, Arkiv-menyn).
+        Window("Transkribera", id: MainWindow.id) {
             ContentView()
                 .environment(appState)
                 .environment(queue)
                 .environment(recorder)
-                .background(TestLabShortcut())
+                .background(TestLabShortcut(container: container, queue: queue, lab: lab))
+                .background(MainWindowReopener(delegate: appDelegate))
         }
         .modelContainer(container)
         .commands {
@@ -42,6 +46,7 @@ struct TranskriberaApp: App {
                 CheckForUpdatesButton(updater: updater)
             }
             CommandGroup(replacing: .newItem) {
+                ShowMainWindowButton()
                 Button("Ny transkribering") {
                     appState.mode = .file
                     appState.clearSelection()
@@ -67,13 +72,6 @@ struct TranskriberaApp: App {
             }
         }
 
-        Window("Testlabb", id: TestLabShortcut.windowID) {
-            TestLabView()
-                .environment(queue)
-                .environment(lab)
-        }
-        .modelContainer(container)
-
         Settings {
             SettingsView()
                 .environment(queue)
@@ -82,19 +80,80 @@ struct TranskriberaApp: App {
     }
 }
 
-/// Testlabbet är ett verktyg för att jämföra inställningar, inte för vanlig användning,
-/// därför finns det inte i någon meny. Det öppnas med den dolda genvägen ⌥⇧⌘T.
-/// Kontrolleras av scripts/test_testlab_hidden.py.
-private struct TestLabShortcut: View {
-    static let windowID = "testlab"
+enum MainWindow {
+    static let id = "main"
+}
+
+/// Dock-klicket på en app utan öppet fönster ska öppna huvudfönstret igen.
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    /// Sätts av huvudfönstret medan det finns; öppnar fönstret igen när det är stängt.
+    var reopenMainWindow: (() -> Void)?
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        guard !flag, let reopen = reopenMainWindow else { return true }
+        reopen()
+        return false
+    }
+}
+
+private struct MainWindowReopener: View {
+    let delegate: AppDelegate
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
-        Button("") { openWindow(id: Self.windowID) }
+        Color.clear
+            .frame(width: 0, height: 0)
+            .onAppear { delegate.reopenMainWindow = { openWindow(id: MainWindow.id) } }
+    }
+}
+
+/// Arkiv-menyn: öppnar huvudfönstret om det har stängts (annars hamnar det överst).
+private struct ShowMainWindowButton: View {
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        Button("Visa huvudfönstret") { openWindow(id: MainWindow.id) }
+    }
+}
+
+/// Testlabbet är ett verktyg för att jämföra inställningar, inte för vanlig användning,
+/// därför finns det inte i någon meny, inte heller i Fönster-menyn. Det är därför ett eget
+/// AppKit-fönster och inte en `Window`-scen (en sådan listas alltid i Fönster-menyn).
+/// Det öppnas med den dolda genvägen ⌥⇧⌘T. Kontrolleras av scripts/test_testlab_hidden.py.
+private struct TestLabShortcut: View {
+    let container: ModelContainer
+    let queue: TranscriptionQueue
+    let lab: TestLab
+
+    var body: some View {
+        Button("") { TestLabWindow.show(container: container, queue: queue, lab: lab) }
             .keyboardShortcut("t", modifiers: [.command, .option, .shift])
             .opacity(0)
             .frame(width: 0, height: 0)
             .accessibilityHidden(true)
+    }
+}
+
+@MainActor
+private enum TestLabWindow {
+    private static var window: NSWindow?
+
+    static func show(container: ModelContainer, queue: TranscriptionQueue, lab: TestLab) {
+        if let window {
+            window.makeKeyAndOrderFront(nil)
+            return
+        }
+        let root = TestLabView()
+            .environment(queue)
+            .environment(lab)
+            .modelContainer(container)
+        let window = NSWindow(contentViewController: NSHostingController(rootView: root))
+        window.title = "Testlabb"
+        window.styleMask = [.titled, .closable, .resizable, .miniaturizable]
+        window.isReleasedWhenClosed = false
+        window.center()
+        self.window = window
+        window.makeKeyAndOrderFront(nil)
     }
 }
 
