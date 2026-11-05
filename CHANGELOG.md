@@ -6,6 +6,11 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.9.8] – 2026-11-05
+
+### Rättat
+- Långa transkriberingar fryser inte längre när du scrollar medan ljudet spelas. Texten räknades om tio gånger i sekunden; nu ritas bara det stycke som spelas om.
+
 ## [0.9.7] – 2026-11-05
 
 ### Rättat

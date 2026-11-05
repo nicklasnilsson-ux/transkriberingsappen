@@ -122,6 +122,17 @@ struct SegmentRow: View {
     }
 }
 
+/// Jämförs på det som syns, så att raden inte ritas om när uppspelningstiden tickar (se ParagraphRow).
+extension SegmentRow: Equatable {
+    static func == (l: SegmentRow, r: SegmentRow) -> Bool {
+        l.segment.persistentModelID == r.segment.persistentModelID
+            && l.displayText == r.displayText && l.displaySpeaker == r.displaySpeaker
+            && l.query == r.query && l.currentOccurrence == r.currentOccurrence
+            && l.isActive == r.isActive && l.currentTime == r.currentTime
+            && l.isEditing == r.isEditing && l.isAnonymized == r.isAnonymized && l.editsAll == r.editsAll
+    }
+}
+
 /// Textfält för att rätta ett segment (radlayouten). Ändringen sparas när fältet lämnas.
 /// Med anonymisering på rättas den anonymiserade texten och ändringen förs tillbaka till
 /// originalet (se `AnonymizedEditing`), så att de dolda uppgifterna aldrig skrivs över.
