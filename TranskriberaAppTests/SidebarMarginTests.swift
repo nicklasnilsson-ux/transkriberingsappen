@@ -76,7 +76,7 @@ final class SidebarMarginTests: XCTestCase {
                 for x in 1..<limit {
                     guard let c = rep.colorAt(x: x, y: y)?.usingColorSpace(.sRGB) else { continue }
                     let d = abs(c.redComponent - bg.redComponent) + abs(c.greenComponent - bg.greenComponent) + abs(c.blueComponent - bg.blueComponent)
-                    if d > 0.06 { if minX < 0 { minX = x }; maxX = x }
+                    if d > 0.02 { if minX < 0 { minX = x }; maxX = x }
                 }
                 if minX < 0 { continue }
                 let b = Band(y0: y, y1: y, minX: Int(Double(minX) / scale), maxX: Int(Double(maxX) / scale))
@@ -95,7 +95,11 @@ final class SidebarMarginTests: XCTestCase {
         }
 
         let box = edges(of: rows[0])
-        let search = edges(of: rows[1])
+        // Raden med rubrik och sökfält: sökfältet är den bredaste ytan (rubriktexten är kortare).
+        let headerBands = bands(in: rows[1])
+        let widest = headerBands.max { ($0.maxX - $0.minX) < ($1.maxX - $1.minX) }
+        let search = (left: widest?.minX ?? -1, right: widest?.maxX ?? -1,
+                      report: headerBands.map { "y\($0.y0)…\($0.y1) x\($0.minX)…\($0.maxX)" }.joined(separator: ", "))
         let selected = edges(of: rows[rows.count - 1])
         let context = "rutan \(box.left)…\(box.right), sök \(search.left)…\(search.right), markering \(selected.left)…\(selected.right) (panel \(Int(sidebarWidth)) pt)\nrutan: \(box.report)\nsök: \(search.report)\nmarkering: \(selected.report)"
         XCTAssertGreaterThan(selected.right - selected.left, 100, "ingen markering hittades. " + context)
