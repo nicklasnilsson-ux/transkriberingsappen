@@ -847,22 +847,26 @@ struct TranscriptDetailView: View {
             .tint(Color.accentColor)
             .accessibilityLabel(player.isPlaying ? "Pausa" : "Spela")
             .help(player.isPlaying ? "Pausa" : "Spela")
-            Text(TimeFormatting.short(player.currentTime))
-                .font(.system(.callout, design: .monospaced))
-                .foregroundStyle(Color.textSecondary)
+            PlaybackTimeReader(player: player) { time in
+                Text(TimeFormatting.short(time))
+                    .font(.system(.callout, design: .monospaced))
+                    .foregroundStyle(Color.textSecondary)
+            }
         }
     }
 
     private func positionSlider(_ player: PlayerController, maxWidth: CGFloat = 200) -> some View {
-        Slider(
-            value: Binding(
-                get: { player.currentTime },
-                set: { player.seek(to: $0, play: player.isPlaying) }
-            ),
-            in: 0...max(transcript.duration, 1)
-        )
-        .frame(minWidth: 80, maxWidth: maxWidth)
-        .help("Hoppa i inspelningen")
+        PlaybackTimeReader(player: player) { time in
+            Slider(
+                value: Binding(
+                    get: { time },
+                    set: { player.seek(to: $0, play: player.isPlaying) }
+                ),
+                in: 0...max(transcript.duration, 1)
+            )
+            .frame(minWidth: 80, maxWidth: maxWidth)
+            .help("Hoppa i inspelningen")
+        }
     }
 
     /// Frågar först när något ska sparas eller raderas (se `RetranscribeDialog`).
@@ -912,13 +916,18 @@ struct TranscriptDetailView: View {
     private func textRows(proxy: ScrollViewProxy) -> some View {
         let segments = transcript.sortedSegments
         if let rows = displaySegments(segments) {
-            let currentTime = player?.currentTime ?? 0
-            let activeID = Self.activeSegment(in: segments, at: currentTime)?.persistentModelID
-            switch layout {
-            case .paragraphs:
-                paragraphRows(rows: rows, currentTime: currentTime, activeID: activeID, proxy: proxy)
-            case .segments:
-                segmentRows(rows: rows, currentTime: currentTime, activeID: activeID, proxy: proxy)
+            // Uppspelningstiden läses bara i PlaybackTimeReader. Annars räknas hela vyn om tio
+            // gånger i sekunden (sortering, anonymiseringsjämförelse, styckeindelning).
+            let paragraphs = layout == .paragraphs ? Self.paragraphs(rows) : []
+            let hit = currentHit
+            PlaybackTimeReader(player: player) { currentTime in
+                let activeID = Self.activeSegment(in: segments, at: currentTime)?.persistentModelID
+                switch layout {
+                case .paragraphs:
+                    paragraphRows(paragraphs: paragraphs, hit: hit, currentTime: currentTime, activeID: activeID, proxy: proxy)
+                case .segments:
+                    segmentRows(rows: rows, hit: hit, currentTime: currentTime, activeID: activeID, proxy: proxy)
+                }
             }
         } else {
             ProgressView("Anonymiserar…")
@@ -933,10 +942,9 @@ struct TranscriptDetailView: View {
         }
     }
 
-    private func segmentRows(rows: [DisplaySegment], currentTime: Double, activeID: PersistentIdentifier?, proxy: ScrollViewProxy) -> some View {
+    private func segmentRows(rows: [DisplaySegment], hit: SearchHit<PersistentIdentifier>?, currentTime: Double, activeID: PersistentIdentifier?, proxy: ScrollViewProxy) -> some View {
         // Hela texten visas alltid; sökningen markerar och stegar mellan träffarna.
-        let hit = currentHit
-        return VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 0) {
             LazyVStack(alignment: .leading, spacing: 0) {
                 ForEach(rows) { row in
                     let segment = row.segment
@@ -947,7 +955,8 @@ struct TranscriptDetailView: View {
                         query: query,
                         currentOccurrence: hit?.id == row.id ? hit?.occurrence : nil,
                         isActive: segment.persistentModelID == activeID,
-                        currentTime: currentTime,
+                        // Bara den spelade raden behöver tiden; övriga ritas inte om vid varje tick.
+                        currentTime: segment.persistentModelID == activeID ? currentTime : nil,
                         isEditing: editsAll || editingID == segment.persistentModelID,
                         isAnonymized: row.isAnonymized,
                         session: editSession,
@@ -957,6 +966,7 @@ struct TranscriptDetailView: View {
                         onCancel: { cancelEditing() },
                         onSeek: { player?.seek(to: segment.start) }
                     )
+                    .equatable()
                     .id(segment.persistentModelID)
                     .background(RowFrameReporter(id: AnyHashable(segment.persistentModelID), anchor: scrollAnchor, space: Self.scrollSpace))
                     .contextMenu { segmentMenu(row) }
@@ -969,21 +979,21 @@ struct TranscriptDetailView: View {
         }
     }
 
-    private func paragraphRows(rows: [DisplaySegment], currentTime: Double, activeID: PersistentIdentifier?, proxy: ScrollViewProxy) -> some View {
-        let paragraphs = Self.paragraphs(rows)
+    private func paragraphRows(paragraphs: [[DisplaySegment]], hit: SearchHit<PersistentIdentifier>?, currentTime: Double, activeID: PersistentIdentifier?, proxy: ScrollViewProxy) -> some View {
         // Hela texten visas alltid; sökningen markerar och stegar mellan träffarna.
-        let hit = currentHit
         let activeParagraphID = paragraphs.first { paragraph in paragraph.contains { $0.id == activeID } }?.first?.id
 
         return VStack(alignment: .leading, spacing: 0) {
             LazyVStack(alignment: .leading, spacing: 0) {
                 ForEach(paragraphs, id: \.first?.id) { paragraph in
+                    // Bara det spelade stycket får tiden och det aktiva id:t (se ParagraphRow ==).
+                    let isActiveParagraph = activeParagraphID != nil && paragraph.first?.id == activeParagraphID
                     ParagraphRow(
                         rows: paragraph,
                         query: query,
                         currentHit: hit,
-                        activeID: activeID,
-                        currentTime: currentTime,
+                        activeID: isActiveParagraph ? activeID : nil,
+                        currentTime: isActiveParagraph ? currentTime : nil,
                         isEditing: editsAll || editingID == paragraph.first?.segment.persistentModelID,
                         session: editSession,
                         onBeginEdit: {
@@ -1000,6 +1010,7 @@ struct TranscriptDetailView: View {
                             })
                         }
                     )
+                    .equatable()
                     .id(paragraph.first?.id)
                     .background(RowFrameReporter(id: AnyHashable(paragraph.first?.id), anchor: scrollAnchor, space: Self.scrollSpace))
                     .contextMenu { paragraphMenu(paragraph) }
@@ -1296,6 +1307,22 @@ struct DisplaySegment: Identifiable {
     var isAnonymized = false
 
     var id: PersistentIdentifier { segment.persistentModelID }
+
+    /// Samma synliga innehåll. Ändringar i själva modellen når raderna via SwiftData-observationen.
+    func sameContent(as other: DisplaySegment) -> Bool {
+        id == other.id && text == other.text && speaker == other.speaker && isAnonymized == other.isAnonymized
+    }
+}
+
+/// Läser uppspelningstiden i en egen vy, så att bara den ritas om när tiden tickar (10 gånger i
+/// sekunden) och inte hela transkriptionsvyn. Kontrolleras av `scripts/test_scroll_perf.py`.
+struct PlaybackTimeReader<Content: View>: View {
+    let player: PlayerController?
+    @ViewBuilder let content: (Double) -> Content
+
+    var body: some View {
+        content(player?.currentTime ?? 0)
+    }
 }
 
 /// Spelaren startas när vyn visas och stängs när den försvinner; anonymiseringen räknas om vid ändring.

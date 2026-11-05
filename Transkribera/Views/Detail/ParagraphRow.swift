@@ -129,3 +129,14 @@ struct ParagraphRow: View {
         return result
     }
 }
+
+/// Jämförs på det som syns, inte på funktionerna (de är alltid "olika"). Då ritas ett stycke bara om
+/// när något i det ändras, inte varje gång uppspelningstiden tickar.
+extension ParagraphRow: Equatable {
+    static func == (l: ParagraphRow, r: ParagraphRow) -> Bool {
+        l.query == r.query && l.currentHit == r.currentHit && l.activeID == r.activeID
+            && l.currentTime == r.currentTime && l.isEditing == r.isEditing && l.editsAll == r.editsAll
+            && l.rows.count == r.rows.count
+            && zip(l.rows, r.rows).allSatisfy { $0.sameContent(as: $1) }
+    }
+}
