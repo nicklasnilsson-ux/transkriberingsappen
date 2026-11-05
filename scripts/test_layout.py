@@ -389,6 +389,15 @@ class MeetingViewHeightTests(unittest.TestCase):
     splitvyn ca 1340 pt hög, så sidopanelen hamnade ovanför appens överkant. Apptestet
     WindowLayoutTests mäter det på CI; här stoppas mönstret redan i källkoden."""
 
+    def test_selected_sidebar_row_flips_its_text_colours(self):
+        """Appens egna textfärger vänds inte av systemet på markerade rader (mörk text på mörk
+        markering, 2026-11-05). Raden måste därför själv läsa backgroundProminence."""
+        src = (VIEWS / "Sidebar" / "SidebarView.swift").read_text(encoding="utf-8")
+        row = src[src.index("private struct SidebarRow"):src.index("/// Rubrik i lägesväxlaren")]
+        self.assertIn("backgroundProminence", row)
+        self.assertNotIn("Color.textSecondary", row, "använd secondaryColor, som vänder på markerad rad")
+        self.assertNotIn(".tint)", row)
+
     def test_meeting_view_has_no_vertically_fixed_text(self):
         # Chipsraden i Fil-läget har en enradig fixedSize och mättes som oskyldig (626 pt); bara mötesvyn har löpande text.
         for name in ("Home/MeetingModeView.swift",):

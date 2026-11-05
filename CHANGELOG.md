@@ -6,6 +6,10 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+### Rättat
+- Ikonerna är skarpa på Retina-skärmar. De ritas nu om i skärmens upplösning i stället för att förstoras från en liten bild.
+- Markerad rad i listan: texten och ikonen är vita mot den mörka markeringen. Förut var texten mörk på mörkt.
+
 ## [0.9.6] – 2026-11-04
 
 ### Rättat

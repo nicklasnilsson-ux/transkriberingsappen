@@ -271,6 +271,13 @@ private struct SidebarRow: View {
     let transcript: Transcript
     let isCurrent: Bool
     @Environment(TranscriptionQueue.self) private var queue
+    /// `.increased` när raden är markerad med fylld bakgrund. Appen sätter egna textfärger
+    /// (Theme.swift), och dem vänder systemet inte på markerade rader: då blev texten mörk på mörk bakgrund.
+    @Environment(\.backgroundProminence) private var prominence
+
+    private var isOnSelection: Bool { prominence == .increased }
+    private var primaryColor: Color { isOnSelection ? .white : .textPrimary }
+    private var secondaryColor: Color { isOnSelection ? .white.opacity(0.85) : .textSecondary }
 
     var body: some View {
         HStack(spacing: 10) {
@@ -280,13 +287,14 @@ private struct SidebarRow: View {
                 Text(transcript.title)
                     .lineLimit(1)
                     .font(.body.weight(.medium))
+                    .foregroundStyle(primaryColor)
                 Text(detail)
                     .font(.system(.caption, design: .monospaced))
-                    .foregroundStyle(Color.textSecondary)
+                    .foregroundStyle(secondaryColor)
                     .lineLimit(1)
                 Text(statusLabel.text)
                     .font(.caption)
-                    .foregroundStyle(statusLabel.isWarning ? AnyShapeStyle(Color.warning) : AnyShapeStyle(Color.textSecondary))
+                    .foregroundStyle(statusLabel.isWarning && !isOnSelection ? Color.warning : secondaryColor)
             }
         }
         .padding(.vertical, 3)
@@ -304,12 +312,12 @@ private struct SidebarRow: View {
                 ProgressView().controlSize(.small)
             }
         case .queued, .transcribing:
-            Image(icon: .clock).foregroundStyle(Color.textSecondary)
+            Image(icon: .clock).foregroundStyle(secondaryColor)
         case .failed:
-            Image(icon: .warning).foregroundStyle(Color.warning)
+            Image(icon: .warning).foregroundStyle(isOnSelection ? Color.white : Color.warning)
         case .completed:
             Image(icon: transcript.isRecording ? .record : (transcript.isVideo ? .movie : .waveform))
-                .foregroundStyle(.tint)
+                .foregroundStyle(isOnSelection ? Color.white : Color.accentColor)
         }
     }
 

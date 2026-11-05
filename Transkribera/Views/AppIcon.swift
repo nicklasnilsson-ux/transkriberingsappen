@@ -16,8 +16,9 @@ enum AppIcon: String, CaseIterable {
 
 extension Image {
     /// Ikonen i sin egen storlek (16 pt), målad i förgrundsfärgen. För andra storlekar: `Icon`.
+    /// Ritas alltid om i den upplösning den visas i (se `AppIcon.crispImage`).
     init(icon: AppIcon) {
-        self.init(icon.assetName)
+        self = icon.crispImage(size: 16)
     }
 }
 
@@ -47,5 +48,21 @@ struct Icon: View {
             .scaledToFit()
             .frame(width: size, height: size)
             .accessibilityHidden(true)
+    }
+}
+
+extension AppIcon {
+    /// Ikonen som en bild som ritas om i den upplösning den visas i. En vanlig `Image("namn")` av en
+    /// 16 pt stor SVG blir i listor, knappar och menyer en bitmapp i 16 pt som sedan förstoras till
+    /// Retina-skärmens pixlar, och blir suddig. Här ritas vektorn först när bilden visas, med
+    /// skärmens skala. Bilden är en mall och följer förgrundsfärgen.
+    func crispImage(size: CGFloat) -> Image {
+        let source = NSImage(named: assetName)
+        let image = NSImage(size: NSSize(width: size, height: size), flipped: false) { rect in
+            source?.draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1)
+            return true
+        }
+        image.isTemplate = true
+        return Image(nsImage: image).renderingMode(.template)
     }
 }
