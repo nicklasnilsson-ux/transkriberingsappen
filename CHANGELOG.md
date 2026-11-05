@@ -10,6 +10,14 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 - Markerad rad i listan: texten är nu vit mot den mörka markeringen (0.9.7 rättade det inte).
 - Rutan för ny transkribering, rubriken och sökfältet har samma kanter som markeringen av en rad.
 
+## [0.9.9] – 2026-11-05
+
+### Rättat
+- En inspelning utan tal (till exempel en tyst mötesinspelning) fastnar inte längre på "Anonymiserar…". Du får i stället beskedet "Ingen text hittades".
+- Mötesinspelningen sa "tillåtelse saknas" för alla fel vid start, även när tillåtelsen fanns. Nu skiljer appen på nekad tillåtelse och andra fel och visar felkoden vid andra fel. Vid nekad tillåtelse förklarar texten att du kan behöva ta bort Transkribera ur listan med − och lägga till den igen efter en uppdatering.
+- Stänger du appens fönster går det nu att öppna det igen: klicka på appen i Dock, välj Visa huvudfönstret i Arkiv-menyn eller huvudfönstret i Fönster-menyn.
+- Testlabbet är borta ur Fönster-menyn. Genvägen ⌥⇧⌘T öppnar det som förut.
+
 ## [0.9.8] – 2026-11-05
 
 ### Rättat

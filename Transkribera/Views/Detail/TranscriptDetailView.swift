@@ -915,7 +915,14 @@ struct TranscriptDetailView: View {
     @ViewBuilder
     private func textRows(proxy: ScrollViewProxy) -> some View {
         let segments = transcript.sortedSegments
-        if let rows = displaySegments(segments) {
+        if segments.isEmpty {
+            ContentUnavailableView {
+                Label("Ingen text hittades", icon: .warning)
+            } description: {
+                Text("Inspelningen innehöll inget tal som gick att skriva ut.")
+            }
+            .frame(maxWidth: .infinity, minHeight: 120)
+        } else if let rows = displaySegments(segments) {
             // Uppspelningstiden läses bara i PlaybackTimeReader. Annars räknas hela vyn om tio
             // gånger i sekunden (sortering, anonymiseringsjämförelse, styckeindelning).
             let paragraphs = layout == .paragraphs ? Self.paragraphs(rows) : []
@@ -929,7 +936,7 @@ struct TranscriptDetailView: View {
                     segmentRows(rows: rows, hit: hit, currentTime: currentTime, activeID: activeID, proxy: proxy)
                 }
             }
-        } else {
+        } else if AnonymizationWait.isWaiting(segmentCount: segments.count, hasCurrentResult: false) {
             ProgressView("Anonymiserar…")
                 .frame(maxWidth: .infinity, minHeight: 120)
         }

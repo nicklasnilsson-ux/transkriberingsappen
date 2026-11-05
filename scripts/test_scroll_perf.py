@@ -37,7 +37,7 @@ class ScrollPerformanceTests(unittest.TestCase):
     def test_text_rows_do_not_rebuild_paragraphs_per_tick(self):
         # Styckeindelningen görs utanför PlaybackTimeReader, inte i tidsclosuren.
         reader_call = self.text[self.text.index("PlaybackTimeReader(player: player) { currentTime in"):]
-        reader_call = reader_call[:reader_call.index("} else {")]
+        reader_call = reader_call[:re.search(r"\} else (if |\{)", reader_call).start()]
         self.assertNotIn("Self.paragraphs(", reader_call)
         self.assertNotIn("sortedSegments", reader_call)
 
