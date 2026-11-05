@@ -6,6 +6,10 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+### Rättat
+- Markerad rad i listan: texten är nu vit mot den mörka markeringen (0.9.7 rättade det inte).
+- Rutan för ny transkribering, rubriken och sökfältet har samma kanter som markeringen av en rad.
+
 ## [0.9.8] – 2026-11-05
 
 ### Rättat

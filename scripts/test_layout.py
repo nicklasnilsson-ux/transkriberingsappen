@@ -234,7 +234,7 @@ class EditModeTests(unittest.TestCase):
         self.assertLess(lst.index("listHeader"), lst.index("ForEach(groups)"))
         helper = side[side.index("func sidebarPlainRow"):]
         self.assertIn(".selectionDisabled()", helper)
-        self.assertIn(".listRowInsets(EdgeInsets(top: 0, leading: SidebarLayout.margin", helper)
+        self.assertIn(".listRowInsets(EdgeInsets(top: 0, leading: SidebarLayout.plainRowInset", helper)
 
     def test_meeting_controls_use_full_width_with_air_between_rows(self):
         text = (VIEWS / "Home/MeetingControls.swift").read_text(encoding="utf-8")
@@ -390,14 +390,16 @@ class MeetingViewHeightTests(unittest.TestCase):
     WindowLayoutTests mäter det på CI; här stoppas mönstret redan i källkoden."""
 
     def test_sidebar_uses_one_side_margin_for_everything(self):
-        """Rutan, rubriken, sökfältet och listraderna hade olika sidmarginaler (2026-11-05).
-        Alla rader i listan sätter sina sidor via SidebarLayout.margin och ingen egen padding på sidorna."""
+        """Rutan, rubriken och sökfältet hade andra sidkanter än markeringen (0.9.7). Kanterna mäts i pixlar av
+        apptestet SidebarMarginTests; här kontrolleras att det finns och att panelen inte har egna sidmarginaler."""
         src = (VIEWS / "Sidebar" / "SidebarView.swift").read_text(encoding="utf-8")
         body = src[:src.index("private enum SidebarLayout")]
         self.assertNotIn(".padding(.horizontal, 12)", body)
         self.assertNotIn(".padding(.horizontal, 14)", body)
-        self.assertGreaterEqual(src.count("SidebarLayout.margin"), 4)  # plain rader (2 sidor) + transkriberingsrader (2 sidor)
-        self.assertNotIn("listRowInsets(EdgeInsets())", src)
+        self.assertIn("SidebarLayout.plainRowInset", src)
+        test = (ROOT / "TranskriberaAppTests" / "SidebarMarginTests.swift").read_text(encoding="utf-8")
+        self.assertIn("abs(box.left - selected.left)", test)
+        self.assertIn("abs(search.right - selected.right)", test)
 
     def test_sidebar_rows_are_single_accessibility_elements(self):
         """Skärmläsare ska läsa en rad som en mening (titel, längd, datum, status), inte som lösa texter."""
@@ -411,7 +413,10 @@ class MeetingViewHeightTests(unittest.TestCase):
         markering, 2026-11-05). Raden måste därför själv läsa backgroundProminence."""
         src = (VIEWS / "Sidebar" / "SidebarView.swift").read_text(encoding="utf-8")
         row = src[src.index("private struct SidebarRow"):src.index("/// Rubrik i lägesväxlaren")]
-        self.assertIn("backgroundProminence", row)
+        # backgroundProminence räckte inte (0.9.7: fortfarande mörk text). Raden får veta att den är vald.
+        self.assertIn("let isSelected: Bool", row)
+        self.assertIn("isSelected && activeState != .inactive", row)
+        self.assertIn("isSelected: listSelection.wrappedValue.contains(transcript)", src)
         self.assertNotIn("Color.textSecondary", row, "använd secondaryColor, som vänder på markerad rad")
         self.assertNotIn(".tint)", row)
 
