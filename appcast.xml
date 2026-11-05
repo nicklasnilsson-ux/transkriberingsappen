@@ -6,6 +6,21 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.9.11</title>
+      <pubDate>Thu, 05 Nov 2026 21:26:49 GMT</pubDate>
+      <sparkle:version>48</sparkle:version>
+      <sparkle:shortVersionString>0.9.11</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.11</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Ändrat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Inställningarna för en ny transkribering finns nu på ett ställe: kortet Inställningar överst i sidopanelen. De gäller både Fil och Mötesinspelning. Kortet visar modell och språk, och en rad till när talare skiljs åt, ordlistan är ifylld eller modellen behöver laddas ner.&lt;/li&gt;
+&lt;li&gt;Raden med väljare för modell, språk, talare och ordlista är borta från huvudytan. Den trycktes ihop och bröt orden när fönstret var smalt.&lt;/li&gt;
+&lt;li&gt;Under Mötesinspelning finns bara mikrofonvalet och Starta inspelning. Talarvalet ligger i kortet Inställningar.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.11/Transkribera-v0.9.11.zip" length="14516855" type="application/octet-stream" sparkle:edSignature="uNN9evaLQ6CaJ1rspB3MJuDMi8R5l1XWn+b2pDdRFq9Y/1OjhRRR5MNBGjf+3diBTn/CUNWeJmJO995V8sBBDw==" />
+    </item>
+    <item>
       <title>Version 0.9.10</title>
       <pubDate>Thu, 05 Nov 2026 17:34:22 GMT</pubDate>
       <sparkle:version>47</sparkle:version>
@@ -469,19 +484,6 @@
 &lt;li&gt;Exporten för analys börjar med ett avsnitt, &amp;quot;Om den här filen&amp;quot;, som förklarar vad ⚠, platshållare som [PERSON 1] och rollerna Intervjuare och Kund betyder, och att en automatisk transkribering kan missa småord och ”eh”/”mm”, så att den som läser filen (t.ex. en AI) förstår den. Bara det som gäller filen tas med. Du kan stänga av det i exportdialogen.&lt;/li&gt;
 &lt;/ul&gt;</description>
       <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.6.2/Transkribera-v0.6.2.zip" length="14005915" type="application/octet-stream" sparkle:edSignature="+cb/QdN53A3my1H5YuQ5IayYF+rz1iuCbgSUkXF3Qi6FiS9GhrbtTZiPEVBMMd2lsGyP6NFpj1hlUpYX+u69CA==" />
-    </item>
-    <item>
-      <title>Version 0.6.1</title>
-      <pubDate>Sat, 31 Oct 2026 09:46:51 GMT</pubDate>
-      <sparkle:version>18</sparkle:version>
-      <sparkle:shortVersionString>0.6.1</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.6.1</sparkle:fullReleaseNotesLink>
-      <description>&lt;h3&gt;Ändrat&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Testlabbet har en ny körlista. Första omgången visade att spärrarna, fönsterklippet och omkörningarna inte spelar någon roll, och att KB-Whisper inte skriver ut &amp;quot;eh&amp;quot; och &amp;quot;mm&amp;quot; alls (facit har ungefär 60 på 18 minuter). Nu provas en ledtråd med fyllnadsord, som lista och som löpande text, med och utan i luckkontrollen, plus Pianissimo som jämförelse. Vanliga transkriberingar påverkas inte.&lt;/li&gt;
-&lt;/ul&gt;</description>
-      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.6.1/Transkribera-v0.6.1.zip" length="14003621" type="application/octet-stream" sparkle:edSignature="yx1fkSDW98MYPOsy0bsbMXA43kxYvU1DPKBKnb22Jp3K+Z20HFAGhaSiqhbxRkQk4PryN5/ako2F1660bseCCQ==" />
     </item>
   </channel>
 </rss>
