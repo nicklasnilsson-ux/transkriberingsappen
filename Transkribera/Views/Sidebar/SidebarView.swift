@@ -305,6 +305,13 @@ private struct SidebarRow: View {
         }
         .padding(.vertical, 3)
         .padding(.horizontal, SidebarLayout.rowTextInset)
+        // En rad är ett enda objekt för skärmläsare: titel, längd, datum och status i en mening.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityText)
+    }
+
+    private var accessibilityText: String {
+        [transcript.title, detail, statusLabel.text].joined(separator: ", ")
     }
 
     @ViewBuilder

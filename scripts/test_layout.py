@@ -399,6 +399,13 @@ class MeetingViewHeightTests(unittest.TestCase):
         self.assertGreaterEqual(src.count("SidebarLayout.margin"), 4)  # plain rader (2 sidor) + transkriberingsrader (2 sidor)
         self.assertNotIn("listRowInsets(EdgeInsets())", src)
 
+    def test_sidebar_rows_are_single_accessibility_elements(self):
+        """Skärmläsare ska läsa en rad som en mening (titel, längd, datum, status), inte som lösa texter."""
+        src = (VIEWS / "Sidebar" / "SidebarView.swift").read_text(encoding="utf-8")
+        row = src[src.index("private struct SidebarRow"):src.index("/// Rubrik i lägesväxlaren")]
+        self.assertIn(".accessibilityElement(children: .ignore)", row)
+        self.assertIn(".accessibilityLabel(accessibilityText)", row)
+
     def test_selected_sidebar_row_flips_its_text_colours(self):
         """Appens egna textfärger vänds inte av systemet på markerade rader (mörk text på mörk
         markering, 2026-11-05). Raden måste därför själv läsa backgroundProminence."""
