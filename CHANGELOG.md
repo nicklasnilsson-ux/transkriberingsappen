@@ -6,6 +6,13 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.9.11] – 2026-11-05
+
+### Ändrat
+- Inställningarna för en ny transkribering finns nu på ett ställe: kortet Inställningar överst i sidopanelen. De gäller både Fil och Mötesinspelning. Kortet visar modell och språk, och en rad till när talare skiljs åt, ordlistan är ifylld eller modellen behöver laddas ner.
+- Raden med väljare för modell, språk, talare och ordlista är borta från huvudytan. Den trycktes ihop och bröt orden när fönstret var smalt.
+- Under Mötesinspelning finns bara mikrofonvalet och Starta inspelning. Talarvalet ligger i kortet Inställningar.
+
 ## [0.9.10] – 2026-11-05
 
 ### Rättat

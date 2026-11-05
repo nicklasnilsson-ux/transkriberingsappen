@@ -2,16 +2,15 @@ import AppKit
 import SwiftUI
 import TranskriberaCore
 
-/// Mötesläget i sidopanelen. Inställningarna ersätter släppytan, och Starta och Stoppa ligger här.
-/// Under inspelning är inställningarna låsta och det går inte att börja transkribera något annat:
+/// Mötesläget i sidopanelen. Mikrofonvalet och Starta/Stoppa ersätter släppytan. Modell, språk, talare och
+/// ordlista ligger i inställningskortet överst i panelen, som gäller både Fil och Mötesinspelning.
+/// Under inspelning är valen låsta och det går inte att börja transkribera något annat:
 /// man gör en sak i taget (Nicklas 2026-11-03).
 struct MeetingControls: View {
     @Environment(MeetingRecorder.self) private var recorder
     @Environment(TranscriptionQueue.self) private var queue
     @Environment(AppState.self) private var appState
     @AppStorage(SettingsKey.recordMicrophone) private var recordMicrophone = true
-    @AppStorage(SettingsKey.identifySpeakers) private var identifySpeakers = false
-    @AppStorage(SettingsKey.speakers) private var speakers = SpeakerCount.automatic.rawValue
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -19,17 +18,6 @@ struct MeetingControls: View {
                 if MeetingRecorder.supportsMicrophone {
                     SwitchRow("Spela även in min mikrofon", isOn: $recordMicrophone)
                         .help("Ta med din egen röst. Annars spelas bara datorns ljud in, alltså de andra deltagarna.")
-                }
-                SwitchRow("Skilj på vem som pratar", isOn: $identifySpeakers)
-                    .help("Märker texten med Talare 1, Talare 2 … som du sedan kan byta namn på. Tar lite längre tid.")
-                if identifySpeakers {
-                    // Rubrik ovanför och väljaren över hela bredden: den är lätt att träffa och får plats med "Automatiskt, minst 2".
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Antal talare")
-                        SpeakerCountPicker(selection: $speakers)
-                            .labelsHidden()
-                            .frame(maxWidth: .infinity)
-                    }
                 }
             }
             // Låst läge under inspelning.

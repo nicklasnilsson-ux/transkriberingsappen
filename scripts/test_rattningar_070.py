@@ -14,13 +14,16 @@ body = sidebar[sidebar.index("var body: some View"):sidebar.index(".navigationSp
 class SidebarOrderTests(unittest.TestCase):
     def test_order_settings_dropzone_heading_search_list(self):
         rows = sidebar[sidebar.index("private var list: some View"):]
-        order = [rows.index(x) for x in ("newTranscriptionGroup", "listHeader", "ForEach(groups)")]
+        order = [rows.index(x) for x in ("topCards", "listHeader", "ForEach(groups)")]
         self.assertEqual(order, sorted(order))
 
     def test_settings_and_dropzone_are_grouped(self):
-        group = sidebar[sidebar.index("private var newTranscriptionGroup"):sidebar.index("private var settingsButton")]
-        self.assertLess(group.index("settingsButton"), group.index("dropArea"))
-        self.assertIn("RoundedRectangle", group)
+        # 0.9.11 (Nicklas skiss 2026-11-05): inställningskortet ligger ovanför rutan, i samma listrad.
+        top = sidebar[sidebar.index("private var topCards"):sidebar.index("private var newTranscriptionGroup")]
+        self.assertLess(top.index("settingsCard"), top.index("newTranscriptionGroup"))
+        group = sidebar[sidebar.index("private var newTranscriptionGroup"):sidebar.index("private var modeSwitcher")]
+        self.assertLess(group.index("modeSwitcher"), group.index("dropArea"))
+        self.assertIn(".sidebarCard()", group)
 
     def test_dropzone_has_choose_files_and_highlight(self):
         self.assertIn('Button("Välj filer…")', sidebar)
@@ -71,11 +74,12 @@ class FinishedTranscriptionSettingsTests(unittest.TestCase):
 
 
 class EmptyViewTests(unittest.TestCase):
-    def test_settings_row_sits_at_the_top_of_the_empty_view(self):
+    def test_empty_view_is_only_the_empty_state(self):
+        # 0.9.11: raden med inställningar är borta ur huvudytan (de finns i sidopanelens kort).
         empty = (V / "Views/Home/FileModeEmptyView.swift").read_text(encoding="utf-8")
-        view = empty[empty.index("struct FileModeEmptyView"):empty.index("struct NextTranscriptionChips")]
-        self.assertLess(view.index("NextTranscriptionChips()"), view.index("ContentUnavailableView"))
-        self.assertRegex(view, r"alignment: \.top\)\s*\n\s*\.navigationTitle")
+        view = empty[empty.index("struct FileModeEmptyView"):empty.index("struct NextTranscriptionSettingsForm")]
+        self.assertIn("ContentUnavailableView", view)
+        self.assertIn('.navigationTitle("Ny transkribering")', view)
 
 
 class CollapseAndPlayerTests(unittest.TestCase):
