@@ -231,8 +231,11 @@ struct SidebarView: View {
             ForEach(groups) { group in
                 Section(group.group.rawValue) {
                     ForEach(group.items) { transcript in
-                        SidebarRow(transcript: transcript, isCurrent: queue.currentTranscriptID == transcript.id)
-                            .listRowInsets(EdgeInsets(top: 0, leading: SidebarLayout.margin, bottom: 0, trailing: SidebarLayout.margin))
+                        SidebarRow(
+                            transcript: transcript,
+                            isCurrent: queue.currentTranscriptID == transcript.id,
+                            isSelected: listSelection.wrappedValue.contains(transcript)
+                        )
                             .tag(transcript)
                             .contextMenu { menu(for: transcript) }
                     }
@@ -266,22 +269,26 @@ struct SidebarView: View {
     }
 }
 
-/// En enda sidmarginal för allt i sidopanelen: rutan, rubriken, sökfältet och markeringen av en rad
-/// har sina kanter på samma avstånd från panelens sidor. Texten i en rad ligger `rowTextInset` innanför markeringen.
+/// Rutan, rubriken och sökfältet ska ha samma kanter som markeringen av en rad.
+/// Uppmätt i CI (SidebarMarginTests, macOS 26): listan lägger varje rads innehåll 16 pt in från panelens
+/// sidor, men ritar markeringen bara 10 pt in. Raderna utan markering flyttas därför ut 6 pt (negativ marginal)
+/// så att deras kanter hamnar på markeringens. Transkriberingsraderna behåller listans egen marginal.
 private enum SidebarLayout {
-    static let margin: CGFloat = 12
-    static let rowTextInset: CGFloat = 8
+    static let cellInset: CGFloat = 16
+    static let selectionInset: CGFloat = 10
+    static let plainRowInset: CGFloat = selectionInset - cellInset
 }
 
 private struct SidebarRow: View {
     let transcript: Transcript
     let isCurrent: Bool
+    /// Raden är vald i listan. `backgroundProminence` räckte inte: 0.9.7 hade fortfarande mörk text på markeringen.
+    let isSelected: Bool
     @Environment(TranscriptionQueue.self) private var queue
-    /// `.increased` när raden är markerad med fylld bakgrund. Appen sätter egna textfärger
-    /// (Theme.swift), och dem vänder systemet inte på markerade rader: då blev texten mörk på mörk bakgrund.
-    @Environment(\.backgroundProminence) private var prominence
+    /// Markeringen är grå när fönstret inte är i fokus; då ska texten inte vara vit.
+    @Environment(\.controlActiveState) private var activeState
 
-    private var isOnSelection: Bool { prominence == .increased }
+    private var isOnSelection: Bool { isSelected && activeState != .inactive }
     private var primaryColor: Color { isOnSelection ? .white : .textPrimary }
     private var secondaryColor: Color { isOnSelection ? .white.opacity(0.85) : .textSecondary }
 
@@ -304,7 +311,6 @@ private struct SidebarRow: View {
             }
         }
         .padding(.vertical, 3)
-        .padding(.horizontal, SidebarLayout.rowTextInset)
         // En rad är ett enda objekt för skärmläsare: titel, längd, datum och status i en mening.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityText)
@@ -372,7 +378,7 @@ private extension View {
     /// eller avdelare. Innehållet bestämmer själv sina marginaler.
     func sidebarPlainRow() -> some View {
         self
-            .listRowInsets(EdgeInsets(top: 0, leading: SidebarLayout.margin, bottom: 0, trailing: SidebarLayout.margin))
+            .listRowInsets(EdgeInsets(top: 0, leading: SidebarLayout.plainRowInset, bottom: 0, trailing: SidebarLayout.plainRowInset))
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
             .selectionDisabled()
