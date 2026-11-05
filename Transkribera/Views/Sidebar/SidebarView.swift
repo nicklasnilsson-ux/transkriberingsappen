@@ -11,6 +11,8 @@ struct SidebarView: View {
     @Environment(MeetingRecorder.self) private var recorder
     @AppStorage(SettingsKey.model) private var modelRaw = WhisperModel.default.rawValue
     @AppStorage(SettingsKey.language) private var language = "sv"
+    @AppStorage(SettingsKey.identifySpeakers) private var identifySpeakers = false
+    @AppStorage(SettingsKey.vocabulary) private var vocabulary = ""
     @Query(sort: \Transcript.createdAt, order: .reverse) private var transcripts: [Transcript]
     @State private var filter = ""
     @State private var transcriptToDelete: Transcript?
@@ -98,7 +100,18 @@ struct SidebarView: View {
         }
     }
 
-    /// Inställningarna och släppytan hör ihop (båda gäller nästa transkribering), så de ligger i samma ruta.
+    /// Överst i panelen: inställningskortet och rutan för ny transkribering, i samma listrad.
+    /// Inställningarna gäller både Fil och Mötesinspelning och finns bara här (Nicklas 2026-11-05):
+    /// ingen rad med väljare i huvudytan, som trycktes ihop när fönstret var smalt.
+    private var topCards: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            settingsCard
+            newTranscriptionGroup
+        }
+        .padding(.top, 10)
+    }
+
+    /// Släppytan eller mötesinspelningen, under Fil/Mötesinspelning.
     private var newTranscriptionGroup: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Ny transkribering")
@@ -106,8 +119,7 @@ struct SidebarView: View {
                 .foregroundStyle(Color.textSecondary)
                 .padding(.leading, 2)
             modeSwitcher
-            settingsButton
-            // I mötesläget ersätter inställningarna släppytan: man gör en sak i taget.
+            // I mötesläget ersätter inspelningen släppytan: man gör en sak i taget.
             if appState.mode == .meeting {
                 MeetingControls()
             } else {
@@ -115,15 +127,7 @@ struct SidebarView: View {
             }
         }
         .padding(10)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.chip)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(Color.line, lineWidth: 1)
-        )
-        .padding(.top, 10)
+        .sidebarCard()
     }
 
     /// Fil eller Mötesinspelning. Ligger överst i sidopanelen (inte i fönstrets verktygsfält), så
@@ -143,29 +147,25 @@ struct SidebarView: View {
         .help("Fil: transkribera ljud- och videofiler. Mötesinspelning: spela in datorns ljud.")
     }
 
-    /// Högst upp: modell och språk för nästa transkribering. Knappen öppnar inställningarna.
-    private var settingsButton: some View {
-        let model = WhisperModel.resolved(modelRaw)
+    /// Inställningskortet: rubrik, modell och språk, och en rad till bara när något mer är på.
+    /// Klick öppnar formuläret med alla val för nästa transkribering.
+    private var settingsCard: some View {
+        let summary = NextTranscriptionSummary(
+            modelName: WhisperModel.resolved(modelRaw).displayName,
+            languageName: Language.displayName(for: language),
+            identifySpeakers: identifySpeakers,
+            hasVocabulary: !vocabulary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+            modelDownloaded: queue.transcriber.isDownloaded(WhisperModel.resolved(modelRaw))
+        )
         return Button { showsNextSettings.toggle() } label: {
-            HStack(spacing: 8) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("\(model.displayName) · \(Language.displayName(for: language))")
-                        .font(.callout.weight(.medium))
-                        .lineLimit(1)
-                    Text(queue.transcriber.isDownloaded(model) ? "Finns på datorn" : "Laddas ner automatiskt första gången")
-                        .font(.caption)
-                        .foregroundStyle(Color.textSecondary)
-                }
-                Spacer(minLength: 4)
-                Image(icon: .tune).foregroundStyle(Color.textSecondary)
-            }
-            .padding(10)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.chip, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            SettingsCardLabel(summary: summary)
         }
         .buttonStyle(.plain)
-        .disabled(appState.mode == .meeting && recorder.isBusy)
-        .help("Inställningar för en ny transkribering: modell, språk, antal talare och ordlista")
+        // Låst under mötesinspelning: inställningarna gäller inspelningen som pågår.
+        .disabled(recorder.isBusy)
+        .opacity(recorder.isBusy ? 0.55 : 1)
+        .help("Inställningar för ny transkribering, både fil och mötesinspelning: modell, språk, talare och ordlista")
+        .accessibilityLabel("Inställningar: \(summary.accessibilityText)")
         .popover(isPresented: $showsNextSettings, arrowEdge: .trailing) {
             NextTranscriptionSettingsForm()
         }
@@ -218,7 +218,7 @@ struct SidebarView: View {
 
     private var list: some View {
         List(selection: listSelection) {
-            newTranscriptionGroup.sidebarPlainRow()
+            topCards.sidebarPlainRow()
             listHeader.sidebarPlainRow()
 
             if transcripts.isEmpty {
@@ -373,7 +373,41 @@ private struct RecordingDotLabelStyle: LabelStyle {
     }
 }
 
-private extension View {
+/// Inställningskortets innehåll. Varje rad är en rad: i en smal panel kortas texten med … i stället för
+/// att brytas mitt i orden (felet med väljarna i huvudytan 2026-11-05). `SettingsCardTests` mäter det.
+struct SettingsCardLabel: View {
+    let summary: NextTranscriptionSummary
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 8) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Inställningar")
+                    .font(.callout.weight(.semibold))
+                    .lineLimit(1)
+                Text(summary.title)
+                    .font(.caption)
+                    .foregroundStyle(Color.textSecondary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                if let detail = summary.detail {
+                    Text(detail)
+                        .font(.caption)
+                        .foregroundStyle(Color.textSecondary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
+            }
+            Spacer(minLength: 4)
+            Image(icon: .tune).foregroundStyle(Color.textSecondary)
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+        .sidebarCard()
+    }
+}
+
+extension View {
     /// En rad i sidopanelens lista som inte är en transkribering: ingen markering, ingen bakgrund, inga marginaler
     /// eller avdelare. Innehållet bestämmer själv sina marginaler.
     func sidebarPlainRow() -> some View {
@@ -382,5 +416,12 @@ private extension View {
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
             .selectionDisabled()
+    }
+
+    /// Kortets yta i sidopanelen: samma fyllning och kant för inställningskortet och rutan för ny transkribering.
+    func sidebarCard() -> some View {
+        self
+            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.chip))
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Color.line, lineWidth: 1))
     }
 }

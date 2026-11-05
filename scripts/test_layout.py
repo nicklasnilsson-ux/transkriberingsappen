@@ -40,12 +40,60 @@ class MeetingModeTests(unittest.TestCase):
         self.assertRegex(sidebar, r"if appState\.mode == \.meeting \{\s*MeetingControls\(\)\s*\} else \{\s*dropArea")
         controls = (VIEWS / "Home" / "MeetingControls.swift").read_text(encoding="utf-8")
         self.assertIn("Spela även in min mikrofon", controls)
-        self.assertIn("Skilj på vem som pratar", controls)
+        self.assertNotIn("Skilj på vem som pratar", controls, "talarvalet ligger i inställningskortet")
         self.assertIn(".disabled(recorder.isBusy)", controls)
         self.assertIn("NeutralProminentButtonStyle()", controls, "Stoppa är en neutral svart knapp")
         self.assertIn(".tint(Color.accentColor)", controls, "Starta är appens uppmaning (accent)")
         self.assertNotIn(".inspector(", (VIEWS / "Home" / "MeetingModeView.swift").read_text(encoding="utf-8"))
         self.assertFalse((VIEWS / "Home" / "MeetingInspector.swift").exists())
+
+
+class NextTranscriptionSettingsInOnePlaceTests(unittest.TestCase):
+    """Nicklas 2026-11-05: inställningarna för ny transkribering (fil och möte) finns på ett ställe,
+    kortet överst i sidopanelen. Raden med väljare i huvudytan trycktes ihop och bröts mitt i orden."""
+
+    def test_settings_for_the_next_transcription_are_only_changed_in_the_card(self):
+        # Vyer som skriver till inställningarna för nästa transkribering. Appens Inställningar… (⌘,) räknas inte.
+        allowed = {"Home/FileModeEmptyView.swift", "Settings/SettingsView.swift"}
+        keys = ["SettingsKey.model)", "SettingsKey.language)", "SettingsKey.identifySpeakers)",
+                "SettingsKey.speakers)", "SettingsKey.vocabulary)"]
+        hits = []
+        for path in VIEWS.rglob("*.swift"):
+            rel = path.relative_to(VIEWS).as_posix()
+            text = path.read_text(encoding="utf-8")
+            for key in keys:
+                for line in text.splitlines():
+                    if "@AppStorage(" + key in line and rel not in allowed and rel != "Sidebar/SidebarView.swift":
+                        hits.append(f"{rel}: {line.strip()}")
+        self.assertEqual(hits, [], "inställningar för ny transkribering utanför kortet")
+        # Sidopanelen läser dem bara för sammanfattningen; själva valen finns i formuläret.
+        sidebar = (VIEWS / "Sidebar" / "SidebarView.swift").read_text(encoding="utf-8")
+        for control in ("ModelPicker(", "Toggle(", "SwitchRow(", "SpeakerCountPicker(", "TextField(\"Ordlista"):
+            self.assertNotIn(control, sidebar, control)
+        form = (VIEWS / "Home" / "FileModeEmptyView.swift").read_text(encoding="utf-8")
+        form = form[form.index("struct NextTranscriptionSettingsForm"):]
+        for control in ("ModelPicker(", "Picker(\"Språk\"", "Skilj på vem som pratar", "SpeakerCountPicker(", "Ordlista"):
+            self.assertIn(control, form, control)
+
+    def test_no_row_of_pickers_in_the_main_area(self):
+        empty = (VIEWS / "Home" / "FileModeEmptyView.swift").read_text(encoding="utf-8")
+        view = empty[empty.index("struct FileModeEmptyView"):empty.index("struct NextTranscriptionSettingsForm")]
+        for banned in ("NextTranscriptionChips", "ChipButton", "HStack", "Picker"):
+            self.assertNotIn(banned, view, banned)
+        for path in VIEWS.rglob("*.swift"):
+            self.assertNotIn("NextTranscriptionChips", path.read_text(encoding="utf-8"), path.name)
+
+    def test_card_sits_above_the_new_transcription_box_and_locks_while_recording(self):
+        sidebar = (VIEWS / "Sidebar" / "SidebarView.swift").read_text(encoding="utf-8")
+        top = sidebar[sidebar.index("private var topCards"):sidebar.index("private var newTranscriptionGroup")]
+        self.assertLess(top.index("settingsCard"), top.index("newTranscriptionGroup"))
+        card = sidebar[sidebar.index("private var settingsCard"):sidebar.index("private var dropArea")]
+        self.assertIn(".disabled(recorder.isBusy)", card)
+        self.assertIn("NextTranscriptionSettingsForm()", card)
+        self.assertIn("NextTranscriptionSummary(", card)
+        label = sidebar[sidebar.index("struct SettingsCardLabel"):]
+        label = label[:label.index("\n}\n")]
+        self.assertEqual(label.count("Text("), label.count(".lineLimit(1)"), "varje rad i kortet ska vara en rad")
 
 
 class MinimumOSTests(unittest.TestCase):
@@ -228,9 +276,9 @@ class EditModeTests(unittest.TestCase):
         for forbidden in ("ViewThatFits", "GeometryReader", "ScrollView", "VStack", "fixedSize", ".frame("):
             self.assertNotIn(forbidden, body, f"{forbidden} i panelens body kan flytta innehållet")
         lst = side[side.index("private var list: some View"):side.index("/// Frågar först")]
-        self.assertIn("newTranscriptionGroup.sidebarPlainRow()", lst, "Rutan är första raden i samma lista")
+        self.assertIn("topCards.sidebarPlainRow()", lst, "Inställningskortet och rutan är första raden i samma lista")
         self.assertIn("listHeader.sidebarPlainRow()", lst, "Rubrik och sökfält scrollar med")
-        self.assertLess(lst.index("newTranscriptionGroup"), lst.index("listHeader"))
+        self.assertLess(lst.index("topCards"), lst.index("listHeader"))
         self.assertLess(lst.index("listHeader"), lst.index("ForEach(groups)"))
         helper = side[side.index("func sidebarPlainRow"):]
         self.assertIn(".selectionDisabled()", helper)
@@ -239,7 +287,7 @@ class EditModeTests(unittest.TestCase):
     def test_meeting_controls_use_full_width_with_air_between_rows(self):
         text = (VIEWS / "Home/MeetingControls.swift").read_text(encoding="utf-8")
         self.assertIn("struct SwitchRow", text)
-        self.assertIn('SwitchRow("Skilj på vem som pratar"', text)
+        self.assertIn('SwitchRow("Spela även in min mikrofon"', text)
         self.assertNotIn(".fixedSize()", text[:text.index("private struct SwitchRow")], "Talarväljaren sträcks över hela bredden")
         self.assertIn(".frame(maxWidth: .infinity)", text)
         self.assertIn("spacing: 16", text)

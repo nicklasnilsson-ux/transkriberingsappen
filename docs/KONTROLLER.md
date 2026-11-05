@@ -42,6 +42,7 @@ först när alla kontroller är gröna på exakt de filer som laddades upp.
 | KB-Whisper-modellen blev trunkerad vid uppladdning | modeller | Varje zip testas med `unzip -t` före och efter uppladdning; trasiga byggs om | `kb-whisper-models.yml` |
 | Radbrutna punkter i CHANGELOG.md blev lösa stycken i uppdateringsdialogen | 0.5.0 | Test att varje punkt blir en hel listpunkt, även för den aktuella CHANGELOG.md | `test_release_checks.py` |
 | Byggnumret måste öka, annars hittar Sparkle inte versionen | – | Byggnumret jämförs med appcasten | `appcast.py check` |
+| Väljarna för ny transkribering i huvudytan trycktes ihop och orden bröts på flera rader när fönstret var smalt, och samma inställningar fanns på tre ställen | 0.9.10 | Inställningskortet ritas i 190 och 400 pt bredd och ska ha samma höjd (ingen rad bryts). Inställningarna för ny transkribering ändras bara i kortets formulär (och appens Inställningar…), och huvudytan har ingen rad med väljare | `SettingsCardTests`, `scripts/test_layout.py` (NextTranscriptionSettingsInOnePlaceTests) |
 
 ## Skydd mot det som inte har hänt än
 
