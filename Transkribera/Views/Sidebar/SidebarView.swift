@@ -231,7 +231,11 @@ struct SidebarView: View {
             ForEach(groups) { group in
                 Section(group.group.rawValue) {
                     ForEach(group.items) { transcript in
-                        SidebarRow(transcript: transcript, isCurrent: queue.currentTranscriptID == transcript.id)
+                        SidebarRow(
+                            transcript: transcript,
+                            isCurrent: queue.currentTranscriptID == transcript.id,
+                            isSelected: listSelection.wrappedValue.contains(transcript)
+                        )
                             .listRowInsets(EdgeInsets(top: 0, leading: SidebarLayout.margin, bottom: 0, trailing: SidebarLayout.margin))
                             .tag(transcript)
                             .contextMenu { menu(for: transcript) }
@@ -276,12 +280,13 @@ private enum SidebarLayout {
 private struct SidebarRow: View {
     let transcript: Transcript
     let isCurrent: Bool
+    /// Raden är vald i listan. `backgroundProminence` räckte inte: 0.9.7 hade fortfarande mörk text på markeringen.
+    let isSelected: Bool
     @Environment(TranscriptionQueue.self) private var queue
-    /// `.increased` när raden är markerad med fylld bakgrund. Appen sätter egna textfärger
-    /// (Theme.swift), och dem vänder systemet inte på markerade rader: då blev texten mörk på mörk bakgrund.
-    @Environment(\.backgroundProminence) private var prominence
+    /// Markeringen är grå när fönstret inte är i fokus; då ska texten inte vara vit.
+    @Environment(\.controlActiveState) private var activeState
 
-    private var isOnSelection: Bool { prominence == .increased }
+    private var isOnSelection: Bool { isSelected && activeState != .inactive }
     private var primaryColor: Color { isOnSelection ? .white : .textPrimary }
     private var secondaryColor: Color { isOnSelection ? .white.opacity(0.85) : .textSecondary }
 
