@@ -8,6 +8,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import material_icons  # noqa: E402
+import svg_bounds  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 APP = ROOT / "Transkribera"
@@ -58,6 +59,25 @@ class IconTests(unittest.TestCase):
             if p.name == "AppIcon.swift":
                 continue
             self.assertNotRegex(p.read_text(encoding="utf-8"), r'Image\(\s*"icon-|assetName', f"{p.name}: använd Image(icon:) eller Icon")
+
+    def test_icons_stay_inside_the_grid_margin(self):
+        """Handen i Inställningar (2026-11-05) gick 0–24 och nuddade texten under. Alla ikoner ska ha
+        sin ritning inom 1–23 i 24-rutnätet, så att de ser lika stora ut och lämnar luft mot texten."""
+        low, high = material_icons.EDGE_LIMIT
+        for folder in sorted((APP / "Resources/Assets.xcassets/Icons").glob("icon-*.imageset")):
+            name = folder.name[len("icon-"):-len(".imageset")]
+            left, top, right, bottom = svg_bounds.bounds_in_grid((folder / f"{name}.svg").read_text(encoding="utf-8"))
+            for edge, value in (("vänster", left), ("topp", top), ("höger", right), ("botten", bottom)):
+                self.assertTrue(low - 0.01 <= value <= high + 0.01, f"{name}: {edge} {value:.1f} utanför {low}–{high}")
+
+    def test_fetch_fits_an_icon_that_reaches_the_edge(self):
+        raw = '<svg height="24" viewBox="0 0 24 24" width="24"><path d="M2 0h20v24H2z"/></svg>'
+        left, top, right, bottom = svg_bounds.bounds_in_grid(material_icons.sized(raw))
+        self.assertAlmostEqual(top, 2, places=3)
+        self.assertAlmostEqual(bottom, 22, places=3)
+        self.assertIn('width="16"', material_icons.sized(raw))
+        inside = '<svg height="24" viewBox="0 0 24 24" width="24"><path d="M2 2h20v20H2z"/></svg>'
+        self.assertIn('viewBox="0 0 24 24"', material_icons.sized(inside))
 
     def test_license_is_included(self):
         folder = ROOT / "third-party/material-design-icons"

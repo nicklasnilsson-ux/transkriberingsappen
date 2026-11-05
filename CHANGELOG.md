@@ -6,6 +6,9 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+### Rättat
+- Handen på fliken Integritet i Inställningar är lika stor som de andra ikonerna och nuddar inte längre texten under.
+
 ## [0.9.17] – 2026-11-07
 
 ### Rättat
