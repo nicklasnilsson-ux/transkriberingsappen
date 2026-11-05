@@ -234,7 +234,7 @@ class EditModeTests(unittest.TestCase):
         self.assertLess(lst.index("listHeader"), lst.index("ForEach(groups)"))
         helper = side[side.index("func sidebarPlainRow"):]
         self.assertIn(".selectionDisabled()", helper)
-        self.assertIn(".listRowInsets(EdgeInsets())", helper)
+        self.assertIn(".listRowInsets(EdgeInsets(top: 0, leading: SidebarLayout.margin", helper)
 
     def test_meeting_controls_use_full_width_with_air_between_rows(self):
         text = (VIEWS / "Home/MeetingControls.swift").read_text(encoding="utf-8")
@@ -388,6 +388,16 @@ class MeetingViewHeightTests(unittest.TestCase):
     """Felet i Mötesinspelning 0.9.0–0.9.5: en text med fixedSize(vertical: true) i detaljvyn gjorde
     splitvyn ca 1340 pt hög, så sidopanelen hamnade ovanför appens överkant. Apptestet
     WindowLayoutTests mäter det på CI; här stoppas mönstret redan i källkoden."""
+
+    def test_sidebar_uses_one_side_margin_for_everything(self):
+        """Rutan, rubriken, sökfältet och listraderna hade olika sidmarginaler (2026-11-05).
+        Alla rader i listan sätter sina sidor via SidebarLayout.margin och ingen egen padding på sidorna."""
+        src = (VIEWS / "Sidebar" / "SidebarView.swift").read_text(encoding="utf-8")
+        body = src[:src.index("private enum SidebarLayout")]
+        self.assertNotIn(".padding(.horizontal, 12)", body)
+        self.assertNotIn(".padding(.horizontal, 14)", body)
+        self.assertGreaterEqual(src.count("SidebarLayout.margin"), 4)  # plain rader (2 sidor) + transkriberingsrader (2 sidor)
+        self.assertNotIn("listRowInsets(EdgeInsets())", src)
 
     def test_selected_sidebar_row_flips_its_text_colours(self):
         """Appens egna textfärger vänds inte av systemet på markerade rader (mörk text på mörk

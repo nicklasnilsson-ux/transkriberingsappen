@@ -123,7 +123,6 @@ struct SidebarView: View {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .strokeBorder(Color.line, lineWidth: 1)
         )
-        .padding(.horizontal, 12)
         .padding(.top, 10)
     }
 
@@ -213,7 +212,6 @@ struct SidebarView: View {
             .padding(.vertical, 5)
             .background(Color.chip, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
-        .padding(.horizontal, 14)
         .padding(.top, 14)
         .padding(.bottom, 6)
     }
@@ -234,6 +232,7 @@ struct SidebarView: View {
                 Section(group.group.rawValue) {
                     ForEach(group.items) { transcript in
                         SidebarRow(transcript: transcript, isCurrent: queue.currentTranscriptID == transcript.id)
+                            .listRowInsets(EdgeInsets(top: 0, leading: SidebarLayout.margin, bottom: 0, trailing: SidebarLayout.margin))
                             .tag(transcript)
                             .contextMenu { menu(for: transcript) }
                     }
@@ -267,6 +266,13 @@ struct SidebarView: View {
     }
 }
 
+/// En enda sidmarginal för allt i sidopanelen: rutan, rubriken, sökfältet och markeringen av en rad
+/// har sina kanter på samma avstånd från panelens sidor. Texten i en rad ligger `rowTextInset` innanför markeringen.
+private enum SidebarLayout {
+    static let margin: CGFloat = 12
+    static let rowTextInset: CGFloat = 8
+}
+
 private struct SidebarRow: View {
     let transcript: Transcript
     let isCurrent: Bool
@@ -298,6 +304,7 @@ private struct SidebarRow: View {
             }
         }
         .padding(.vertical, 3)
+        .padding(.horizontal, SidebarLayout.rowTextInset)
     }
 
     @ViewBuilder
@@ -358,7 +365,7 @@ private extension View {
     /// eller avdelare. Innehållet bestämmer själv sina marginaler.
     func sidebarPlainRow() -> some View {
         self
-            .listRowInsets(EdgeInsets())
+            .listRowInsets(EdgeInsets(top: 0, leading: SidebarLayout.margin, bottom: 0, trailing: SidebarLayout.margin))
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
             .selectionDisabled()

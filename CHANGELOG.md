@@ -8,6 +8,7 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ### Rättat
 - Ikonerna är skarpa på Retina-skärmar. De ritas nu om i skärmens upplösning i stället för att förstoras från en liten bild.
+- Sidopanelen har en enda sidmarginal: rutan för ny transkribering, rubriken, sökfältet och listraderna har sina kanter på samma avstånd från sidorna.
 - Markerad rad i listan: texten och ikonen är vita mot den mörka markeringen. Förut var texten mörk på mörkt.
 
 ## [0.9.6] – 2026-11-04
