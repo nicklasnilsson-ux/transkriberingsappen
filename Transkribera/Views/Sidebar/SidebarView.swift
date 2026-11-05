@@ -123,7 +123,6 @@ struct SidebarView: View {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .strokeBorder(Color.line, lineWidth: 1)
         )
-        .padding(.horizontal, 12)
         .padding(.top, 10)
     }
 
@@ -213,7 +212,6 @@ struct SidebarView: View {
             .padding(.vertical, 5)
             .background(Color.chip, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
-        .padding(.horizontal, 14)
         .padding(.top, 14)
         .padding(.bottom, 6)
     }
@@ -234,6 +232,7 @@ struct SidebarView: View {
                 Section(group.group.rawValue) {
                     ForEach(group.items) { transcript in
                         SidebarRow(transcript: transcript, isCurrent: queue.currentTranscriptID == transcript.id)
+                            .listRowInsets(EdgeInsets(top: 0, leading: SidebarLayout.margin, bottom: 0, trailing: SidebarLayout.margin))
                             .tag(transcript)
                             .contextMenu { menu(for: transcript) }
                     }
@@ -267,10 +266,24 @@ struct SidebarView: View {
     }
 }
 
+/// En enda sidmarginal för allt i sidopanelen: rutan, rubriken, sökfältet och markeringen av en rad
+/// har sina kanter på samma avstånd från panelens sidor. Texten i en rad ligger `rowTextInset` innanför markeringen.
+private enum SidebarLayout {
+    static let margin: CGFloat = 12
+    static let rowTextInset: CGFloat = 8
+}
+
 private struct SidebarRow: View {
     let transcript: Transcript
     let isCurrent: Bool
     @Environment(TranscriptionQueue.self) private var queue
+    /// `.increased` när raden är markerad med fylld bakgrund. Appen sätter egna textfärger
+    /// (Theme.swift), och dem vänder systemet inte på markerade rader: då blev texten mörk på mörk bakgrund.
+    @Environment(\.backgroundProminence) private var prominence
+
+    private var isOnSelection: Bool { prominence == .increased }
+    private var primaryColor: Color { isOnSelection ? .white : .textPrimary }
+    private var secondaryColor: Color { isOnSelection ? .white.opacity(0.85) : .textSecondary }
 
     var body: some View {
         HStack(spacing: 10) {
@@ -280,16 +293,25 @@ private struct SidebarRow: View {
                 Text(transcript.title)
                     .lineLimit(1)
                     .font(.body.weight(.medium))
+                    .foregroundStyle(primaryColor)
                 Text(detail)
                     .font(.system(.caption, design: .monospaced))
-                    .foregroundStyle(Color.textSecondary)
+                    .foregroundStyle(secondaryColor)
                     .lineLimit(1)
                 Text(statusLabel.text)
                     .font(.caption)
-                    .foregroundStyle(statusLabel.isWarning ? AnyShapeStyle(Color.warning) : AnyShapeStyle(Color.textSecondary))
+                    .foregroundStyle(statusLabel.isWarning && !isOnSelection ? Color.warning : secondaryColor)
             }
         }
         .padding(.vertical, 3)
+        .padding(.horizontal, SidebarLayout.rowTextInset)
+        // En rad är ett enda objekt för skärmläsare: titel, längd, datum och status i en mening.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityText)
+    }
+
+    private var accessibilityText: String {
+        [transcript.title, detail, statusLabel.text].joined(separator: ", ")
     }
 
     @ViewBuilder
@@ -304,12 +326,12 @@ private struct SidebarRow: View {
                 ProgressView().controlSize(.small)
             }
         case .queued, .transcribing:
-            Image(icon: .clock).foregroundStyle(Color.textSecondary)
+            Image(icon: .clock).foregroundStyle(secondaryColor)
         case .failed:
-            Image(icon: .warning).foregroundStyle(Color.warning)
+            Image(icon: .warning).foregroundStyle(isOnSelection ? Color.white : Color.warning)
         case .completed:
             Image(icon: transcript.isRecording ? .record : (transcript.isVideo ? .movie : .waveform))
-                .foregroundStyle(.tint)
+                .foregroundStyle(isOnSelection ? Color.white : Color.accentColor)
         }
     }
 
@@ -350,7 +372,7 @@ private extension View {
     /// eller avdelare. Innehållet bestämmer själv sina marginaler.
     func sidebarPlainRow() -> some View {
         self
-            .listRowInsets(EdgeInsets())
+            .listRowInsets(EdgeInsets(top: 0, leading: SidebarLayout.margin, bottom: 0, trailing: SidebarLayout.margin))
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
             .selectionDisabled()

@@ -37,6 +37,28 @@ class IconTests(unittest.TestCase):
             self.assertTrue("<path" in svg or "<circle" in svg, name)
             self.assertIn('width="16"', svg, f"{name}: ikonen ska vara 16 pt")
 
+    def test_icons_are_vectors_never_bitmaps(self):
+        """Suddiga ikoner (2026-11-05): en bitmapp i 16 pt förstoras på Retina och blir suddig."""
+        icons = APP / "Resources/Assets.xcassets/Icons"
+        rasters = [p.name for p in icons.rglob("*") if p.suffix.lower() in (".png", ".jpg", ".jpeg", ".gif", ".tiff")]
+        self.assertEqual(rasters, [], "Ikoner ska vara SVG, inte bitmappar")
+        for folder in icons.glob("icon-*.imageset"):
+            contents = json.loads((folder / "Contents.json").read_text(encoding="utf-8"))
+            self.assertTrue(contents["properties"].get("preserves-vector-representation"), folder.name)
+            files = [i["filename"] for i in contents["images"]]
+            self.assertTrue(all(f.endswith(".svg") for f in files), folder.name)
+
+    def test_icons_are_drawn_at_screen_resolution(self):
+        """Ikonen får inte hämtas som vanlig Image("icon-…"): den blir bitmapp i 16 pt. All visning
+        går via AppIcon.crispImage, som ritar vektorn i den skala bilden visas i."""
+        src = (APP / "Views/AppIcon.swift").read_text(encoding="utf-8")
+        self.assertIn("self = icon.crispImage(size: 16)", src)
+        self.assertNotIn("self.init(icon.assetName)", src)
+        for p in swift_files():
+            if p.name == "AppIcon.swift":
+                continue
+            self.assertNotRegex(p.read_text(encoding="utf-8"), r'Image\(\s*"icon-|assetName', f"{p.name}: använd Image(icon:) eller Icon")
+
     def test_license_is_included(self):
         folder = ROOT / "third-party/material-design-icons"
         self.assertIn("Apache License", (folder / "LICENSE").read_text(encoding="utf-8"))
