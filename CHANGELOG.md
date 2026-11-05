@@ -73,6 +73,8 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 - Transkribera igen ligger nu inne i rutan med modell, språk och talare, tillsammans med Återställ. Ändrade val kastas om man stänger rutan utan att transkribera igen. Klar visas med en grön bock, och en äldre version märks även i titelbaren.
 - Ny uppställning av fönstret: Fil/Mötesinspelning ligger överst i sidopanelen. Titelbaren har alltid Sök i texten (⌘F), Redigera och en ⋯-meny med verktygen. Spelaren ligger fast under titelbaren, och version, modell, verktygsrad och text skrollar tillsammans. Titelkortet fälls inte längre ihop. Exportera är en svart knapp. Namnet på transkriberingen byts i titelbaren.
 - Ny, vitare och stramare färgpalett i hela appen (ljust, mörkt och Öka kontrast), i stället för systemets bakgrunder. Accentfärgen är densamma. Stoppa inspelning är nu en neutral svart knapp, Starta inspelning behåller accentfärgen.
+### Rättat
+- Mötesinspelningen sa "tillåtelse saknas" för alla fel vid start, även när tillåtelsen fanns. Nu skiljer appen på nekad tillåtelse och andra fel och visar felkoden vid andra fel. Vid nekad tillåtelse förklarar texten att du kan behöva ta bort Transkribera ur listan med − och lägga till den igen efter en uppdatering.
 
 ## [0.8.1] – 2026-11-03
 
