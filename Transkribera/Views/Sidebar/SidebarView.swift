@@ -174,18 +174,26 @@ struct SidebarView: View {
     }
 
     /// Släppyta med knappen Välj filer…. Hela fönstret tar emot filer; den här visar var.
+    /// Egen, nedsänkt bakgrund som skiljer sig från kortet (Nicklas 2026-11-06); när en fil dras
+    /// över blir den indigotonad med hel accentkant. Färgerna kontrolleras av scripts/check_colors.py
+    /// (check_drop_zone), som också kräver att ytan bara använder färgerna nedan.
     private var dropArea: some View {
         VStack(spacing: 8) {
             Icon(appState.isDropTargeted ? .downloadCircle : .download, size: 26)
                 .foregroundStyle(appState.isDropTargeted ? Color.accentColor : Color.textSecondary)
             Text("Släpp ljud- eller videofiler här")
                 .font(.app(.regular))
+                .foregroundStyle(Color.textPrimary)
                 .multilineTextAlignment(.center)
             Button("Välj filer…") { appState.isImporterPresented = true }
                 .help("Välj ljud- eller videofiler att transkribera (⌘O)")
         }
         .padding(14)
         .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(appState.isDropTargeted ? Color.dropZoneTarget : Color.dropZone)
+        )
         .overlay {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .strokeBorder(
