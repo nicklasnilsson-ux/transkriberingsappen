@@ -113,7 +113,7 @@ class EditModeTests(unittest.TestCase):
     def test_entering_edit_mode_inserts_nothing_above_the_text(self):
         text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
         start = text.index("private var noticeCard")
-        block = text[start:text.index("private func miniPlayer", start)]
+        block = text[start:text.index("private func requestRetranscribe", start)]
         self.assertNotIn("isEditing", block, "Kortet ovanför texten får inte bero på redigeringsläget (layouten hoppar)")
         roles = text[text.index("private var showsRolesBanner"):][:200]
         self.assertNotIn("!isEditing", roles, "Rollbannern får inte försvinna när redigeringsläget slås på (layouten hoppar)")
@@ -231,17 +231,25 @@ class EditModeTests(unittest.TestCase):
 
     def test_player_controls(self):
         text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
-        play = text[text.index("private func playPauseAndTime"):][:1100]
-        self.assertIn(".buttonBorderShape(.circle)", play, "Play/Pause ligger på en rund platta")
-        self.assertIn(".buttonStyle(.borderedProminent)", play)
-        self.assertIn("Color.accentColor", play, "Plattan har accentfärgen")
+        bar_src = (VIEWS / "Player/PlayerBar.swift").read_text(encoding="utf-8")
+        button = (VIEWS / "Player/PlayPauseButton.swift").read_text(encoding="utf-8")
+        # Rund platta i accentfärgen, med fast storlek: dubbelt så stor som i 0.9.2–0.9.14 (Nicklas 2026-11-06).
+        # Själva storleken mäts i TranskriberaAppTests/PlayButtonSizeTests.swift.
+        self.assertIn("Circle().fill(Color.accentColor)", button, "Play/Pause ligger på en rund platta i accentfärgen")
+        self.assertIn("static let diameter: CGFloat = 56", button)
+        self.assertIn("PlayPauseButton(isPlaying: player.isPlaying)", bar_src)
+        self.assertNotIn("Button { player.togglePlayPause() }", text, "Spela/Pausa finns bara i PlayerBar")
         bar = text[text.index("private var playerBar"):text.index("private var showsRolesBanner")]
-        self.assertIn("videoWithControls(player)", bar)
-        self.assertNotIn("sizeMenu", bar, "Bildstorlek ligger närmast videon, inte längst till höger")
-        video = text[text.index("private func videoWithControls"):][:700]
-        self.assertLess(video.index("miniPlayer(player)"), video.index("sizeMenu"))
+        self.assertIn("PlayerBar(", bar)
+        row = bar_src[bar_src.index("private func row(followTitle"):][:600]
+        self.assertIn("videoWithControls", row)
+        self.assertNotIn("sizeMenu", row, "Bildstorlek ligger närmast videon, inte längst till höger")
+        # Reglaget är det enda som växer och krymper; det får en minsta bredd.
+        self.assertIn("minWidth: Self.sliderMinWidth, idealWidth: Self.sliderMinWidth, maxWidth: .infinity", bar_src)
+        video = bar_src[bar_src.index("private var videoWithControls"):][:400]
+        self.assertLess(video.index("miniPlayer"), video.index("sizeMenu"))
         # Helskärm ligger i samma lilla meny som bildstorlekarna (Nicklas 2026-11-04).
-        menu = text[text.index("private func sizeMenu"):][:900]
+        menu = bar_src[bar_src.index("private var sizeMenu"):][:900]
         self.assertIn("VideoFullscreen.present(player: player.player)", menu)
         self.assertIn("Picker(\"Bildstorlek\"", menu)
         full = (VIEWS / "Player/VideoFullscreen.swift").read_text(encoding="utf-8")

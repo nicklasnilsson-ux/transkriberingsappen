@@ -24,7 +24,10 @@ class ScrollPerformanceTests(unittest.TestCase):
         outside = self.text.replace(reader, "")
         reads = [m.start() for m in re.finditer(r"\bplayer\??\.currentTime\b", outside)]
         self.assertEqual(reads, [], "Vyn läser player.currentTime utanför PlaybackTimeReader: hela vyn räknas då om 10 gånger i sekunden")
-        self.assertGreaterEqual(self.text.count("PlaybackTimeReader(player:"), 3, "Tid, reglage och text läses via läsaren")
+        bar = (DETAIL.parent / "Player" / "PlayerBar.swift").read_text(encoding="utf-8")
+        self.assertEqual(re.findall(r"\bplayer\??\.currentTime\b", bar), [], "Spelarraden läser tiden via PlaybackTimeReader")
+        self.assertGreaterEqual(self.text.count("PlaybackTimeReader(player:"), 1, "Texten läser tiden via läsaren")
+        self.assertGreaterEqual(bar.count("PlaybackTimeReader(player:"), 2, "Tid och reglage läses via läsaren")
 
     def test_rows_skip_redraw_when_only_time_ticks(self):
         for row, source in (("ParagraphRow", self.paragraph), ("SegmentRow", self.segment)):

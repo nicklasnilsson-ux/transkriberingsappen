@@ -6,6 +6,9 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+### Ändrat
+- Spela/Pausa i spelarraden är dubbelt så stor. Bredden tas från reglaget. I ett smalt fönster står det Följ i stället för Följ uppspelning, så att reglaget får plats.
+
 ## [0.9.14] – 2026-11-06
 
 ### Ändrat

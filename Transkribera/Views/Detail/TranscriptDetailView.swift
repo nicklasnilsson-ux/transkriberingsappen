@@ -752,28 +752,17 @@ struct TranscriptDetailView: View {
         Toggle("Ta med tidsstämplar (.txt och .md)", isOn: $exportTimestamps)
     }
 
-    /// Spelaren, fast under titelbaren: bild (video), spela, tid, reglage och Följ uppspelning.
+    /// Spelaren, fast under titelbaren (se `PlayerBar`).
     @ViewBuilder
     private var playerBar: some View {
         if hasText, let player {
-            HStack(spacing: 14) {
-                if transcript.isVideo { videoWithControls(player) }
-                playPauseAndTime(player)
-                positionSlider(player, maxWidth: .infinity)
-                Text(TimeFormatting.short(transcript.duration))
-                    .font(.app(.small, design: .monospaced))
-                    .foregroundStyle(Color.textSecondary)
-                Toggle(isOn: $followPlayback) {
-                    Text("Följ uppspelning")
-                }
-                .toggleStyle(.checkbox)
-                .help("Håll stycket som spelas upp i bild")
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 10)
-            .frame(maxWidth: .infinity)
-            .background(Color.surface)
-            .overlay(alignment: .bottom) { Rectangle().fill(Color.line).frame(height: 1) }
+            PlayerBar(
+                player: player,
+                duration: transcript.duration,
+                isVideo: transcript.isVideo,
+                followPlayback: $followPlayback,
+                miniSizeRaw: $miniSizeRaw
+            )
         }
     }
 
@@ -795,78 +784,6 @@ struct TranscriptDetailView: View {
             .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color.accentColor.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        }
-    }
-
-    /// Videobilden i spelarraden. Liten som standard; Bildstorlek väljer mellan tre.
-    private func miniPlayer(_ player: PlayerController) -> some View {
-        let size = MiniPlayerSize.resolved(miniSizeRaw)
-        return PlayerView(player: player.player, isVideo: true, compact: true)
-            .frame(width: size.width, height: size.height)
-            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-    }
-
-    /// Bilden med bildstorlek och helskärm närmast sig, till vänster om spelknapparna.
-    private func videoWithControls(_ player: PlayerController) -> some View {
-        HStack(alignment: .center, spacing: 8) {
-            miniPlayer(player)
-            sizeMenu(player)
-        }
-    }
-
-    /// Bildstorlek och helskärm i samma lilla meny.
-    private func sizeMenu(_ player: PlayerController) -> some View {
-        Menu {
-            Picker("Bildstorlek", selection: $miniSizeRaw) {
-                ForEach(MiniPlayerSize.allCases, id: \.rawValue) { Text($0.label).tag($0.rawValue) }
-            }
-            .pickerStyle(.inline)
-            Divider()
-            Button {
-                VideoFullscreen.present(player: player.player)
-            } label: {
-                Label("Helskärm", icon: .fullscreen)
-            }
-        } label: {
-            Icon(.openInFull, size: 18).accessibilityLabel("Bildstorlek")
-        }
-        .menuStyle(.borderlessButton)
-        .fixedSize()
-        .help("Bildstorlek: liten, mellan eller stor, eller helskärm")
-    }
-
-    private func playPauseAndTime(_ player: PlayerController) -> some View {
-        HStack(spacing: 10) {
-            Button { player.togglePlayPause() } label: {
-                // Stor och tydlig: en rund platta i accentfärgen (Nicklas 2026-11-04).
-                Icon(player.isPlaying ? .pause : .play, size: 22)
-                    .padding(4)
-            }
-            .buttonStyle(.borderedProminent)
-            .buttonBorderShape(.circle)
-            .controlSize(.large)
-            .tint(Color.accentColor)
-            .accessibilityLabel(player.isPlaying ? "Pausa" : "Spela")
-            .help(player.isPlaying ? "Pausa" : "Spela")
-            PlaybackTimeReader(player: player) { time in
-                Text(TimeFormatting.short(time))
-                    .font(.app(.small, design: .monospaced))
-                    .foregroundStyle(Color.textSecondary)
-            }
-        }
-    }
-
-    private func positionSlider(_ player: PlayerController, maxWidth: CGFloat = 200) -> some View {
-        PlaybackTimeReader(player: player) { time in
-            Slider(
-                value: Binding(
-                    get: { time },
-                    set: { player.seek(to: $0, play: player.isPlaying) }
-                ),
-                in: 0...max(transcript.duration, 1)
-            )
-            .frame(minWidth: 80, maxWidth: maxWidth)
-            .help("Hoppa i inspelningen")
         }
     }
 
