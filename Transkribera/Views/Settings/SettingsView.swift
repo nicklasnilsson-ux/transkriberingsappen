@@ -215,7 +215,7 @@ private struct ModelSettingsView: View {
                             }
                             .padding(12)
                         }
-                            .font(.app(.regular))
+                            .presentationRoot()
                     }
             } footer: {
                 Text("Pianissimo är snabbast och bäst som förstaval för svenska. Välj Large v3 Turbo för andra språk. Modellen laddas ner automatiskt första gången den används.")

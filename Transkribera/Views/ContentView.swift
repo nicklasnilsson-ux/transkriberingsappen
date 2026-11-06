@@ -91,7 +91,7 @@ struct ContentView: View {
         }
         .sheet(isPresented: $appState.isAnalysisExportPresented) {
             AnalysisExportSheet(preselected: appState.selectedTranscripts)
-                .font(.app(.regular))
+                .presentationRoot()
         }
         .fileImporter(
             isPresented: $appState.isImporterPresented,

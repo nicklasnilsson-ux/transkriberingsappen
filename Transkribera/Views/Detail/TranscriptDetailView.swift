@@ -241,7 +241,7 @@ struct TranscriptDetailView: View {
                     requestRetranscribe()
                 }
             )
-            .font(.app(.regular))
+            .presentationRoot()
         }
         // Ändrade val kastas om rutan stängs utan att transkribera igen.
         .onChange(of: showRerunSettings) { _, isOpen in
@@ -1373,7 +1373,7 @@ private struct DetailDialogs: ViewModifier {
                         onRetranscribe()
                     }
                 )
-                .font(.app(.regular))
+                .presentationRoot()
             }
             .alert("Byt namn på talare", isPresented: Binding(
                 get: { speakerToRename != nil },

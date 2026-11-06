@@ -44,6 +44,7 @@ först när alla kontroller är gröna på exakt de filer som laddades upp.
 | Byggnumret måste öka, annars hittar Sparkle inte versionen | – | Byggnumret jämförs med appcasten | `appcast.py check` |
 | Väljarna för ny transkribering i huvudytan trycktes ihop och orden bröts på flera rader när fönstret var smalt, och samma inställningar fanns på tre ställen | 0.9.10 | Inställningskortet ritas i 190 och 400 pt bredd och ska ha samma höjd (ingen rad bryts). Inställningarna för ny transkribering ändras bara i kortets formulär (och appens Inställningar…), och huvudytan har ingen rad med väljare | `SettingsCardTests`, `scripts/test_layout.py` (NextTranscriptionSettingsInOnePlaceTests) |
 | Gränssnittet hade sju textstorlekar (10, 11, 12, 13, 15, 17 och 44 pt) och hjälptexter i 10 pt | 0.9.11 | Bara 12/14/16 pt via `Font.app` i `Theme.swift`; inga av systemets textstilar eller fasta storlekar utanför Theme; varje fönster, ark och popover har 14 pt som standard; små knappar har en av appens storlekar; läsytan 16 pt som standard. Enda undantag: läsytans ⌘+ (18/20 pt) och mötestimern | `scripts/test_text_sizes.py` |
+| Modellväljarens förklarande texter klipptes till en rad med … när den öppnades från Inställningar-kortet i sidopanelen (popovern ärvde listradens radgräns) | 0.9.12 | Varje ark och popover har `.presentationRoot()` (14 pt och nollställd radgräns). Modellraderna och källnoten ritas med och utan en radgräns utifrån och ska vara lika höga | `scripts/test_text_sizes.py`, `PresentationRootTests` |
 
 ## Skydd mot det som inte har hänt än
 

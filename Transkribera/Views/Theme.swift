@@ -82,3 +82,16 @@ extension NSFont {
         .systemFont(ofSize: CGFloat(ReadingTextSize.clamped(size)))
     }
 }
+
+extension View {
+    /// Roten i varje ark och popover. En popover ärver miljön från det den öppnas från. Öppnas den från
+    /// sidopanelens lista följer listradens radgräns med, och förklarande texter klipptes till en rad med …
+    /// (modellväljaren från Inställningar-kortet, 2026-11-06). Här nollställs det, och texten får appens 14 pt.
+    /// scripts/test_text_sizes.py kräver den på varje .sheet/.popover; `PresentationRootTests` mäter effekten.
+    func presentationRoot() -> some View {
+        self
+            .font(.app(.regular))
+            .lineLimit(nil)
+            .truncationMode(.tail)
+    }
+}
