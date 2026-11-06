@@ -6,6 +6,19 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.9.13</title>
+      <pubDate>Fri, 06 Nov 2026 16:01:34 GMT</pubDate>
+      <sparkle:version>50</sparkle:version>
+      <sparkle:shortVersionString>0.9.13</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.13</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Rättat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Texterna i modellväljaren och i Vilken modell ska jag välja? syns nu i sin helhet när väljaren öppnas från kortet Inställningar i sidopanelen. Tidigare klipptes de efter en rad med …&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.13/Transkribera-v0.9.13.zip" length="14538980" type="application/octet-stream" sparkle:edSignature="NwwBv/j5bdb1blQhylOpZqEt8Kiazmo5penVZpbQM2u0SjIxfmDpJ3FBzxVt9Lwzm2FuAcQsxogua1pdyzc1Ag==" />
+    </item>
+    <item>
       <title>Version 0.9.12</title>
       <pubDate>Fri, 06 Nov 2026 11:06:17 GMT</pubDate>
       <sparkle:version>49</sparkle:version>
@@ -472,19 +485,6 @@
 &lt;li&gt;Stycket som spelas just nu får en accentlinje till vänster och tydligare bakgrund.&lt;/li&gt;
 &lt;/ul&gt;</description>
       <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.7.0/Transkribera-v0.7.0.zip" length="14119541" type="application/octet-stream" sparkle:edSignature="884L3XVHeRE5yE2+nB7rVI5fXvbxRgSi2NsiKwhzH4OLqlA0SKj2hZT7evYhv080sN80wLq0EJqvhIYhDrcsDg==" />
-    </item>
-    <item>
-      <title>Version 0.6.3</title>
-      <pubDate>Sat, 31 Oct 2026 12:19:59 GMT</pubDate>
-      <sparkle:version>20</sparkle:version>
-      <sparkle:shortVersionString>0.6.3</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.6.3</sparkle:fullReleaseNotesLink>
-      <description>&lt;h3&gt;Ändrat&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Modellväljaren har bara tre modeller: &lt;b&gt;Pianissimo&lt;/b&gt; (förstaval för svenska, snabbast), &lt;b&gt;KB Large ordagrann&lt;/b&gt; (när varje ord måste stämma, t.ex. citat, namn och facktermer) och &lt;b&gt;Large v3 Turbo&lt;/b&gt; (andra språk än svenska). Pianissimo är nu standard. De andra modellerna är dolda, inte borttagna, och redan nedladdade modeller ligger kvar. Hade du valt en dold modell byter appen till Pianissimo och väljaren visar &amp;quot;(ersätter …)&amp;quot; tills du väljer själv.&lt;/li&gt;
-&lt;/ul&gt;</description>
-      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.6.3/Transkribera-v0.6.3.zip" length="14005815" type="application/octet-stream" sparkle:edSignature="mP8aVj6GjA8MvZtbZlNC+xwdMhmElmaP4MXgayWBAt40Jf435lNeD9T0I81KnJBjwnNIwzTGOjqu9nvNS6BJAw==" />
     </item>
   </channel>
 </rss>
