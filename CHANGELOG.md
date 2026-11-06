@@ -6,6 +6,8 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.9.12] – 2026-11-06
+
 ### Ändrat
 - Appen använder nu bara tre textstorlekar: 12 pt för hjälptexter, tidskoder och märken, 14 pt för vanlig text och 16 pt för rubriker. Den minsta texten var tidigare 10 pt.
 - Transkriptet visas i 16 pt som standard. Större text (⌘+) och Mindre text (⌘−) väljer mellan 14, 16, 18 och 20 pt. Har du valt en storlek tidigare får du närmaste nya storlek uppåt.
