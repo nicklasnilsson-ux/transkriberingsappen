@@ -90,6 +90,7 @@ struct SidebarView: View {
                     transcriptToRetranscribe = nil
                 }
             )
+            .font(.app(.regular))
         }
         .onDeleteCommand {
             if multiSelection.count > 1 {
@@ -115,7 +116,7 @@ struct SidebarView: View {
     private var newTranscriptionGroup: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Ny transkribering")
-                .font(.caption.weight(.semibold))
+                .font(.app(.small, weight: .semibold))
                 .foregroundStyle(Color.textSecondary)
                 .padding(.leading, 2)
             modeSwitcher
@@ -168,6 +169,7 @@ struct SidebarView: View {
         .accessibilityLabel("Inställningar: \(summary.accessibilityText)")
         .popover(isPresented: $showsNextSettings, arrowEdge: .trailing) {
             NextTranscriptionSettingsForm()
+                .font(.app(.regular))
         }
     }
 
@@ -177,7 +179,7 @@ struct SidebarView: View {
             Icon(appState.isDropTargeted ? .downloadCircle : .download, size: 26)
                 .foregroundStyle(appState.isDropTargeted ? Color.accentColor : Color.textSecondary)
             Text("Släpp ljud- eller videofiler här")
-                .font(.callout)
+                .font(.app(.regular))
                 .multilineTextAlignment(.center)
             Button("Välj filer…") { appState.isImporterPresented = true }
                 .help("Välj ljud- eller videofiler att transkribera (⌘O)")
@@ -196,7 +198,7 @@ struct SidebarView: View {
     private var listHeader: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Transkriberingar (\(transcripts.count))")
-                .font(.headline)
+                .font(.app(.regular, weight: .semibold))
             HStack(spacing: 6) {
                 Image(icon: .search).foregroundStyle(Color.textSecondary)
                 TextField("Sök på titel", text: $filter)
@@ -223,7 +225,7 @@ struct SidebarView: View {
 
             if transcripts.isEmpty {
                 Text("Inga transkriberingar än. Släpp en fil eller spela in ett möte så hamnar resultatet här.")
-                    .font(.callout)
+                    .font(.app(.small))
                     .foregroundStyle(Color.textSecondary)
                     .padding(.top, 8)
             }
@@ -299,14 +301,14 @@ private struct SidebarRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(transcript.title)
                     .lineLimit(1)
-                    .font(.body.weight(.medium))
+                    .font(.app(.regular, weight: .medium))
                     .foregroundStyle(primaryColor)
                 Text(detail)
-                    .font(.system(.caption, design: .monospaced))
+                    .font(.app(.small, design: .monospaced))
                     .foregroundStyle(secondaryColor)
                     .lineLimit(1)
                 Text(statusLabel.text)
-                    .font(.caption)
+                    .font(.app(.small))
                     .foregroundStyle(statusLabel.isWarning && !isOnSelection ? Color.warning : secondaryColor)
             }
         }
@@ -382,16 +384,16 @@ struct SettingsCardLabel: View {
         HStack(alignment: .center, spacing: 8) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Inställningar")
-                    .font(.callout.weight(.semibold))
+                    .font(.app(.regular, weight: .semibold))
                     .lineLimit(1)
                 Text(summary.title)
-                    .font(.caption)
+                    .font(.app(.small))
                     .foregroundStyle(Color.textSecondary)
                     .lineLimit(1)
                     .truncationMode(.tail)
                 if let detail = summary.detail {
                     Text(detail)
-                        .font(.caption)
+                        .font(.app(.small))
                         .foregroundStyle(Color.textSecondary)
                         .lineLimit(1)
                         .truncationMode(.tail)

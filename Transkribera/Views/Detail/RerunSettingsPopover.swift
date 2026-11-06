@@ -16,9 +16,9 @@ struct RerunSettingsPopover: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Inställningar för den här filen").font(.headline)
+            Text("Inställningar för den här filen").font(.app(.large, weight: .semibold))
             Text("Gäller bara nästa omtagning av den här transkriberingen. Dina vanliga inställningar ändras inte.")
-                .font(.caption)
+                .font(.app(.small))
                 .foregroundStyle(Color.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
             LabeledContent("Modell") {

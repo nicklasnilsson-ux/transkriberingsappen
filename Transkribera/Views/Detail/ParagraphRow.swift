@@ -52,7 +52,7 @@ struct ParagraphRow: View {
             timeButton
             if isActive {
                 Text("Spelas nu")
-                    .font(.caption.weight(.semibold))
+                    .font(.app(.small, weight: .semibold))
                     .foregroundStyle(Color.accentColor)
             }
             Spacer(minLength: 0)
@@ -101,7 +101,7 @@ struct ParagraphRow: View {
                 .modifier(EditSurface())
         } else {
             Text(attributedText)
-                .font(.system(size: size))
+                .font(.reading(size))
                 .lineSpacing(4)
                 .textSelection(.enabled)
                 .frame(maxWidth: textWidth, alignment: .leading)

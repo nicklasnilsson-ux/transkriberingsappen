@@ -37,7 +37,7 @@ struct TestLabView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(run.title)
                                 Text(run.differences.isEmpty ? "som i dag" : run.differences.joined(separator: ", "))
-                                    .font(.caption)
+                                    .font(.app(.small))
                                     .foregroundStyle(Color.textSecondary)
                             }
                         }

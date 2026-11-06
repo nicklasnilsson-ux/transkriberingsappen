@@ -34,6 +34,7 @@ struct TranskriberaApp: App {
         // Ett enda huvudfönster. Det kan stängas och öppnas igen (Dock, Fönster-menyn, Arkiv-menyn).
         Window("Transkribera", id: MainWindow.id) {
             ContentView()
+                .font(.app(.regular))
                 .environment(appState)
                 .environment(queue)
                 .environment(recorder)
@@ -74,6 +75,7 @@ struct TranskriberaApp: App {
 
         Settings {
             SettingsView()
+                .font(.app(.regular))
                 .environment(queue)
                 .environmentObject(updater)
         }
@@ -144,6 +146,7 @@ private enum TestLabWindow {
             return
         }
         let root = TestLabView()
+            .font(.app(.regular))
             .environment(queue)
             .environment(lab)
             .modelContainer(container)

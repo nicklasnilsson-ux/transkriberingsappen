@@ -74,7 +74,7 @@ struct SegmentRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 if let speaker = displaySpeaker {
                     HStack(spacing: 6) {
-                        SpeakerLabel(name: speaker, font: .caption.weight(.semibold))
+                        SpeakerLabel(name: speaker, font: .app(.small, weight: .semibold))
                         if segment.isSpeakerUncertain {
                             UncertainSpeakerMark()
                         }
@@ -96,7 +96,7 @@ struct SegmentRow: View {
                         currentTime: isActive ? currentTime : nil,
                         currentOccurrence: currentOccurrence
                     ))
-                    .font(.system(size: ReadingTextSize.clamped(readingSize)))
+                    .font(.reading(readingSize))
                     .lineSpacing(3)
                     .textSelection(.enabled)
                     .frame(maxWidth: textWidth, alignment: .leading)
@@ -332,7 +332,7 @@ struct EditableText: View {
                 )
             } else {
                 Text(text)
-                    .font(.system(size: size))
+                    .font(.reading(size))
                     .lineSpacing(lineSpacing)
                     .help("Det här stycket kan inte rättas med anonymiseringen på. Slå av anonymiseringen för att rätta det.")
             }
@@ -399,7 +399,7 @@ struct ReadingTextView: NSViewRepresentable {
         return CGSize(width: width, height: Self.height(of: view, width: width, lineSpacing: lineSpacing))
     }
 
-    private var font: NSFont { NSFont.systemFont(ofSize: fontSize) }
+    private var font: NSFont { NSFont.reading(fontSize) }
 
     private var attributes: [NSAttributedString.Key: Any] {
         let style = NSMutableParagraphStyle()
@@ -429,7 +429,7 @@ struct ReadingTextView: NSViewRepresentable {
         layout.enumerateLineFragments(forGlyphRange: glyphs) { _, _, _, _, _ in lines += 1 }
         if layout.extraLineFragmentTextContainer != nil { lines += 1 }
         lines = max(lines, 1)
-        let rowHeight = Self.lineHeight(fontSize: Double(view.font?.pointSize ?? NSFont.systemFontSize))
+        let rowHeight = Self.lineHeight(fontSize: Double(view.font?.pointSize ?? ReadingTextSize.standard))
         return CGFloat(lines) * rowHeight + CGFloat(lines - 1) * lineSpacing
     }
 
@@ -440,7 +440,7 @@ struct ReadingTextView: NSViewRepresentable {
     /// i ett långt stycke (mätt av `EditModeHeightTests`).
     static func lineHeight(fontSize: Double) -> CGFloat {
         if let cached = lineHeights[fontSize] { return cached }
-        let host = NSHostingView(rootView: Text("Åg").font(.system(size: fontSize)).fixedSize())
+        let host = NSHostingView(rootView: Text("Åg").font(.reading(fontSize)).fixedSize())
         let height = host.fittingSize.height
         lineHeights[fontSize] = height
         return height
@@ -524,6 +524,7 @@ struct RowEditActions: View {
                     .help("Spara rättningen (⌘Retur)")
             }
             .controlSize(.small)
+            .font(.app(.small))
         } else {
             EditHoverButton(visible: hovering && !isEditing, action: onBeginEdit)
         }
@@ -544,6 +545,7 @@ struct EditHoverButton: View {
         // Samma stil och storlek som Avbryt och Spara, så att knapparna hör ihop (Nicklas 2026-11-04).
         .buttonStyle(.bordered)
         .controlSize(.small)
+        .font(.app(.small))
         .opacity(visible ? 1 : 0)
         .allowsHitTesting(visible)
         .accessibilityHidden(!visible)
@@ -568,7 +570,7 @@ struct ActiveParagraphStyle: ViewModifier {
 /// information ensam (kontrast), den är bara en hjälp att se talarbyten.
 struct SpeakerLabel: View {
     let name: String
-    var font: Font = .callout.weight(.semibold)
+    var font: Font = .app(.regular, weight: .semibold)
 
     var body: some View {
         HStack(spacing: 6) {
@@ -619,7 +621,7 @@ struct TimecodeButton: View {
         Button(action: action) {
             HStack(spacing: 4) {
                 Text(TimeFormatting.short(time))
-                    .font(.system(.callout, design: .monospaced))
+                    .font(.app(.small, design: .monospaced))
                 Icon(.play, size: 10)
                     .opacity(hovering ? 1 : 0)
                     .accessibilityHidden(true)

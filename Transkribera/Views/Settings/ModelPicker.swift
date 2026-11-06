@@ -32,6 +32,7 @@ struct ModelPicker: View {
                 selection = model.rawValue
                 isPresented = false
             }
+                .font(.app(.regular))
         }
     }
 }
@@ -48,7 +49,7 @@ private struct ModelList: View {
                 ForEach(WhisperModel.Family.allCases) { family in
                     VStack(alignment: .leading, spacing: 4) {
                         Text(family.title)
-                            .font(.caption.weight(.semibold))
+                            .font(.app(.small, weight: .semibold))
                             .foregroundStyle(Color.textSecondary)
                             .padding(.horizontal, 8)
                         ForEach(family.models) { model in
@@ -83,24 +84,24 @@ struct ModelInfoRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
             HStack(spacing: 6) {
-                Text(model.displayName).font(.body.weight(.medium))
+                Text(model.displayName).font(.app(.regular, weight: .medium))
                 if model.isRecommended { Badge(text: "Rekommenderad", color: .accentColor) }
                 Badge(text: model.languageNote, color: model.isSwedishOnly ? Color.accentColor : .gray)
                 Spacer(minLength: 4)
                 Text(model.downloadSize)
-                    .font(.callout.monospacedDigit())
+                    .font(.app(.small).monospacedDigit())
                     .foregroundStyle(Color.textSecondary)
             }
             Text(model.characteristic)
-                .font(.caption)
+                .font(.app(.small))
                 .foregroundStyle(Color.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
             Text(model.swedishErrorText)
-                .font(.caption.monospacedDigit())
+                .font(.app(.small).monospacedDigit())
                 .foregroundStyle(Color.textSecondary)
             if let warning = model.memoryWarning {
                 Label(warning, icon: .memory)
-                    .font(.caption)
+                    .font(.app(.small))
                     .foregroundStyle(Color.warning)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -111,7 +112,7 @@ struct ModelInfoRow: View {
                 Spacer()
                 Label(isDownloaded ? "Finns på datorn" : "Laddas ner automatiskt första gången",
                       icon: isDownloaded ? .checkCircle : .downloadCircle)
-                    .font(.caption2)
+                    .font(.app(.small))
                     .foregroundStyle(isDownloaded ? Color.green : Color.textSecondary)
             }
         }
@@ -126,15 +127,15 @@ private struct ModelAdvice: View {
     var body: some View {
         Label {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Pratas det svenska? Välj Pianissimo.").font(.callout.weight(.medium))
+                Text("Pratas det svenska? Välj Pianissimo.").font(.app(.regular, weight: .medium))
                 Text("Pianissimo är snabbast och ger en komplett text. Välj KB Large ordagrann när varje ord måste stämma, t.ex. för citat, namn och facktermer. Andra språk än svenska: välj Large v3 Turbo.")
-                    .font(.caption)
+                    .font(.app(.small))
                     .foregroundStyle(Color.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
                 Button("Vilken modell ska jag välja?") { showsGuide = true }
                     .buttonStyle(.link)
-                    .font(.caption)
-                    .popover(isPresented: $showsGuide, arrowEdge: .trailing) { ModelGuideView() }
+                    .font(.app(.small))
+                    .popover(isPresented: $showsGuide, arrowEdge: .trailing) { ModelGuideView().font(.app(.regular)) }
             }
         } icon: {
             Image(icon: .lightbulb).foregroundStyle(.yellow)
@@ -152,7 +153,7 @@ struct ModelSourceNote: View {
             Text("Felsiffrorna är KBLab:s mätningar (Pianissimo: Klangs) på det svenska testet FLEURS. Riktigt ljud med brus eller dialekt ger fler fel för alla modeller, men ordningen mellan dem brukar hålla.")
             Link("Källa: KBLab, Kungliga biblioteket", destination: URL(string: "https://kb-labb.github.io/posts/2025-03-07-welcome-KB-Whisper/")!)
         }
-        .font(.caption2)
+        .font(.app(.small))
         .foregroundStyle(Color.textTertiary)
         .fixedSize(horizontal: false, vertical: true)
     }
@@ -164,7 +165,7 @@ private struct Badge: View {
 
     var body: some View {
         Text(text)
-            .font(.caption2.weight(.medium))
+            .font(.app(.small, weight: .medium))
             .padding(.horizontal, 6)
             .padding(.vertical, 1)
             .foregroundStyle(color)
@@ -179,7 +180,7 @@ private struct Meter: View {
 
     var body: some View {
         HStack(spacing: 4) {
-            Text(label).font(.caption2).foregroundStyle(Color.textSecondary)
+            Text(label).font(.app(.small)).foregroundStyle(Color.textSecondary)
             HStack(spacing: 2) {
                 ForEach(1...5, id: \.self) { index in
                     Circle()
@@ -202,13 +203,13 @@ struct ModelGuideView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 Text("Vilken modell ska jag välja?")
-                    .font(.title3.weight(.semibold))
+                    .font(.app(.large, weight: .semibold))
 
                 section("Pianissimo: första valet för svenska",
                         "Pianissimo från Klang bygger inte på Whisper utan på NVIDIA:s Parakeet och är vidaretränad på omkring 50 000 timmar svenskt tal. Den är många gånger snabbare än Whisper-modellerna, även på långa inspelningar, och sätter själv punkt och stor bokstav. I våra jämförelser på riktiga intervjuer låg den nära KB Large på innehållet; skillnaden syns mest i småord och ordlydelse.")
                 Link("Pianissimo av KlangAI, licens CC BY 4.0",
                      destination: URL(string: "https://huggingface.co/KlangAI/pianissimo-sv")!)
-                    .font(.caption)
+                    .font(.app(.small))
 
                 section("KB Large ordagrann: när varje ord måste stämma",
                         "KB-modellerna kommer från Kungliga biblioteket (KBLab) och är vidaretränade på över 50 000 timmar svenskt tal. Den ordagranna varianten skriver mer exakt vad som sägs och stryker mindre. Välj den för citat, namn och facktermer, när du kan vänta längre och datorn har minst 16 GB minne.")
@@ -217,7 +218,7 @@ struct ModelGuideView: View {
                         "Pianissimo och KB-modellen är tränade för svenska och blir sämre på andra språk. Pratas det engelska eller blandade språk, välj Large v3 Turbo.")
 
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Fel per 100 ord på svenska").font(.headline)
+                    Text("Fel per 100 ord på svenska").font(.app(.large, weight: .semibold))
                     Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 4) {
                         ForEach(rows) { model in
                             GridRow {
@@ -228,7 +229,7 @@ struct ModelGuideView: View {
                                     .foregroundStyle(Color.textSecondary)
                                     .gridColumnAlignment(.trailing)
                             }
-                            .font(.callout)
+                            .font(.app(.regular))
                         }
                         GridRow {
                             Text("OpenAI Large v3")
@@ -237,10 +238,10 @@ struct ModelGuideView: View {
                                 .monospacedDigit()
                                 .foregroundStyle(Color.textSecondary)
                         }
-                        .font(.callout)
+                        .font(.app(.regular))
                     }
                     Text("OpenAI Large v3 är den modell som Large v3 Turbo bygger på. Turbo är snabbare men brukar göra något fler fel.")
-                        .font(.caption)
+                        .font(.app(.small))
                         .foregroundStyle(Color.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -255,7 +256,7 @@ struct ModelGuideView: View {
 
     private func section(_ title: String, _ text: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(title).font(.headline)
+            Text(title).font(.app(.large, weight: .semibold))
             Text(text)
                 .foregroundStyle(Color.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)

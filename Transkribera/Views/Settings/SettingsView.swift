@@ -215,6 +215,7 @@ private struct ModelSettingsView: View {
                             }
                             .padding(12)
                         }
+                            .font(.app(.regular))
                     }
             } footer: {
                 Text("Pianissimo är snabbast och bäst som förstaval för svenska. Välj Large v3 Turbo för andra språk. Modellen laddas ner automatiskt första gången den används.")
@@ -255,7 +256,7 @@ private struct ModelSettingsView: View {
                 if transcriber.isBusy {
                     HStack {
                         ProgressView().controlSize(.small)
-                        Text(transcriber.statusText).font(.caption)
+                        Text(transcriber.statusText).font(.app(.small))
                     }
                 }
                 Button("Visa modellmappen i Finder") {

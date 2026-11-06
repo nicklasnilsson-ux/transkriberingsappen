@@ -18,12 +18,12 @@ struct TranscriptionProgressView: View {
                 VStack(spacing: 4) {
                     if let step = transcriber.stepText {
                         Text(step)
-                            .font(.caption)
+                            .font(.app(.small))
                             .foregroundStyle(Color.textSecondary)
                             .monospacedDigit()
                     }
                     Text(transcriber.statusText)
-                        .font(.headline)
+                        .font(.app(.large, weight: .semibold))
                 }
                 // Samma stapel i alla steg; utan procent rör den sig obestämt i stället
                 // för att stå still på noll.
@@ -38,7 +38,7 @@ struct TranscriptionProgressView: View {
                 .frame(maxWidth: 360)
                 if !transcriber.liveText.isEmpty {
                     Text("”\(transcriber.liveText)”")
-                        .font(.callout)
+                        .font(.app(.regular))
                         .italic()
                         .foregroundStyle(Color.textSecondary)
                         .multilineTextAlignment(.center)
@@ -48,9 +48,9 @@ struct TranscriptionProgressView: View {
                 }
             } else {
                 Text("Väntar i kön")
-                    .font(.headline)
+                    .font(.app(.large, weight: .semibold))
                 Text("Startar automatiskt när filerna före är klara.")
-                    .font(.callout)
+                    .font(.app(.regular))
                     .foregroundStyle(Color.textSecondary)
             }
 
