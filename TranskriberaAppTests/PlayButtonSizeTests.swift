@@ -53,6 +53,34 @@ final class PlayButtonSizeTests: XCTestCase {
         XCTAssertEqual(now.width, now.height, accuracy: 0.5, "Plattan är rund")
     }
 
+    /// Felet 0.9.2–0.9.14: koden bad om accentfärgen via `.tint`, men macOS ritade en ljus platta
+    /// (Nicklas skärmbilder 2026-11-06). Kontrollen läser därför färgen i den ritade bilden.
+    func testPlateIsDrawnInTheAccentColor() throws {
+        for name in [NSAppearance.Name.aqua, .darkAqua] {
+            let appearance = try XCTUnwrap(NSAppearance(named: name))
+            let (host, window) = host(PlayPauseButton(isPlaying: false) {})
+            defer { window.contentView = nil }
+            host.appearance = appearance
+            host.layoutSubtreeIfNeeded()
+            RunLoop.main.run(until: Date().addingTimeInterval(0.2))
+            let rep = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+            host.cacheDisplay(in: host.bounds, to: rep)
+            // En punkt på plattan ovanför ikonen (pixlar, Retina eller inte).
+            let scale = CGFloat(rep.pixelsWide) / host.bounds.width
+            let pixel = try XCTUnwrap(rep.colorAt(x: Int(host.bounds.width / 2 * scale), y: Int(3 * scale))?.usingColorSpace(.sRGB))
+            var expected = NSColor.black
+            appearance.performAsCurrentDrawingAppearance {
+                expected = NSColor(named: "AccentColor")?.usingColorSpace(.sRGB) ?? .black
+            }
+            print("Plattans färg (\(name.rawValue)): \(pixel), väntat \(expected)")
+            for (got, want, channel) in [(pixel.redComponent, expected.redComponent, "röd"),
+                                         (pixel.greenComponent, expected.greenComponent, "grön"),
+                                         (pixel.blueComponent, expected.blueComponent, "blå")] {
+                XCTAssertEqual(got, want, accuracy: 0.06, "Plattan har inte accentfärgen (\(channel), \(name.rawValue))")
+            }
+        }
+    }
+
     // MARK: - Smalt fönster
 
     private struct BarResult {
