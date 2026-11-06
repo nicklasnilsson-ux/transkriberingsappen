@@ -9,7 +9,7 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 ## [0.9.15] – 2026-11-06
 
 ### Ändrat
-- Spela/Pausa i spelarraden är dubbelt så stor. Bredden tas från reglaget. I ett smalt fönster står det Följ i stället för Följ uppspelning, så att reglaget får plats.
+- Spela/Pausa i spelarraden är dubbelt så stor och ligger nu på en indigofärgad platta (den var tänkt så sedan 0.9.2 men visades ljus). Bredden tas från reglaget. I ett smalt fönster står det Följ i stället för Följ uppspelning, så att reglaget får plats.
 
 ## [0.9.14] – 2026-11-06
 
