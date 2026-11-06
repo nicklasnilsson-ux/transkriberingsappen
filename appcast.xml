@@ -6,6 +6,20 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.9.12</title>
+      <pubDate>Fri, 06 Nov 2026 11:06:17 GMT</pubDate>
+      <sparkle:version>49</sparkle:version>
+      <sparkle:shortVersionString>0.9.12</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.12</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Ändrat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Appen använder nu bara tre textstorlekar: 12 pt för hjälptexter, tidskoder och märken, 14 pt för vanlig text och 16 pt för rubriker. Den minsta texten var tidigare 10 pt.&lt;/li&gt;
+&lt;li&gt;Transkriptet visas i 16 pt som standard. Större text (⌘+) och Mindre text (⌘−) väljer mellan 14, 16, 18 och 20 pt. Har du valt en storlek tidigare får du närmaste nya storlek uppåt.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.12/Transkribera-v0.9.12.zip" length="14532389" type="application/octet-stream" sparkle:edSignature="cAWY9imwYfbk4WenRWp/ZVgViQy4c2wq5bz/3+9meDDhRSAY993bILkF+fupl9A1IIA4Zwyo9lvFUEBX4K7MBQ==" />
+    </item>
+    <item>
       <title>Version 0.9.11</title>
       <pubDate>Thu, 05 Nov 2026 21:26:49 GMT</pubDate>
       <sparkle:version>48</sparkle:version>
@@ -471,19 +485,6 @@
 &lt;li&gt;Modellväljaren har bara tre modeller: &lt;b&gt;Pianissimo&lt;/b&gt; (förstaval för svenska, snabbast), &lt;b&gt;KB Large ordagrann&lt;/b&gt; (när varje ord måste stämma, t.ex. citat, namn och facktermer) och &lt;b&gt;Large v3 Turbo&lt;/b&gt; (andra språk än svenska). Pianissimo är nu standard. De andra modellerna är dolda, inte borttagna, och redan nedladdade modeller ligger kvar. Hade du valt en dold modell byter appen till Pianissimo och väljaren visar &amp;quot;(ersätter …)&amp;quot; tills du väljer själv.&lt;/li&gt;
 &lt;/ul&gt;</description>
       <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.6.3/Transkribera-v0.6.3.zip" length="14005815" type="application/octet-stream" sparkle:edSignature="mP8aVj6GjA8MvZtbZlNC+xwdMhmElmaP4MXgayWBAt40Jf435lNeD9T0I81KnJBjwnNIwzTGOjqu9nvNS6BJAw==" />
-    </item>
-    <item>
-      <title>Version 0.6.2</title>
-      <pubDate>Sat, 31 Oct 2026 10:43:50 GMT</pubDate>
-      <sparkle:version>19</sparkle:version>
-      <sparkle:shortVersionString>0.6.2</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.6.2</sparkle:fullReleaseNotesLink>
-      <description>&lt;h3&gt;Nytt&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Exporten för analys börjar med ett avsnitt, &amp;quot;Om den här filen&amp;quot;, som förklarar vad ⚠, platshållare som [PERSON 1] och rollerna Intervjuare och Kund betyder, och att en automatisk transkribering kan missa småord och ”eh”/”mm”, så att den som läser filen (t.ex. en AI) förstår den. Bara det som gäller filen tas med. Du kan stänga av det i exportdialogen.&lt;/li&gt;
-&lt;/ul&gt;</description>
-      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.6.2/Transkribera-v0.6.2.zip" length="14005915" type="application/octet-stream" sparkle:edSignature="+cb/QdN53A3my1H5YuQ5IayYF+rz1iuCbgSUkXF3Qi6FiS9GhrbtTZiPEVBMMd2lsGyP6NFpj1hlUpYX+u69CA==" />
     </item>
   </channel>
 </rss>
