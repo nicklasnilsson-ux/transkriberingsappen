@@ -92,9 +92,10 @@ class CollapseAndPlayerTests(unittest.TestCase):
 
     def test_mini_player_in_the_fixed_player_bar_with_three_sizes(self):
         bar = detail[detail.index("private var playerBar"):detail.index("private var showsRolesBanner")]
-        self.assertIn("videoWithControls(", bar)
-        self.assertIn("miniPlayer(player)", detail)
-        self.assertIn("MiniPlayerSize.allCases", detail)
+        self.assertIn("PlayerBar(", bar)
+        player_bar = (V / "Views/Player/PlayerBar.swift").read_text(encoding="utf-8")
+        self.assertIn("if isVideo { videoWithControls }", player_bar)
+        self.assertIn("MiniPlayerSize.allCases", player_bar)
 
 
 class RerunButtonTests(unittest.TestCase):
