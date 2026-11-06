@@ -90,7 +90,7 @@ struct SidebarView: View {
                     transcriptToRetranscribe = nil
                 }
             )
-            .font(.app(.regular))
+            .presentationRoot()
         }
         .onDeleteCommand {
             if multiSelection.count > 1 {
@@ -169,7 +169,7 @@ struct SidebarView: View {
         .accessibilityLabel("Inställningar: \(summary.accessibilityText)")
         .popover(isPresented: $showsNextSettings, arrowEdge: .trailing) {
             NextTranscriptionSettingsForm()
-                .font(.app(.regular))
+                .presentationRoot()
         }
     }
 

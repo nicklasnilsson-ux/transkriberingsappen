@@ -32,7 +32,7 @@ struct ModelPicker: View {
                 selection = model.rawValue
                 isPresented = false
             }
-                .font(.app(.regular))
+                .presentationRoot()
         }
     }
 }
@@ -135,7 +135,7 @@ private struct ModelAdvice: View {
                 Button("Vilken modell ska jag välja?") { showsGuide = true }
                     .buttonStyle(.link)
                     .font(.app(.small))
-                    .popover(isPresented: $showsGuide, arrowEdge: .trailing) { ModelGuideView().font(.app(.regular)) }
+                    .popover(isPresented: $showsGuide, arrowEdge: .trailing) { ModelGuideView().presentationRoot() }
             }
         } icon: {
             Image(icon: .lightbulb).foregroundStyle(.yellow)

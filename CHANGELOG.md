@@ -6,6 +6,11 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.9.13] – 2026-11-06
+
+### Rättat
+- Texterna i modellväljaren och i Vilken modell ska jag välja? syns nu i sin helhet när väljaren öppnas från kortet Inställningar i sidopanelen. Tidigare klipptes de efter en rad med …
+
 ## [0.9.12] – 2026-11-06
 
 ### Ändrat

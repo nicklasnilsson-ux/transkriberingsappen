@@ -6,6 +6,8 @@ hjälptexter och tidskoder var 10 pt. Kontrollen stoppar att en ny storlek smyge
 - inga fasta storlekar (.system(size:), NSFont.systemFont(ofSize:)) utanför Theme.swift
 - Theme.swift har exakt storlekarna 12/14/16, plus läsytan och mötestimern som enda undantag
 - varje fönster, ark och popover har 14 pt som standard (annars blir texten systemets 13 pt)
+- varje ark och popover har .presentationRoot(): 14 pt och ingen radgräns som ärvs från det den öppnas
+  från (modellväljarens texter klipptes med … från sidopanelens Inställningar-kort, 2026-11-06)
 - små knappar (controlSize .small/.mini, 11 pt) har en av appens storlekar
 
 Kör: python3 -m unittest discover -s scripts"""
@@ -57,7 +59,7 @@ def small_control_violations(text):
 
 
 def presentations_without_font(text):
-    """.sheet/.popover vars innehåll inte har appens standardstorlek."""
+    """.sheet/.popover vars innehåll saknar .presentationRoot() (14 pt och nollställd radgräns)."""
     lines = text.split("\n")
     bad = []
     for i, line in enumerate(lines):
@@ -69,7 +71,7 @@ def presentations_without_font(text):
             body.append(lines[j])
             if depth == 0 and "{" in "".join(body):
                 break
-        if ".font(.app(" not in "\n".join(body):
+        if ".presentationRoot()" not in "\n".join(body):
             bad.append(i + 1)
     return bad
 
@@ -122,7 +124,7 @@ class TextSizeTests(unittest.TestCase):
             lines = presentations_without_font(path.read_text(encoding="utf-8"))
             if lines:
                 found[str(path.relative_to(ROOT))] = lines
-        self.assertEqual(found, {}, "Ark och popovers ska ha .font(.app(.regular))")
+        self.assertEqual(found, {}, "Ark och popovers ska ha .presentationRoot() (se Theme.swift)")
 
     def test_small_controls_use_an_app_size(self):
         found = {}
@@ -146,6 +148,10 @@ class CheckerCatchesViolationsTests(unittest.TestCase):
         self.assertEqual(fixed_size_violations('.font(.system(size: 11))\nNSFont.systemFont(ofSize: 10)'), [1, 2])
         self.assertEqual(fixed_size_violations('.font(.app(.small))'), [])
 
+    def test_catches_presentations_without_root(self):
+        self.assertEqual(presentations_without_font('.popover(isPresented: $a) {\n    ModelGuideView().font(.app(.regular))\n}'), [1])
+        self.assertEqual(presentations_without_font('.popover(isPresented: $a) {\n    ModelGuideView()\n        .presentationRoot()\n}'), [])
+
     def test_catches_small_buttons_without_size(self):
         self.assertEqual(small_control_violations('Button("Spara") {}\n    .controlSize(.small)'), [2])
         self.assertEqual(small_control_violations('Button("Spara") {}\n    .controlSize(.small)\n    .font(.app(.small))'), [])
@@ -153,7 +159,7 @@ class CheckerCatchesViolationsTests(unittest.TestCase):
 
     def test_catches_sheet_without_size(self):
         self.assertEqual(presentations_without_font('.sheet(isPresented: $x) {\n    Ark()\n}'), [1])
-        self.assertEqual(presentations_without_font('.sheet(isPresented: $x) {\n    Ark()\n        .font(.app(.regular))\n}'), [])
+        self.assertEqual(presentations_without_font('.sheet(isPresented: $x) {\n    Ark()\n        .presentationRoot()\n}'), [])
 
 
 if __name__ == "__main__":
