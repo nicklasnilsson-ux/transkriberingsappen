@@ -6,6 +6,8 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.9.14] – 2026-11-06
+
 ### Ändrat
 - Släppytan i kortet Ny transkribering har nu en egen, något mörkare bakgrund än kortet, i både ljust och mörkt läge. När du drar en fil över ytan blir den svagt indigofärgad med hel kant.
 
