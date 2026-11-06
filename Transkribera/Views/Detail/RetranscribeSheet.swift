@@ -21,7 +21,7 @@ struct RetranscribeSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(RetranscribeDialog.title(kind))
-                .font(.headline)
+                .font(.app(.large, weight: .semibold))
                 .fixedSize(horizontal: false, vertical: true)
             Text(RetranscribeDialog.message(kind))
                 .foregroundStyle(Color.textSecondary)
@@ -31,7 +31,7 @@ struct RetranscribeSheet: View {
 
             if case .replacesOldest = kind, let oldestDescription {
                 Text(RetranscribeDialog.warning(oldest: oldestDescription))
-                    .font(.callout)
+                    .font(.app(.regular))
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(10)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -43,7 +43,7 @@ struct RetranscribeSheet: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(RetranscribeDialog.suppressLabel)
                         Text(RetranscribeDialog.suppressHint)
-                            .font(.caption)
+                            .font(.app(.small))
                             .foregroundStyle(Color.textSecondary)
                     }
                 }
@@ -73,7 +73,7 @@ struct RetranscribeSheet: View {
                 slot(index)
             }
             Text(slotCaption)
-                .font(.caption)
+                .font(.app(.small))
                 .foregroundStyle(Color.textSecondary)
                 .padding(.leading, 4)
         }

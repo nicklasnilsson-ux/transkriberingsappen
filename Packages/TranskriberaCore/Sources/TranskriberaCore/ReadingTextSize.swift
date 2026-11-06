@@ -2,12 +2,15 @@ import Foundation
 
 /// Textstorlek på läsytan (transkriberingens text). Fyra steg; 15 pt är standard.
 public enum ReadingTextSize {
-    public static let steps: [Double] = [13, 15, 17, 20]
-    public static let standard: Double = 15
+    /// Standard 16 pt, den största av appens tre textstorlekar (Nicklas 2026-11-06). Stegen över
+    /// är ett personligt val för den som vill läsa större (⌘+), inte en del av gränssnittets skala.
+    public static let steps: [Double] = [14, 16, 18, 20]
+    public static let standard: Double = 16
 
-    /// Närmaste giltiga steg (t.ex. om ett gammalt eller trasigt värde är sparat).
+    /// Närmaste giltiga steg (t.ex. om ett gammalt eller trasigt värde är sparat). Mitt emellan två
+    /// steg blir det större, så att de gamla stegen 13/15/17 blir 14/16/18 och ingen får mindre text.
     public static func clamped(_ size: Double) -> Double {
-        steps.min { abs($0 - size) < abs($1 - size) } ?? standard
+        steps.min { (abs($0 - size), -$0) < (abs($1 - size), -$1) } ?? standard
     }
 
     /// Nästa större steg, eller samma om den redan är störst.

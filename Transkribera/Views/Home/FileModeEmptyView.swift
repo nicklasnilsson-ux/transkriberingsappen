@@ -30,10 +30,10 @@ struct NextTranscriptionSettingsForm: View {
     var body: some View {
         let model = WhisperModel.resolved(modelRaw)
         VStack(alignment: .leading, spacing: 12) {
-            Text("Ny transkribering").font(.headline)
+            Text("Ny transkribering").font(.app(.large, weight: .semibold))
             LabeledContent("Modell") { ModelPicker(selection: $modelRaw).frame(width: 240) }
             Text(queue.transcriber.isDownloaded(model) ? "Finns på datorn" : "Laddas ner automatiskt första gången")
-                .font(.caption)
+                .font(.app(.small))
                 .foregroundStyle(Color.textSecondary)
             Picker("Språk", selection: $language) {
                 ForEach(Language.all) { Text($0.name).tag($0.id) }

@@ -221,7 +221,7 @@ struct TranscriptDetailView: View {
                     .truncationMode(.tail)
                 Icon(.chevronDown, size: 10)
             }
-            .font(.callout)
+            .font(.app(.small))
             .padding(.horizontal, 10)
             .padding(.vertical, 4)
             .background(Color.chip, in: Capsule())
@@ -241,6 +241,7 @@ struct TranscriptDetailView: View {
                     requestRetranscribe()
                 }
             )
+            .font(.app(.regular))
         }
         // Ändrade val kastas om rutan stängs utan att transkribera igen.
         .onChange(of: showRerunSettings) { _, isOpen in
@@ -286,7 +287,7 @@ struct TranscriptDetailView: View {
             Text("·")
             Text(TimeFormatting.duration(transcript.duration)).monospacedDigit()
         }
-        .font(.callout)
+        .font(.app(.small))
         .foregroundStyle(Color.textSecondary)
         .lineLimit(1)
     }
@@ -376,7 +377,7 @@ struct TranscriptDetailView: View {
                     .buttonStyle(.link)
                     .disabled(isWorking)
             }
-            .font(.callout)
+            .font(.app(.regular))
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
             .background(Color.accentColor.opacity(0.10), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
@@ -389,7 +390,7 @@ struct TranscriptDetailView: View {
     private var editStateLabel: some View {
         if isEditing {
             Text(anonymizationOptions != nil ? "Redigerar anonymiserad text" : "Redigerar originaltexten")
-                .font(.callout.weight(.semibold))
+                .font(.app(.small, weight: .semibold))
                 .foregroundStyle(Color.accentColor)
                 .lineLimit(1)
                 .truncationMode(.tail)
@@ -399,7 +400,7 @@ struct TranscriptDetailView: View {
             HStack(spacing: 6) {
                 Label("Sparat", icon: .check)
                     .labelStyle(.titleAndIcon)
-                    .font(.callout.weight(.semibold))
+                    .font(.app(.small, weight: .semibold))
                     .foregroundStyle(Color.success)
                     .lineLimit(1)
                 Button("Ångra") { undoLastEdit() }
@@ -435,7 +436,7 @@ struct TranscriptDetailView: View {
             if showSearch {
                 let count = searchHits.count
                 Text(TextSearch.positionLabel(index: hitIndex, count: count))
-                    .font(.callout.monospacedDigit())
+                    .font(.app(.small).monospacedDigit())
                     .foregroundStyle(Color.textSecondary)
                     .fixedSize()
                 HStack(spacing: 2) {
@@ -493,7 +494,7 @@ struct TranscriptDetailView: View {
         if transcript.isViewingOlderVersion, let label = transcript.versionShortLabel {
             Label(label, icon: .clock)
                 .labelStyle(.titleAndIcon)
-                .font(.caption.weight(.semibold))
+                .font(.app(.small, weight: .semibold))
                 .foregroundStyle(Color.accentColor)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 3)
@@ -726,7 +727,7 @@ struct TranscriptDetailView: View {
                 Text("Exportera")
                 Icon(.chevronDown, size: 10)
             }
-            .font(.body.weight(.medium))
+            .font(.app(.regular, weight: .medium))
             .foregroundStyle(Color.neutralButtonText)
             .padding(.horizontal, 12)
             .padding(.vertical, 5)
@@ -760,7 +761,7 @@ struct TranscriptDetailView: View {
                 playPauseAndTime(player)
                 positionSlider(player, maxWidth: .infinity)
                 Text(TimeFormatting.short(transcript.duration))
-                    .font(.system(.callout, design: .monospaced))
+                    .font(.app(.small, design: .monospaced))
                     .foregroundStyle(Color.textSecondary)
                 Toggle(isOn: $followPlayback) {
                     Text("Följ uppspelning")
@@ -849,7 +850,7 @@ struct TranscriptDetailView: View {
             .help(player.isPlaying ? "Pausa" : "Spela")
             PlaybackTimeReader(player: player) { time in
                 Text(TimeFormatting.short(time))
-                    .font(.system(.callout, design: .monospaced))
+                    .font(.app(.small, design: .monospaced))
                     .foregroundStyle(Color.textSecondary)
             }
         }
@@ -1105,7 +1106,7 @@ struct TranscriptDetailView: View {
                 Button("Inte nu") { rolesDismissed = true }
                     .buttonStyle(.link)
             }
-            .font(.callout)
+            .font(.app(.regular))
         }
     }
 
@@ -1130,7 +1131,7 @@ struct TranscriptDetailView: View {
                 }
                 .buttonStyle(.link)
             }
-            .font(.callout)
+            .font(.app(.regular))
         }
     }
 
@@ -1164,7 +1165,7 @@ struct TranscriptDetailView: View {
                     .buttonStyle(.link)
                     .help("Stäng av anonymiseringen. Slå på den igen med ögat i verktygsfältet.")
             }
-            .font(.callout)
+            .font(.app(.regular))
         }
     }
 
@@ -1372,6 +1373,7 @@ private struct DetailDialogs: ViewModifier {
                         onRetranscribe()
                     }
                 )
+                .font(.app(.regular))
             }
             .alert("Byt namn på talare", isPresented: Binding(
                 get: { speakerToRename != nil },
@@ -1398,7 +1400,7 @@ struct RerunButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.callout)
+            .font(.app(.small))
             .padding(.horizontal, 12)
             .padding(.vertical, 5)
             .foregroundStyle(isEmphasized ? AnyShapeStyle(Color.white) : AnyShapeStyle(Color.textPrimary))

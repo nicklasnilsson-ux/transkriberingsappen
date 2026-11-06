@@ -21,30 +21,30 @@ struct MeetingModeView: View {
             if case .recording(let since) = recorder.state {
                 TimelineView(.periodic(from: since, by: 1)) { context in
                     Text(TimeFormatting.short(context.date.timeIntervalSince(since)))
-                        .font(.system(size: 44, weight: .semibold, design: .monospaced))
+                        .font(.meetingTimer)
                 }
             } else {
                 Icon(.record, size: 48)
                     .foregroundStyle(Color.accentColor)
                     .accessibilityHidden(true)
             }
-            statusText.font(.title2.weight(.semibold))
+            statusText.font(.app(.large, weight: .semibold))
             Text(recorder.isBusy
                  ? "Spelar in allt ljud som hörs på datorn tills du stoppar. Texten skapas när du stoppar inspelningen."
                  : "Spelar in allt ljud som hörs på datorn tills du stoppar. Texten skapas när inspelningen är klar.")
-                .font(.callout)
+                .font(.app(.regular))
                 .foregroundStyle(Color.textSecondary)
                 .multilineTextAlignment(.center)
             if recorder.isBusy, waitingCount > 0 {
                 Text(waitingCount == 1
                      ? "1 fil väntar och transkriberas när inspelningen är sparad."
                      : "\(waitingCount) filer väntar och transkriberas när inspelningen är sparad.")
-                    .font(.callout)
+                    .font(.app(.regular))
                     .foregroundStyle(Color.textSecondary)
             }
             if let error = recorder.errorMessage {
                 Label(error, icon: .warning)
-                    .font(.callout)
+                    .font(.app(.regular))
                     .foregroundStyle(Color.warning)
                 if error == RecordingError.permissionDenied.errorDescription {
                     Button("Öppna Systeminställningar") {

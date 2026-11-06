@@ -27,11 +27,11 @@ struct MeetingControls: View {
             if case .recording(let since) = recorder.state {
                 HStack(spacing: 6) {
                     Circle().fill(Color.red).frame(width: 8, height: 8).accessibilityHidden(true)
-                    Text("Spelar in").font(.callout)
+                    Text("Spelar in").font(.app(.regular))
                     Spacer()
                     TimelineView(.periodic(from: since, by: 1)) { context in
                         Text(TimeFormatting.short(context.date.timeIntervalSince(since)))
-                            .font(.system(.callout, design: .monospaced))
+                            .font(.app(.regular, design: .monospaced))
                             .foregroundStyle(Color.textSecondary)
                     }
                 }
@@ -53,7 +53,7 @@ struct MeetingControls: View {
             Text(recorder.isBusy
                  ? "Texten skapas när du stoppar inspelningen."
                  : "Spelar in allt ljud som hörs på datorn tills du stoppar.")
-                .font(.caption)
+                .font(.app(.small))
                 .foregroundStyle(Color.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }

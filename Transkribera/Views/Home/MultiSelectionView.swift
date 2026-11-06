@@ -22,14 +22,14 @@ struct MultiSelectionView: View {
 
         VStack(alignment: .leading, spacing: 16) {
             Text("\(count) transkriberingar valda")
-                .font(.title2.weight(.semibold))
+                .font(.app(.large, weight: .semibold))
 
             List(transcripts) { transcript in
                 HStack {
                     Text(transcript.title).lineLimit(1)
                     Spacer()
                     Text(transcript.status == .completed ? TimeFormatting.duration(transcript.duration) : "")
-                        .font(.system(.caption, design: .monospaced))
+                        .font(.app(.small, design: .monospaced))
                         .foregroundStyle(Color.textSecondary)
                 }
             }
@@ -38,7 +38,7 @@ struct MultiSelectionView: View {
             if anyText {
                 Label(BulkRetranscribe.message(count: count, atCapacity: atCapacity),
                       icon: atCapacity > 0 ? .warning : .info)
-                    .font(.callout)
+                    .font(.app(.regular))
                     .foregroundStyle(atCapacity > 0 ? AnyShapeStyle(Color.warning) : AnyShapeStyle(Color.textSecondary))
             }
 

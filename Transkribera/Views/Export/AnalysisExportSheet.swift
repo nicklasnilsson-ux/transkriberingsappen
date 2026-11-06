@@ -27,9 +27,9 @@ struct AnalysisExportSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Exportera för analys")
-                .font(.title2.weight(.semibold))
+                .font(.app(.large, weight: .semibold))
             Text("Varje session blir en Markdown-fil med datum, längd och talare överst och ett stycke per talarbyte med tidskod. Byt gärna namn på talarna först, t.ex. till ”Moderator” och ”Deltagare”.")
-                .font(.callout)
+                .font(.app(.regular))
                 .foregroundStyle(Color.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -43,7 +43,7 @@ struct AnalysisExportSheet: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(transcript.title).lineLimit(1)
                             Text("\(transcript.createdAt.formatted(date: .abbreviated, time: .shortened)) · \(TimeFormatting.duration(transcript.duration))")
-                                .font(.caption)
+                                .font(.app(.small))
                                 .foregroundStyle(Color.textSecondary)
                         }
                     }
