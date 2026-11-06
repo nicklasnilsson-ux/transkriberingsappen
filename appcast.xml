@@ -6,6 +6,19 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.9.14</title>
+      <pubDate>Fri, 06 Nov 2026 18:05:40 GMT</pubDate>
+      <sparkle:version>51</sparkle:version>
+      <sparkle:shortVersionString>0.9.14</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.14</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Ändrat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Släppytan i kortet Ny transkribering har nu en egen, något mörkare bakgrund än kortet, i både ljust och mörkt läge. När du drar en fil över ytan blir den svagt indigofärgad med hel kant.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.14/Transkribera-v0.9.14.zip" length="14540661" type="application/octet-stream" sparkle:edSignature="Ir9gS9MhOU6aKzq646cB6dYNioAsELo1xsqxnsNtAsuuiIpdO+ipa2x1NOG/acgFYUyePWiFqNM2yuAms7taCw==" />
+    </item>
+    <item>
       <title>Version 0.9.13</title>
       <pubDate>Fri, 06 Nov 2026 16:01:34 GMT</pubDate>
       <sparkle:version>50</sparkle:version>
@@ -463,28 +476,6 @@
 &lt;li&gt;Den hopfällda raden vid skroll mäts om och ska nu fällas ihop. För videofiler visas en liten bild i raden; med knappen Bildstorlek väljer du liten, mellan eller stor.&lt;/li&gt;
 &lt;/ul&gt;</description>
       <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.7.1/Transkribera-v0.7.1.zip" length="14175969" type="application/octet-stream" sparkle:edSignature="79M0gPeBXEpFzz0n0xjemP+1N9vPry4cPOi/yvQkgxTT1koIL9BV0tQSUwiOQdx2RiWdUjzxNkn/xJIHPJd3DQ==" />
-    </item>
-    <item>
-      <title>Version 0.7.0</title>
-      <pubDate>Sun, 01 Nov 2026 15:42:57 GMT</pubDate>
-      <sparkle:version>21</sparkle:version>
-      <sparkle:shortVersionString>0.7.0</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.7.0</sparkle:fullReleaseNotesLink>
-      <description>&lt;h3&gt;Ändrat&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Inställningarna under Transkribering ligger i ny ordning: Språk, Talare, Ordlista, Ordträff, Tidsstämplar, Mötesinspelning och Experiment sist. Samma val som förut.&lt;/li&gt;
-&lt;li&gt;Mötesinspelning har ett statuskort överst (röd tid och &amp;quot;Spelar in&amp;quot; under inspelning, knappen Stoppa och transkribera) och en högerpanel med &amp;quot;Spela även in min mikrofon&amp;quot; och inställningarna som inspelningen transkriberas med. Texten skapas som förut när du stoppar.&lt;/li&gt;
-&lt;li&gt;Ny vy för en transkribering: chips överst (modell, språk, antal talare) med &lt;b&gt;Transkribera igen&lt;/b&gt;, ett titelkort med status, titel, intervjuare, &lt;b&gt;Sök i texten&lt;/b&gt; och &lt;b&gt;Exportera&lt;/b&gt;, verktygen (Redigera, Anonymisera, Talare, Kopiera text) och Stycken/Rader, spelaren i ett eget kort, och texten med tunna avdelare. Talarraden har en ▾-meny, tidskod och &amp;quot;Spelas nu&amp;quot;. När du skrollat förbi titelkortet ligger en smal rad kvar överst med spela/pausa, skjutreglage, titel, verktygen som ikoner, sök och Exportera.&lt;/li&gt;
-&lt;li&gt;&lt;b&gt;Transkribera igen&lt;/b&gt; frågar nu först, eftersom det ersätter rättningar och talarnamn och inte går att ångra.&lt;/li&gt;
-&lt;li&gt;Nytt fönster: en växlare överst mellan &lt;b&gt;Fil&lt;/b&gt; och &lt;b&gt;Mötesinspelning&lt;/b&gt; (en röd prick syns på Mötesinspelning medan det spelas in). Sidopanelen har &amp;quot;Välj filer…&amp;quot;, antalet transkriberingar, sök, listan med längd, datum och status (Klar, Transkriberar, I kö, Misslyckades) och längst ner modell och språk. Du kan släppa filer var som helst i fönstret.&lt;/li&gt;
-&lt;li&gt;Utan vald transkribering visar Fil-läget chips för nästa transkribering (Modell, Språk, Talare, Ordlista) som öppnar sina val.&lt;/li&gt;
-&lt;li&gt;Ny accentfärg (indigo) och en egen varningsfärg som är lättare att läsa, i ljust och mörkt läge och med Öka kontrast. Förut hade accentfärgen för låg kontrast mot vitt och varningar var orange.&lt;/li&gt;
-&lt;li&gt;Talare visas med en liten färgprick och namnet i vanlig textfärg, så att färgen inte ensam bär informationen.&lt;/li&gt;
-&lt;li&gt;Texten du läser är 15 punkter som standard. Under Visa kan du välja Större text (⌘+), Mindre text (⌘−) och Normal storlek (⌘0).&lt;/li&gt;
-&lt;li&gt;Stycket som spelas just nu får en accentlinje till vänster och tydligare bakgrund.&lt;/li&gt;
-&lt;/ul&gt;</description>
-      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.7.0/Transkribera-v0.7.0.zip" length="14119541" type="application/octet-stream" sparkle:edSignature="884L3XVHeRE5yE2+nB7rVI5fXvbxRgSi2NsiKwhzH4OLqlA0SKj2hZT7evYhv080sN80wLq0EJqvhIYhDrcsDg==" />
     </item>
   </channel>
 </rss>
