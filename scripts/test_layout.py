@@ -236,7 +236,7 @@ class EditModeTests(unittest.TestCase):
         # Rund platta i accentfärgen, med fast storlek: dubbelt så stor som i 0.9.2–0.9.14 (Nicklas 2026-11-06).
         # Själva storleken mäts i TranskriberaAppTests/PlayButtonSizeTests.swift.
         self.assertIn("Circle().fill(Color.accentColor)", button, "Play/Pause ligger på en rund platta i accentfärgen")
-        self.assertIn("static let diameter: CGFloat = 76", button)
+        self.assertIn("static let diameter: CGFloat = 56", button)
         self.assertIn("PlayPauseButton(isPlaying: player.isPlaying)", bar_src)
         self.assertNotIn("Button { player.togglePlayPause() }", text, "Spela/Pausa finns bara i PlayerBar")
         bar = text[text.index("private var playerBar"):text.index("private var showsRolesBanner")]

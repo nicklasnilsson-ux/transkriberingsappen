@@ -8,8 +8,8 @@ import SwiftUI
 /// som är det enda i raden som växer och krymper.
 struct PlayPauseButton: View {
     /// Plattans diameter i punkter.
-    static let diameter: CGFloat = 76
-    /// Ikonen behåller samma andel av plattan som tidigare (22 pt ikon på den gamla plattan).
+    static let diameter: CGFloat = 56
+    /// Ikonen dubblas också (22 pt på den gamla plattan, som mätte 28 pt på macOS 15).
     static let iconSize: CGFloat = 44
 
     let isPlaying: Bool
