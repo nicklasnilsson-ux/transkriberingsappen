@@ -42,3 +42,27 @@ class ColorTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DropZoneTests(unittest.TestCase):
+    """Släppytan ska synas mot kortet, och dra-över-läget mot vila (Nicklas 2026-11-06)."""
+
+    def test_drop_zone_colors(self):
+        self.assertEqual(check_colors.check_drop_zone(), [])
+
+    def test_drop_area_uses_checked_colors(self):
+        self.assertEqual(check_colors.check_drop_area_code(), [])
+
+    def test_same_color_as_card_is_caught(self):
+        # Felet som fanns före 0.9.14: ytan hade ingen egen bakgrund och syntes som kortet.
+        colors = check_colors.load_all()
+        for mode in ("light", "dark"):
+            for high in (False, True):
+                colors[(check_colors.DROP_REST, mode, high)] = colors[(check_colors.DROP_CARD, mode, high)]
+        self.assertTrue(any("släppytan mot kortet" in e for e in check_colors.check_drop_zone(colors)))
+
+    def test_target_equal_to_rest_is_caught(self):
+        colors = check_colors.load_all()
+        key = (check_colors.DROP_TARGET, "dark", False)
+        colors[key] = colors[(check_colors.DROP_REST, "dark", False)]
+        self.assertTrue(any("dra-över mot vila" in e for e in check_colors.check_drop_zone(colors)))

@@ -17,6 +17,10 @@ extension Color {
     static let surface = Color("SurfaceBackground")
     /// Chips, tonade fält och inställningsknappar.
     static let chip = Color("ChipBackground")
+    /// Släppytan i kortet Ny transkribering: nedsänkt, mörkare än kortet (chip) i båda lägena.
+    static let dropZone = Color("DropZoneBackground")
+    /// Släppytan när en fil dras över: indigotonad. Skiljer sig från både vila och kortet.
+    static let dropZoneTarget = Color("DropZoneTargetBackground")
     /// Tunna kanter och avdelare. Bär ingen information ensam.
     static let line = Color("LineColor")
     static let textPrimary = Color("TextPrimary")
