@@ -10,6 +10,8 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ### Ändrat
 - Menyn för uppspelningshastighet har rubriken Uppspelningshastighet.
+- Rubriker och förklaringar i menyerna syntes knappt, eftersom macOS ritade dem ljusgrå. Det gäller rubriken Bildstorlek och raden om hur många versioner som sparas. Nu ritas de mörkare och är lätta att läsa. Detsamma gäller rubrikerna i sidopanelens lista.
+- Visning i menyn ⋯ är en undermeny, och valen av intervjuare under Talare heter till exempel ”Talare 1 är intervjuare”. Tidigare hade de ljusgrå rubriker.
 
 ## [0.9.18] – 2026-11-07
 

@@ -152,7 +152,7 @@ class EditModeTests(unittest.TestCase):
         # Nicklas 2026-11-03: verktygen finns både i raden och i ⋯-menyn, så att de nås när raden skrollat bort.
         text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
         menu = text[text.index("private var moreMenu"):text.index("/// Alla träffar i den text som visas")]
-        for item in ("$layout", "$anonymize", "speakersMenuContent", "copyText()", "exportMenuContent", "requestRetranscribe()"):
+        for item in ("layout = option", "$anonymize", "speakersMenuContent", "copyText()", "exportMenuContent", "requestRetranscribe()"):
             self.assertIn(item, menu, f"{item} saknas i ⋯-menyn")
 
     def test_on_states_are_filled_and_keep_their_size(self):
@@ -249,10 +249,11 @@ class EditModeTests(unittest.TestCase):
         video = bar_src[bar_src.index("private var videoWithControls"):][:400]
         self.assertLess(video.index("miniPlayer"), video.index("sizeMenu"))
         # Eget fönster ligger i samma lilla meny som bildstorlekarna och ersätter Helskärm (Nicklas 2026-11-07).
-        menu = bar_src[bar_src.index("private var sizeMenu"):][:1100]
-        self.assertIn("Picker(\"Bildstorlek\"", menu)
+        # Menyn är en AppMenu (rubriken ritas av appen med tillräcklig kontrast, Nicklas 2026-11-07).
+        self.assertIn("videoWindow.open(player: player.player", bar_src[bar_src.index("private var sizeMenu"):][:600])
+        menu = bar_src[bar_src.index("struct VideoSizeMenuButton"):]
+        self.assertIn(".header(\"Bildstorlek\")", menu)
         self.assertIn("Visa i eget fönster", menu)
-        self.assertIn("videoWindow.open(player: player.player", menu)
         self.assertIn("Tillbaka till spelarraden", menu, "Menyn lägger tillbaka videon när den visas i eget fönster")
         self.assertNotIn("Helskärm", menu, "Helskärm är ersatt av eget fönster")
         self.assertFalse((VIEWS / "Player/VideoFullscreen.swift").exists())

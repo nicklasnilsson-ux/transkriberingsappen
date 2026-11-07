@@ -7,7 +7,7 @@ import TranskriberaCore
 /// med alla steg. Knappen blir indigo när hastigheten inte är 1×, så att man ser att man lyssnar
 /// snabbare eller långsammare.
 ///
-/// Knappen ritas av appen själv och menyn är en vanlig `NSMenu`. En SwiftUI-`Menu` ritas av macOS,
+/// Knappen ritas av appen själv och menyn är en vanlig `NSMenu` (se `AppMenu`). En SwiftUI-`Menu` ritas av macOS,
 /// som kan strunta i färgerna (så blev det med playknappen i 0.9.2–0.9.14). `PlaybackSpeedTests`
 /// läser färgerna i den ritade knappen.
 struct PlaybackSpeedButton: View {
@@ -20,7 +20,7 @@ struct PlaybackSpeedButton: View {
 
     var body: some View {
         Button {
-            anchor.showSpeedMenu(selected: speed) { speed = $0 }
+            anchor.show(PlaybackSpeedMenu.entries(selected: speed) { speed = $0 })
         } label: {
             HStack(spacing: 2) {
                 Text(PlaybackSpeed.label(speed))
@@ -58,63 +58,15 @@ struct SpeedButtonStyle: ButtonStyle {
     }
 }
 
-/// Håller vyn som menyn ska visas under.
+/// Menyn under hastighetsknappen: rubrik och alla steg, med bock på det valda.
 @MainActor
-final class MenuAnchor {
-    weak var view: NSView?
-    /// Menyns mål hålls kvar medan menyn är öppen (NSMenuItem håller det bara svagt).
-    private var target: SpeedMenuTarget?
-
-    /// Menyn med alla hastigheter, under knappen. Vald hastighet har bock.
-    func showSpeedMenu(selected: Double, onPick: @escaping (Double) -> Void) {
-        guard let view else { return }
-        let target = SpeedMenuTarget(onPick: onPick)
-        self.target = target
-        let menu = Self.speedMenu(selected: selected, target: target)
-        // Vyn är inte vänd (origo nere till vänster), så y = -4 är strax under knappen.
-        menu.popUp(positioning: nil, at: NSPoint(x: 0, y: view.isFlipped ? view.bounds.height + 4 : -4), in: view)
-    }
-
-    static func speedMenu(selected: Double, target: SpeedMenuTarget) -> NSMenu {
-        let menu = NSMenu(title: "Uppspelningshastighet")
+enum PlaybackSpeedMenu {
+    static func entries(selected: Double, onPick: @escaping (Double) -> Void) -> [AppMenuEntry] {
         let current = PlaybackSpeed.clamped(selected)
-        // Rubrik överst (Nicklas 2026-11-07), i macOS egen stil för sektionsrubriker.
-        menu.addItem(NSMenuItem.sectionHeader(title: "Uppspelningshastighet"))
-        for step in PlaybackSpeed.steps {
-            let item = NSMenuItem(title: PlaybackSpeed.menuLabel(step), action: #selector(SpeedMenuTarget.pick(_:)), keyEquivalent: "")
-            item.target = target
-            item.representedObject = step
-            item.state = step == current ? .on : .off
-            menu.addItem(item)
+        // Rubriken överst (Nicklas 2026-11-07), ritad av appen så att den uppfyller kontrastkravet.
+        let choices = PlaybackSpeed.steps.map { step -> AppMenuEntry in
+            .choice(PlaybackSpeed.menuLabel(step), checked: step == current) { onPick(step) }
         }
-        return menu
-    }
-}
-
-@MainActor
-final class SpeedMenuTarget: NSObject {
-    let onPick: (Double) -> Void
-
-    init(onPick: @escaping (Double) -> Void) {
-        self.onPick = onPick
-    }
-
-    @objc func pick(_ sender: NSMenuItem) {
-        guard let speed = sender.representedObject as? Double else { return }
-        onPick(speed)
-    }
-}
-
-private struct MenuAnchorView: NSViewRepresentable {
-    let anchor: MenuAnchor
-
-    func makeNSView(context: Context) -> NSView {
-        let view = NSView()
-        anchor.view = view
-        return view
-    }
-
-    func updateNSView(_ nsView: NSView, context: Context) {
-        anchor.view = nsView
+        return [.header("Uppspelningshastighet")] + choices
     }
 }

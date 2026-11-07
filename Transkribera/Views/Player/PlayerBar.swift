@@ -110,33 +110,14 @@ struct PlayerBar: View {
         }
     }
 
-    /// Bildstorlek och eget fönster i samma lilla meny.
+    /// Bildstorlek och eget fönster i samma lilla meny (se `VideoSizeMenuButton`).
     private var sizeMenu: some View {
-        Menu {
-            Picker("Bildstorlek", selection: $miniSizeRaw) {
-                ForEach(MiniPlayerSize.allCases, id: \.rawValue) { Text($0.label).tag($0.rawValue) }
-            }
-            .pickerStyle(.inline)
-            Divider()
-            if inOwnWindow {
-                Button {
-                    videoWindow.close()
-                } label: {
-                    Label("Tillbaka till spelarraden", icon: .closeFullscreen)
-                }
-            } else {
-                Button {
-                    videoWindow.open(player: player.player, title: title)
-                } label: {
-                    Label("Visa i eget fönster", icon: .openInNew)
-                }
-            }
-        } label: {
-            Icon(.openInFull, size: 18).accessibilityLabel("Bildstorlek")
-        }
-        .menuStyle(.borderlessButton)
-        .fixedSize()
-        .help("Bildstorlek: liten, mellan eller stor, eller visa i eget fönster")
+        VideoSizeMenuButton(
+            miniSizeRaw: $miniSizeRaw,
+            inOwnWindow: inOwnWindow,
+            openWindow: { videoWindow.open(player: player.player, title: title) },
+            closeWindow: { videoWindow.close() }
+        )
     }
 
     private var playPauseAndTime: some View {
@@ -164,5 +145,40 @@ struct PlayerBar: View {
             .frame(minWidth: Self.sliderMinWidth, idealWidth: Self.sliderMinWidth, maxWidth: .infinity)
             .help("Hoppa i inspelningen")
         }
+    }
+}
+
+/// Knappen för bildstorlek bredvid videon. Menyn är en `AppMenu`, så att rubriken Bildstorlek ritas
+/// av appen med tillräcklig kontrast (macOS ritade den ljusgrå, 1,9:1, Nicklas 2026-11-07).
+struct VideoSizeMenuButton: View {
+    @Binding var miniSizeRaw: String
+    let inOwnWindow: Bool
+    let openWindow: () -> Void
+    let closeWindow: () -> Void
+    @State private var anchor = MenuAnchor()
+
+    var body: some View {
+        Button {
+            anchor.show(Self.entries(selected: MiniPlayerSize.resolved(miniSizeRaw), inOwnWindow: inOwnWindow,
+                                     pick: { miniSizeRaw = $0.rawValue }, openWindow: openWindow, closeWindow: closeWindow))
+        } label: {
+            Icon(.openInFull, size: 18)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .background(MenuAnchorView(anchor: anchor))
+        .fixedSize()
+        .help("Bildstorlek: liten, mellan eller stor, eller visa i eget fönster")
+        .accessibilityLabel("Bildstorlek")
+    }
+
+    static func entries(selected: MiniPlayerSize, inOwnWindow: Bool, pick: @escaping (MiniPlayerSize) -> Void,
+                        openWindow: @escaping () -> Void, closeWindow: @escaping () -> Void) -> [AppMenuEntry] {
+        var entries: [AppMenuEntry] = [.header("Bildstorlek")]
+        entries += MiniPlayerSize.allCases.map { size -> AppMenuEntry in .choice(size.label, checked: size == selected) { pick(size) } }
+        entries.append(.separator)
+        entries.append(inOwnWindow ? .action("Tillbaka till spelarraden", action: closeWindow)
+                                   : .action("Visa i eget fönster", action: openWindow))
+        return entries
     }
 }
