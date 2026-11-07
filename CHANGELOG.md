@@ -6,6 +6,11 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.9.22] – 2026-11-07
+
+### Ändrat
+- I modellväljaren har den valda modellen nu en kant i accentfärgen runt sig, inte bara en ljus bakgrund. Då syns det tydligt vilken modell som är vald, även för den som har svårt att se svaga färgskillnader. VoiceOver läser också upp den som vald.
+
 ## [0.9.21] – 2026-11-07
 
 ### Ändrat

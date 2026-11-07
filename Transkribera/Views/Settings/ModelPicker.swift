@@ -56,13 +56,11 @@ private struct ModelList: View {
                             Button { onSelect(model) } label: {
                                 ModelInfoRow(model: model, isDownloaded: transcriber.isDownloaded(model))
                                     .padding(8)
-                                    .background(
-                                        model == selection ? Color.accentColor.opacity(0.15) : .clear,
-                                        in: RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                    )
+                                    .selectionHighlight(model == selection)
                                     .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
+                            .accessibilityAddTraits(model == selection ? .isSelected : [])
                         }
                     }
                 }
