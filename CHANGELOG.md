@@ -6,12 +6,22 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
-## [0.9.19] – 2026-11-07
+## [0.9.21] – 2026-11-07
 
 ### Ändrat
 - Menyn för uppspelningshastighet har rubriken Uppspelningshastighet.
 - Rubriker och förklaringar i menyerna syntes knappt, eftersom macOS ritade dem ljusgrå. Det gäller rubriken Bildstorlek och raden om hur många versioner som sparas. Nu ritas de mörkare och är lätta att läsa. Detsamma gäller rubrikerna i sidopanelens lista.
 - Visning i menyn ⋯ är en undermeny, och valen av intervjuare under Talare heter till exempel ”Talare 1 är intervjuare”. Tidigare hade de ljusgrå rubriker.
+
+## [0.9.19] – 2026-11-07
+
+### Nytt
+- Du kan byta talare på ett stycke eller en rad om något har hamnat hos fel talare. Klicka på ▾ bredvid talarens namn (eller högerklicka) och välj Flytta stycket till, eller Flytta raden till i radläget. Välj en av talarna, eller Ny talare… om personen inte finns med. Det fungerar både när du läser och när du redigerar.
+- Efter ett byte står Flyttat till … med Ångra i titelbaren. Ångra lägger tillbaka talaren och ⚠ som de var.
+- Stycken i följd från samma talare slås ihop till ett, så texten kan flytta sig lite efter ett byte. ⚠ försvinner från det du har flyttat, eftersom du själv har bestämt vem som pratar.
+
+### Ändrat
+- I menyn vid talarens namn heter namnbytet nu Byt namn på … (överallt), så att det syns att det ändrar talaren i hela texten och inte bara i stycket.
 
 ## [0.9.18] – 2026-11-07
 

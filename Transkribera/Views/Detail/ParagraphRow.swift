@@ -22,6 +22,8 @@ struct ParagraphRow: View {
     let onSeek: (Double) -> Void
     /// Innehållet i ▾-menyn bredvid talarens namn.
     var speakerMenu: ((String) -> AnyView)? = nil
+    /// Talarna i filen. Menyn listar dem (Flytta stycket till), så stycket ritas om när de ändras.
+    var menuSpeakers: [String] = []
 
     @AppStorage(SettingsKey.readingTextSize) private var readingSize = ReadingTextSize.standard
     @State private var hovering = false
@@ -70,15 +72,7 @@ struct ParagraphRow: View {
     private func speakerGroup(_ speaker: String) -> some View {
         SpeakerLabel(name: speaker)
         if let speakerMenu {
-            Menu {
-                speakerMenu(speaker)
-            } label: {
-                Icon(.chevronDown, size: 12)
-            }
-            .menuStyle(.borderlessButton)
-            .menuIndicator(.hidden)
-            .fixedSize()
-            .help("Byt namn på talaren eller ange intervjuare")
+            SpeakerMenuButton { speakerMenu(speaker) }
         }
         if rows.contains(where: { $0.segment.isSpeakerUncertain }) {
             UncertainSpeakerMark()
@@ -136,7 +130,26 @@ extension ParagraphRow: Equatable {
     static func == (l: ParagraphRow, r: ParagraphRow) -> Bool {
         l.query == r.query && l.currentHit == r.currentHit && l.activeID == r.activeID
             && l.currentTime == r.currentTime && l.isEditing == r.isEditing && l.editsAll == r.editsAll
+            && l.menuSpeakers == r.menuSpeakers
             && l.rows.count == r.rows.count
             && zip(l.rows, r.rows).allSatisfy { $0.sameContent(as: $1) }
+    }
+}
+
+/// ▾ bredvid talarens namn, i stycke- och radläget: flytta stycket eller raden till en annan
+/// talare, byt namn på talaren överallt och ange intervjuare.
+struct SpeakerMenuButton<Content: View>: View {
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        Menu {
+            content()
+        } label: {
+            Icon(.chevronDown, size: 12)
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help("Flytta till en annan talare, byt namn på talaren eller ange intervjuare")
     }
 }
