@@ -60,6 +60,10 @@ struct SegmentRow: View {
     var onSave: () -> Void = {}
     var onCancel: () -> Void = {}
     let onSeek: () -> Void
+    /// Innehållet i ▾-menyn bredvid talarens namn (som i styckeläget).
+    var speakerMenu: (() -> AnyView)? = nil
+    /// Talarna i filen. Menyn listar dem (Flytta raden till), så raden ritas om när de ändras.
+    var menuSpeakers: [String] = []
 
     @AppStorage(SettingsKey.readingTextSize) private var readingSize = ReadingTextSize.standard
     @State private var hovering = false
@@ -75,6 +79,9 @@ struct SegmentRow: View {
                 if let speaker = displaySpeaker {
                     HStack(spacing: 6) {
                         SpeakerLabel(name: speaker, font: .app(.small, weight: .semibold))
+                        if let speakerMenu {
+                            SpeakerMenuButton { speakerMenu() }
+                        }
                         if segment.isSpeakerUncertain {
                             UncertainSpeakerMark()
                         }
@@ -130,6 +137,7 @@ extension SegmentRow: Equatable {
             && l.query == r.query && l.currentOccurrence == r.currentOccurrence
             && l.isActive == r.isActive && l.currentTime == r.currentTime
             && l.isEditing == r.isEditing && l.isAnonymized == r.isAnonymized && l.editsAll == r.editsAll
+            && l.menuSpeakers == r.menuSpeakers
     }
 }
 

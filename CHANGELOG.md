@@ -6,10 +6,20 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
-## [0.9.19] – 2026-11-07
+## [0.9.20] – 2026-11-07
 
 ### Ändrat
 - Inställningarnas flikar, titelbaren och menyerna har nu macOS egna ikoner (SF Symbols). De följer systemets text i storlek, tyngd och linje. Sidopanelen, spelarraden och texten behåller appens egna ikoner.
+
+## [0.9.19] – 2026-11-07
+
+### Nytt
+- Du kan byta talare på ett stycke eller en rad om något har hamnat hos fel talare. Klicka på ▾ bredvid talarens namn (eller högerklicka) och välj Flytta stycket till, eller Flytta raden till i radläget. Välj en av talarna, eller Ny talare… om personen inte finns med. Det fungerar både när du läser och när du redigerar.
+- Efter ett byte står Flyttat till … med Ångra i titelbaren. Ångra lägger tillbaka talaren och ⚠ som de var.
+- Stycken i följd från samma talare slås ihop till ett, så texten kan flytta sig lite efter ett byte. ⚠ försvinner från det du har flyttat, eftersom du själv har bestämt vem som pratar.
+
+### Ändrat
+- I menyn vid talarens namn heter namnbytet nu Byt namn på … (överallt), så att det syns att det ändrar talaren i hela texten och inte bara i stycket.
 
 ## [0.9.18] – 2026-11-07
 
