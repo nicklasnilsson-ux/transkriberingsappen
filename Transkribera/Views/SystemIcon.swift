@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// Ikoner i macOS egna ytor: Inställningars flikar, titelbaren och menyerna. Där används SF Symbols,
@@ -27,6 +28,11 @@ enum SystemIcon: String, CaseIterable {
     case backToPlayer = "arrow.uturn.backward"
 
     var symbolName: String { rawValue }
+}
+
+extension SystemIcon {
+    /// För menyrader som AppKit ritar (`AppMenu`).
+    var nsImage: NSImage? { NSImage(systemSymbolName: symbolName, accessibilityDescription: nil) }
 }
 
 extension Image {

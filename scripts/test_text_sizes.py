@@ -104,8 +104,9 @@ class TextSizeTests(unittest.TestCase):
         sizes = re.findall(r"\.system\(size: (size\.rawValue|CGFloat\(ReadingTextSize\.clamped\(size\)\)|\w+)", theme)
         self.assertEqual(sizes, ["size.rawValue", "CGFloat(ReadingTextSize.clamped(size))", "44"])
         self.assertEqual(len(re.findall(r"\.system\(size:", theme)), 3)
-        self.assertEqual(re.findall(r"systemFont\(ofSize: (CGFloat\(ReadingTextSize\.clamped\(size\)\)|\w+)", theme),
-                         ["CGFloat(ReadingTextSize.clamped(size))"])
+        # NSFont.app (appens tre storlekar för text som AppKit ritar) och läsytan.
+        self.assertEqual(re.findall(r"systemFont\(ofSize: (size\.rawValue|CGFloat\(ReadingTextSize\.clamped\(size\)\)|\w+)", theme),
+                         ["size.rawValue", "CGFloat(ReadingTextSize.clamped(size))"])
 
     def test_reading_area_defaults_to_the_largest_size(self):
         core = (ROOT / "Packages" / "TranskriberaCore" / "Sources" / "TranskriberaCore" / "ReadingTextSize.swift")

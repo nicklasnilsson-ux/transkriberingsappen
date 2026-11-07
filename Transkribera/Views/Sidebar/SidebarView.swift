@@ -239,7 +239,8 @@ struct SidebarView: View {
             }
 
             ForEach(groups) { group in
-                Section(group.group.rawValue) {
+                // Egen rubrik i TextSecondary: sidopanelens rubriker ritas annars ljusgrå av macOS.
+                Section {
                     ForEach(group.items) { transcript in
                         SidebarRow(
                             transcript: transcript,
@@ -249,6 +250,10 @@ struct SidebarView: View {
                             .tag(transcript)
                             .contextMenu { menu(for: transcript) }
                     }
+                } header: {
+                    Text(group.group.rawValue)
+                        .font(.app(.small, weight: .semibold))
+                        .foregroundStyle(Color.textSecondary)
                 }
             }
         }

@@ -25,18 +25,41 @@ final class PlaybackSpeedTests: XCTestCase {
     }
 
     func testMenuListsEveryStepWithTheCurrentOneChecked() {
-        let menu = MenuAnchor.speedMenu(selected: 1.25, target: SpeedMenuTarget { _ in })
-        XCTAssertEqual(menu.items.map(\.title), ["0,75×", "1× (Normal)", "1,25×", "1,5×", "1,75×", "2×"])
+        let menu = AppMenu.make(PlaybackSpeedMenu.entries(selected: 1.25) { _ in }, target: AppMenuTarget())
+        XCTAssertEqual(menu.items.first?.title, "Uppspelningshastighet")
+        XCTAssertNotNil(menu.items.first?.view, "Rubriken ska ritas av appen, inte av macOS (som ritar den ljusgrå)")
+        XCTAssertFalse(menu.items.first?.isEnabled ?? true, "Rubriken kan inte väljas")
+        XCTAssertEqual(menu.items.dropFirst().map(\.title), ["0,75×", "1× (Normal)", "1,25×", "1,5×", "1,75×", "2×"])
         XCTAssertEqual(menu.items.filter { $0.state == .on }.map(\.title), ["1,25×"])
     }
 
     func testPickingInTheMenuSetsTheSpeed() throws {
         var picked: Double?
-        let target = SpeedMenuTarget { picked = $0 }
-        let menu = MenuAnchor.speedMenu(selected: 1, target: target)
+        let target = AppMenuTarget()
+        let menu = AppMenu.make(PlaybackSpeedMenu.entries(selected: 1) { picked = $0 }, target: target)
         let item = try XCTUnwrap(menu.items.last)
-        target.pick(item)
+        target.run(item)
         XCTAssertEqual(picked, 2)
+    }
+
+    /// Rubriker och förklaringar i appens menyer ritas i TextSecondary, inte i macOS ljusgrå
+    /// (1,9:1 i Nicklas skärmbild 2026-11-07). Färgen läses i den ritade raden.
+    func testMenuHeaderIsDrawnInTheSecondaryTextColor() throws {
+        for name in [NSAppearance.Name.aqua, .darkAqua] {
+            let appearance = try XCTUnwrap(NSAppearance(named: name))
+            let item = AppMenu.textItem("Uppspelningshastighet", bold: true)
+            let view = try XCTUnwrap(item.view)
+            view.appearance = appearance
+            let label = try XCTUnwrap(view.subviews.first as? NSTextField)
+            var drawn = NSColor.clear
+            var expected = NSColor.clear
+            appearance.performAsCurrentDrawingAppearance {
+                drawn = label.textColor?.usingColorSpace(.sRGB) ?? .clear
+                expected = NSColor(named: "TextSecondary")?.usingColorSpace(.sRGB) ?? .black
+            }
+            XCTAssertEqual(drawn, expected, "Rubriken har inte TextSecondary (\(name.rawValue))")
+            XCTAssertGreaterThan(view.frame.width, 100)
+        }
     }
 
     /// Räknar tydligt indigo bildpunkter i den ritade knappen (färgen läses i bilden, inte i koden,
