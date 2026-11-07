@@ -6,6 +6,11 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.9.23] – 2026-11-07
+
+### Nytt
+- Testlabbet (⌥⇧⌘T) har en ny lista, Tidsmätning. Den kör samma inspelning med Pianissimo, KB Large ordagrann och Large v3 Turbo, var och en med och utan talare, och mäter varje steg för sig: ljudet, transkriberingen, talarna och anonymiseringen. Sammanfattningen visar också tiden per timme ljud och vilken Mac den kördes på. Tiderna ska användas till exempeltider i modellväljaren.
+
 ## [0.9.20] – 2026-11-07
 
 ### Ändrat

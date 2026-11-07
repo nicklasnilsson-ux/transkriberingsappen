@@ -20,6 +20,9 @@ struct TranscriptionDiagnostics {
     var gaps: TestLabReport.Gaps?
     var whisperSegments: [TestLabReport.WhisperSegment]?
     var pianissimoConfidence: Double?
+    /// Talaridentifieringen inne i körningen (0 när talarna kom utifrån eller var av).
+    var speakersSeconds: Double = 0
+    var diarizer: String?
 }
 
 enum TranscriberError: LocalizedError {
@@ -326,7 +329,11 @@ final class TranscriberService {
             if assigned.contains(where: { $0.speaker != nil }) { segments = assigned }
         } else if options.identifySpeakers {
             phase = .identifyingSpeakers
-            segments = try await diarizedSegments(samples: samples, segments: segments, options: options)
+            let speakersStart = clock.now
+            let diarized = try await diarizedSegments(samples: samples, segments: segments, options: options)
+            segments = diarized.segments
+            diagnostics.diarizer = diarized.diarizer
+            diagnostics.speakersSeconds = Self.seconds(clock.now - speakersStart)
         }
         segments = segments.filter { !TextCleaning.isNonSpeechMarker($0.text) }
         return TranscriptionOutput(segments: segments, language: language, diagnostics: diagnostics)
@@ -505,7 +512,11 @@ final class TranscriberService {
 
     // MARK: - Talaridentifiering (Nemotron 3 eller SpeakerKit)
 
-    private func diarizedSegments(samples: [Float], segments: [SegmentData], options: TranscriptionOptions) async throws -> [SegmentData] {
+    private func diarizedSegments(
+        samples: [Float],
+        segments: [SegmentData],
+        options: TranscriptionOptions
+    ) async throws -> (segments: [SegmentData], diarizer: String) {
         let (turns, diarizerName) = try await speakerTurns(samples: samples, options: options)
 
         // Talare sätts per ord, så att repliker utan paus emellan ändå delas upp rätt.
@@ -520,7 +531,7 @@ final class TranscriberService {
         )
 
         // Om diariseringen inte gav något – behåll segmenten utan talare.
-        return assigned.contains { $0.speaker != nil } ? assigned : segments
+        return (assigned.contains { $0.speaker != nil } ? assigned : segments, diarizerName)
     }
 
     /// Vem som talar när, och vilken modell som kom fram till det.
