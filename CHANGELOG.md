@@ -6,10 +6,17 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.9.25] – 2026-11-07
+
 ### Ändrat
 - När ingen transkribering är vald står det nu "Släpp ljud- eller videofiler i fönstret eller välj filer i sidopanelen. Allt transkriberas lokalt, inget lämnar din Mac." Ljudvågsikonen ovanför är fyra gånger så stor.
 - Släppytan i kortet Ny transkribering har samma svagt indigo bakgrund som rutan "Vem är intervjuare?", i både ljust och mörkt läge. När en fil dras över blir den tydligare indigo.
 - Frågan om talarna heter nu "Vem är intervjuare?" i stället för "Vem av talarna är du?".
+
+## [0.9.24] – 2026-11-07
+
+### Ändrat
+- Platshållartexten i sökfälten och i fälten för ordlista och undantag syntes knappt, eftersom macOS ritade den ljusgrå. Nu är den mörkare och lätt att läsa, i både ljust och mörkt läge.
 
 ## [0.9.23] – 2026-11-07
 
