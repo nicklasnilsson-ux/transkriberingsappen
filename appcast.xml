@@ -6,6 +6,23 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.9.26</title>
+      <pubDate>Sat, 07 Nov 2026 19:28:51 GMT</pubDate>
+      <sparkle:version>63</sparkle:version>
+      <sparkle:shortVersionString>0.9.26</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.26</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Nytt&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Modellväljaren visar nu ungefär hur lång tid varje modell tar för en timmes ljud: Pianissimo ca 40 sekunder, Large v3 Turbo ca 3 minuter och KB Large ordagrann ca 12 minuter. Tiden gäller hela processen, med talarigenkänning. Den är uppmätt på en Mac med M4-chip, så äldre datorer är långsammare, och första gången tar det längre.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Ändrat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Fart-prickarna i modellväljaren är borta, eftersom tiden säger samma sak tydligare.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.26/Transkribera-v0.9.26.zip" length="14620312" type="application/octet-stream" sparkle:edSignature="v0FIzkh14kiQmItKSoWfV1YlO8TjhantUeUwIpcp0qjemerVj223w/Yc61tnuiS4Uaum3/xw23SokrfTTMfEDw==" />
+    </item>
+    <item>
       <title>Version 0.9.25</title>
       <pubDate>Sat, 07 Nov 2026 16:16:50 GMT</pubDate>
       <sparkle:version>62</sparkle:version>
@@ -449,21 +466,6 @@
 &lt;li&gt;Sökfältet i det hopfällda titelkortet tappade fokus efter ett par bokstäver och sidan hoppade till början.&lt;/li&gt;
 &lt;/ul&gt;</description>
       <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.7.13/Transkribera-v0.7.13.zip" length="14308158" type="application/octet-stream" sparkle:edSignature="A4J2NK/IStPfvub1xku5/R7cFPgTOsMRdOyZ+LP0rT7pHPJ3h5bC34c4cyJuAaanAyYzEtFwPu8v1pwml2wDBA==" />
-    </item>
-    <item>
-      <title>Version 0.7.12</title>
-      <pubDate>Mon, 02 Nov 2026 15:40:19 GMT</pubDate>
-      <sparkle:version>33</sparkle:version>
-      <sparkle:shortVersionString>0.7.12</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.7.12</sparkle:fullReleaseNotesLink>
-      <description>&lt;h3&gt;Ändrat&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Sökfältet följer med när titelkortet är hopfällt. Klickar du på Sök i texten medan du skrollar öppnas fältet direkt i den hopfällda raden, utan att sidan hoppar till början.&lt;/li&gt;
-&lt;li&gt;Med liten bild eller bara ljud ligger spelkontrollerna staplade bredvid bilden i det hopfällda titelkortet. Då får texten om redigeringen plats.&lt;/li&gt;
-&lt;li&gt;Det står nu &amp;quot;Redigerar anonymiserad text&amp;quot; (eller &amp;quot;Redigerar originaltexten&amp;quot;) i stället för &amp;quot;Rättar …&amp;quot;.&lt;/li&gt;
-&lt;/ul&gt;</description>
-      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.7.12/Transkribera-v0.7.12.zip" length="14295791" type="application/octet-stream" sparkle:edSignature="nT6dTGSY+6NqQrE9O/gv3XrhVAkQUm5EjC9POl1D0iy+/1RfL2mJRjXb5iK+MBlB0h6WZLCVT1w73qp28MMhCQ==" />
     </item>
   </channel>
 </rss>
