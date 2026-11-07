@@ -26,6 +26,8 @@ struct PlayerBar: View {
         ViewThatFits(in: .horizontal) {
             row(followTitle: "Följ uppspelning")
             row(followTitle: "Följ")
+            // Smalast (video i ca 600 pt): tätare avstånd och hastighetsknappen utan pil.
+            row(followTitle: "Följ", spacing: 8, compactSpeed: true)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 10)
@@ -34,8 +36,8 @@ struct PlayerBar: View {
         .overlay(alignment: .bottom) { Rectangle().fill(Color.line).frame(height: 1) }
     }
 
-    private func row(followTitle: String) -> some View {
-        HStack(spacing: 14) {
+    private func row(followTitle: String, spacing: CGFloat = 14, compactSpeed: Bool = false) -> some View {
+        HStack(spacing: spacing) {
             if isVideo { videoWithControls }
             playPauseAndTime
             positionSlider
@@ -43,7 +45,7 @@ struct PlayerBar: View {
                 .font(.app(.small, design: .monospaced))
                 .foregroundStyle(Color.textSecondary)
                 .fixedSize()
-            PlaybackSpeedButton(speed: $playbackSpeed)
+            PlaybackSpeedButton(speed: $playbackSpeed, compact: compactSpeed)
             followToggle(followTitle)
         }
     }

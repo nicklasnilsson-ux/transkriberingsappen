@@ -12,6 +12,8 @@ import TranskriberaCore
 /// läser färgerna i den ritade knappen.
 struct PlaybackSpeedButton: View {
     @Binding var speed: Double
+    /// Utan pilen, för spelarraden i ett smalt fönster.
+    var compact = false
     @State private var anchor = MenuAnchor()
 
     private var isActive: Bool { !PlaybackSpeed.isNormal(speed) }
@@ -25,8 +27,9 @@ struct PlaybackSpeedButton: View {
                     .font(.app(.small, weight: isActive ? .semibold : .regular, design: .monospaced))
                     // Lika bred för alla steg, så att raden inte hoppar när hastigheten byts.
                     .frame(minWidth: 38, alignment: .leading)
-                Icon(.chevronDown, size: 14)
+                if !compact { Icon(.chevronDown, size: 14) }
             }
+            .padding(.trailing, compact ? 4 : 0)
         }
         .buttonStyle(SpeedButtonStyle(isActive: isActive))
         .background(MenuAnchorView(anchor: anchor))
