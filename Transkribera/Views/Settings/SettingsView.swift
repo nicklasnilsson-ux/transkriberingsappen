@@ -7,13 +7,13 @@ struct SettingsView: View {
     var body: some View {
         TabView {
             TranscriptionSettingsView()
-                .tabItem { Label("Transkribering", icon: .waveform) }
+                .tabItem { Label("Transkribering", systemIcon: .transcription) }
             ModelSettingsView()
-                .tabItem { Label("Modeller", icon: .chip) }
+                .tabItem { Label("Modeller", systemIcon: .models) }
             PrivacySettingsView()
-                .tabItem { Label("Integritet", icon: .hand) }
+                .tabItem { Label("Integritet", systemIcon: .privacy) }
             UpdateSettingsView()
-                .tabItem { Label("Uppdateringar", icon: .sync) }
+                .tabItem { Label("Uppdateringar", systemIcon: .updates) }
         }
         .frame(width: 520)
         .padding(20)

@@ -2,14 +2,14 @@ import SwiftUI
 
 /// Appens ikoner. De kommer från Material Design Icons (stilen Rounded, Apache 2.0) och ligger som
 /// ikonuppsättningar i resurskatalogen under `Icons`. Hämtas med `scripts/material_icons.py`.
-/// SF Symbols används inte; `scripts/test_icons.py` stoppar det.
+/// I macOS egna ytor (Inställningar, titelbaren, menyerna) används SF Symbols via `SystemIcon` i stället.
 ///
 /// Namnen här är samma som i skriptet. Varje fall har en uppsättning `icon-<namn>`.
 enum AppIcon: String, CaseIterable {
-    case check, checkCircle, cancel, chevronDown, chevronUp, unfold, circle, clock, copy, chip
-    case download, downloadCircle, edit, fullscreen, fullscreenExit, group, hand, history, info
-    case lightbulb, memory, more, movie, openInFull, openInNew, closeFullscreen, pause, personQuestion, play, playCircle
-    case record, refresh, search, share, sync, tune, visibility, visibilityOff, warning, waveform
+    case check, checkCircle, cancel, chevronDown, unfold, circle, clock, copy
+    case download, downloadCircle, group, history, info
+    case lightbulb, memory, movie, openInFull, closeFullscreen, pause, personQuestion, play, playCircle
+    case record, refresh, search, share, tune, visibility, visibilityOff, warning, waveform
 
     var assetName: String { "icon-\(rawValue)" }
 }

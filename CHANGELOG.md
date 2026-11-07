@@ -6,6 +6,11 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.9.20] – 2026-11-07
+
+### Ändrat
+- Inställningarnas flikar, titelbaren och menyerna har nu macOS egna ikoner (SF Symbols). De följer systemets text i storlek, tyngd och linje. Sidopanelen, spelarraden och texten behåller appens egna ikoner.
+
 ## [0.9.19] – 2026-11-07
 
 ### Nytt

@@ -14,6 +14,9 @@ import sys
 import urllib.request
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import svg_bounds  # noqa: E402
+
 ROOT = Path(__file__).resolve().parent.parent
 ASSETS = ROOT / "Transkribera/Resources/Assets.xcassets/Icons"
 THIRD_PARTY = ROOT / "third-party/material-design-icons"
@@ -24,6 +27,10 @@ CATEGORIES = ["action", "alert", "av", "communication", "content", "device", "ed
 STYLE = "materialiconsround"
 # Ikonens bredd och höjd i punkter när den ritas utan egen storlek (menyer, knappar).
 POINTS = 16
+# Ritytan i 24-rutnätet. Material lämnar 2 enheter runt om; en ikon som går längre ut än 1 enhet från
+# kanten (pan_tool går 0–24) ser större ut än de andra och nuddar texten under, så den skalas in.
+LIVE_AREA = (2, 22)
+EDGE_LIMIT = (1, 23)
 
 # namn i appen -> namn hos Material
 ICONS = {
@@ -31,27 +38,19 @@ ICONS = {
     "checkCircle": "check_circle",
     "cancel": "cancel",
     "chevronDown": "keyboard_arrow_down",
-    "chevronUp": "keyboard_arrow_up",
     "unfold": "unfold_more",
     "circle": "radio_button_unchecked",
     "clock": "schedule",
     "copy": "content_copy",
-    "chip": "developer_board",
     "download": "file_download",
     "downloadCircle": "arrow_circle_down",
-    "edit": "edit",
-    "fullscreen": "fullscreen",
-    "fullscreenExit": "fullscreen_exit",
     "group": "group",
-    "hand": "pan_tool",
     "history": "history",
     "info": "info",
     "lightbulb": "lightbulb",
     "memory": "memory",
-    "more": "more_horiz",
     "movie": "movie",
     "openInFull": "open_in_full",
-    "openInNew": "open_in_new",
     "closeFullscreen": "close_fullscreen",
     "pause": "pause",
     "personQuestion": "contact_support",
@@ -61,7 +60,6 @@ ICONS = {
     "refresh": "refresh",
     "search": "search",
     "share": "ios_share",
-    "sync": "sync",
     "tune": "tune",
     "visibility": "visibility",
     "visibilityOff": "visibility_off",
@@ -86,8 +84,24 @@ def svg_for(material: str) -> tuple[str, str]:
     raise SystemExit(f"Hittar inte {material} i {STYLE}")
 
 
+def fitted(svg: str) -> str:
+    """Skalar in en ikon som går ut mot kanten, genom att göra viewBox större runt mitten (12, 12),
+    så att den största sidan ryms i ritytan. Ikoner inom gränsen lämnas som de är."""
+    left, top, right, bottom = svg_bounds.bounds_in_grid(svg)
+    low, high = EDGE_LIMIT
+    if left >= low and top >= low and right <= high and bottom <= high:
+        return svg
+    reach = max(12 - left, 12 - top, right - 12, bottom - 12)
+    size = 24 * reach / (LIVE_AREA[1] - 12)
+    origin = 12 - size / 2
+    box = f"{origin:g} {origin:g} {size:g} {size:g}"
+    return re.sub(r'viewBox="[^"]+"', f'viewBox="{box}"', svg, count=1)
+
+
 def sized(svg: str) -> str:
-    """Samma ritning, men med bredd och höjd i punkter, så att den får rätt storlek där ingen anges."""
+    """Samma ritning, inskalad vid behov (se fitted), med bredd och höjd i punkter, så att den får rätt
+    storlek där ingen anges."""
+    svg = fitted(svg)
     svg = re.sub(r'\sheight="24"', f' height="{POINTS}"', svg, count=1)
     svg = re.sub(r'\swidth="24"', f' width="{POINTS}"', svg, count=1)
     return svg
