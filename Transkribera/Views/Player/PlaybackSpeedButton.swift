@@ -78,6 +78,8 @@ final class MenuAnchor {
     static func speedMenu(selected: Double, target: SpeedMenuTarget) -> NSMenu {
         let menu = NSMenu(title: "Uppspelningshastighet")
         let current = PlaybackSpeed.clamped(selected)
+        // Rubrik överst (Nicklas 2026-11-07), i macOS egen stil för sektionsrubriker.
+        menu.addItem(NSMenuItem.sectionHeader(title: "Uppspelningshastighet"))
         for step in PlaybackSpeed.steps {
             let item = NSMenuItem(title: PlaybackSpeed.menuLabel(step), action: #selector(SpeedMenuTarget.pick(_:)), keyEquivalent: "")
             item.target = target

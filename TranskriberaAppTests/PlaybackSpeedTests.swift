@@ -26,7 +26,9 @@ final class PlaybackSpeedTests: XCTestCase {
 
     func testMenuListsEveryStepWithTheCurrentOneChecked() {
         let menu = MenuAnchor.speedMenu(selected: 1.25, target: SpeedMenuTarget { _ in })
-        XCTAssertEqual(menu.items.map(\.title), ["0,75×", "1× (Normal)", "1,25×", "1,5×", "1,75×", "2×"])
+        XCTAssertEqual(menu.items.first?.title, "Uppspelningshastighet")
+        XCTAssertTrue(menu.items.first?.isSectionHeader == true, "Rubriken ska vara en sektionsrubrik, inte ett val")
+        XCTAssertEqual(menu.items.dropFirst().map(\.title), ["0,75×", "1× (Normal)", "1,25×", "1,5×", "1,75×", "2×"])
         XCTAssertEqual(menu.items.filter { $0.state == .on }.map(\.title), ["1,25×"])
     }
 

@@ -6,6 +6,11 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.9.19] – 2026-11-07
+
+### Ändrat
+- Menyn för uppspelningshastighet har rubriken Uppspelningshastighet.
+
 ## [0.9.18] – 2026-11-07
 
 ### Nytt
