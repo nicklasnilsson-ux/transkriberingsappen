@@ -6,6 +6,20 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.9.27</title>
+      <pubDate>Sat, 07 Nov 2026 19:50:38 GMT</pubDate>
+      <sparkle:version>64</sparkle:version>
+      <sparkle:shortVersionString>0.9.27</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.27</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Rättat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Under uppspelning gick det segt och hoppigt att skrolla i texten, med och utan &amp;quot;Följ uppspelning&amp;quot;. Nu ritas texten bara om när nästa stycke börjar spelas och när nästa ord markeras, inte tio gånger i sekunden.&lt;/li&gt;
+&lt;li&gt;Med &amp;quot;Följ uppspelning&amp;quot; påslaget drog appen tillbaka texten medan du skrollade. Nu får du skrolla fritt; texten följer med igen när du har låtit bli att skrolla i tre sekunder och nästa stycke börjar.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.27/Transkribera-v0.9.27.zip" length="14631285" type="application/octet-stream" sparkle:edSignature="GhkeLOs3fP1ZFDPOcyRPDKFdIJZeVQqcjJRwqjsNdu0IzpFe/fbNEUtVn1qWI33pr592CWmEq7YRvNwi/Rg3Ag==" />
+    </item>
+    <item>
       <title>Version 0.9.26</title>
       <pubDate>Sat, 07 Nov 2026 19:28:51 GMT</pubDate>
       <sparkle:version>63</sparkle:version>
@@ -448,24 +462,6 @@
 &lt;li&gt;Filer du släpper eller öppnar medan en mötesinspelning pågår läggs i kön och transkriberas först när inspelningen är sparad, så att inspelningen inte störs. Vyn byter inte längre till filen, så knappen Stoppa och transkribera finns kvar. På inspelningssidan står hur många filer som väntar.&lt;/li&gt;
 &lt;/ul&gt;</description>
       <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.8.0/Transkribera-v0.8.0.zip" length="14421357" type="application/octet-stream" sparkle:edSignature="mJF6VVNTJk2xqMU3SeyKzgJhVjgcp/8vzWte+gypI7KM/sEHStrWaDDdIPmgNAg6mDphJQsO7Ilnr/PaxshEBQ==" />
-    </item>
-    <item>
-      <title>Version 0.7.13</title>
-      <pubDate>Mon, 02 Nov 2026 16:49:58 GMT</pubDate>
-      <sparkle:version>34</sparkle:version>
-      <sparkle:shortVersionString>0.7.13</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.7.13</sparkle:fullReleaseNotesLink>
-      <description>&lt;h3&gt;Ändrat&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Sök i texten fungerar som ⌘F i en webbläsare. Hela texten visas, sökfältet visar till exempel &amp;quot;3 av 12&amp;quot; och du stegar mellan träffarna med pilarna, Retur eller ⌘G (⇧⌘G bakåt). Texten skrollar till träffen, som är orange; övriga träffar är gula. &amp;quot;Visa bara träffar&amp;quot; är borttaget.&lt;/li&gt;
-&lt;li&gt;Det hopfällda titelkortet ligger kloss mot överkanten med raka hörn upptill, så att texten inte syns ovanför det.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h3&gt;Rättat&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Sökfältet i det hopfällda titelkortet tappade fokus efter ett par bokstäver och sidan hoppade till början.&lt;/li&gt;
-&lt;/ul&gt;</description>
-      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.7.13/Transkribera-v0.7.13.zip" length="14308158" type="application/octet-stream" sparkle:edSignature="A4J2NK/IStPfvub1xku5/R7cFPgTOsMRdOyZ+LP0rT7pHPJ3h5bC34c4cyJuAaanAyYzEtFwPu8v1pwml2wDBA==" />
     </item>
   </channel>
 </rss>
