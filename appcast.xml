@@ -6,6 +6,21 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.9.21</title>
+      <pubDate>Sat, 07 Nov 2026 14:29:06 GMT</pubDate>
+      <sparkle:version>58</sparkle:version>
+      <sparkle:shortVersionString>0.9.21</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.21</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Ändrat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Menyn för uppspelningshastighet har rubriken Uppspelningshastighet.&lt;/li&gt;
+&lt;li&gt;Rubriker och förklaringar i menyerna syntes knappt, eftersom macOS ritade dem ljusgrå. Det gäller rubriken Bildstorlek och raden om hur många versioner som sparas. Nu ritas de mörkare och är lätta att läsa. Detsamma gäller rubrikerna i sidopanelens lista.&lt;/li&gt;
+&lt;li&gt;Visning i menyn ⋯ är en undermeny, och valen av intervjuare under Talare heter till exempel ”Talare 1 är intervjuare”. Tidigare hade de ljusgrå rubriker.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.21/Transkribera-v0.9.21.zip" length="14586065" type="application/octet-stream" sparkle:edSignature="ZzX0se70xAy3jeQ4TBPDg7C9hMT3Xhkfe4elphs3z2SS2iXRx/rm51qZRpT06g9MEY5sn0Pi6SxrVDVGg2WzBQ==" />
+    </item>
+    <item>
       <title>Version 0.9.20</title>
       <pubDate>Sat, 07 Nov 2026 14:06:10 GMT</pubDate>
       <sparkle:version>57</sparkle:version>
@@ -451,22 +466,6 @@
 &lt;li&gt;Texten &amp;quot;Rättar anonymiserad text&amp;quot; (eller &amp;quot;Rättar originaltexten&amp;quot;) ligger nu precis vid knappen Redigera/Klar i stället för som en stor etikett på titelraden. Knappen Redigera/Klar sitter bredvid valet Stycken/Rader.&lt;/li&gt;
 &lt;/ul&gt;</description>
       <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.7.8/Transkribera-v0.7.8.zip" length="14258798" type="application/octet-stream" sparkle:edSignature="ny7XdRIJgoc3hA5zjkcJLd5ws5BVni+Kn2YeUyOnnhnzd0UlTGVd4uwn+EL4QShEW4A2alT0jBKVYbV4fcmtBQ==" />
-    </item>
-    <item>
-      <title>Version 0.7.7</title>
-      <pubDate>Sun, 01 Nov 2026 23:33:55 GMT</pubDate>
-      <sparkle:version>28</sparkle:version>
-      <sparkle:shortVersionString>0.7.7</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.7.7</sparkle:fullReleaseNotesLink>
-      <description>&lt;h3&gt;Ändrat&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Texten hoppar inte längre när du slår på redigeringsläget. Rutan med instruktionen ovanför texten är borttagen, och texten har samma mått och radavstånd i visnings- och redigeringsläget.&lt;/li&gt;
-&lt;li&gt;Det syns tydligare att du redigerar: varje stycke får en fältyta med kant, titelraden visar vilken text du rättar (&amp;quot;Redigerar anonymiserad text&amp;quot; eller &amp;quot;Redigerar originaltexten&amp;quot;), och knappen heter &amp;quot;Klar&amp;quot;. Esc stänger redigeringsläget, och ändringarna sparas.&lt;/li&gt;
-&lt;li&gt;Du rättar nu den text som visas. Med anonymisering på rättar du den anonymiserade texten, och ändringen förs tillbaka till originalet utan att de dolda uppgifterna skrivs över. Rör du själv en platshållare som [PERSON 1] ersätts den dolda uppgiften med det du skrev. Ett stycke som inte går att koppla tillbaka till originalet kan inte rättas med anonymiseringen på.&lt;/li&gt;
-&lt;li&gt;Tidskoden för stycken och rader visar en play-ikon och en mjuk bakgrund när du pekar på den, så att det syns att den går att klicka på. Träffytan är lika stor i stycken och rader.&lt;/li&gt;
-&lt;/ul&gt;</description>
-      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.7.7/Transkribera-v0.7.7.zip" length="14260577" type="application/octet-stream" sparkle:edSignature="9R6lrEaZdrDSvhKiSYI5bYjFaeqniSnSrVuQH8ifvX+RoWL1VhILgM9NMbvq10fCwVNCuCZAb1KSXKyfOl2iAg==" />
     </item>
   </channel>
 </rss>
