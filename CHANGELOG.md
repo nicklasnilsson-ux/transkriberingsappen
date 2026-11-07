@@ -11,6 +11,13 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 ### Ändrat
 - I modellväljaren har den valda modellen nu en kant i accentfärgen runt sig, inte bara en ljus bakgrund. Då syns det tydligt vilken modell som är vald, även för den som har svårt att se svaga färgskillnader. VoiceOver läser också upp den som vald.
 
+## [0.9.21] – 2026-11-07
+
+### Ändrat
+- Menyn för uppspelningshastighet har rubriken Uppspelningshastighet.
+- Rubriker och förklaringar i menyerna syntes knappt, eftersom macOS ritade dem ljusgrå. Det gäller rubriken Bildstorlek och raden om hur många versioner som sparas. Nu ritas de mörkare och är lätta att läsa. Detsamma gäller rubrikerna i sidopanelens lista.
+- Visning i menyn ⋯ är en undermeny, och valen av intervjuare under Talare heter till exempel ”Talare 1 är intervjuare”. Tidigare hade de ljusgrå rubriker.
+
 ## [0.9.20] – 2026-11-07
 
 ### Ändrat

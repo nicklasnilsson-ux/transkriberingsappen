@@ -81,6 +81,11 @@ extension Font {
 }
 
 extension NSFont {
+    /// En av appens tre textstorlekar, för text som AppKit ritar (t.ex. rubriker i `AppMenu`).
+    static func app(_ size: AppTextSize, weight: NSFont.Weight = .regular) -> NSFont {
+        .systemFont(ofSize: size.rawValue, weight: weight)
+    }
+
     /// Läsytan i redigeringsfältet, samma storlek som `Font.reading`.
     static func reading(_ size: Double) -> NSFont {
         .systemFont(ofSize: CGFloat(ReadingTextSize.clamped(size)))
