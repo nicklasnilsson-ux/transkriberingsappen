@@ -6,6 +6,19 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.9.17</title>
+      <pubDate>Sat, 07 Nov 2026 10:30:09 GMT</pubDate>
+      <sparkle:version>54</sparkle:version>
+      <sparkle:shortVersionString>0.9.17</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.17</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Rättat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Videofönstret ligger nu kvar ovanpå huvudfönstret när du klickar i huvudfönstret. Tidigare lade det sig bakom. Byter du till en annan app beter sig videofönstret som ett vanligt fönster och lägger sig inte över den appen.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.17/Transkribera-v0.9.17.zip" length="14526498" type="application/octet-stream" sparkle:edSignature="TfKMQqirqlmJ6RGrgTQf1glXXEYJbROJzrqkZkK/IYKMbQexhzYDCBEOmnsoVBfrK37L9AX8Ue4laSfkuIhmCA==" />
+    </item>
+    <item>
       <title>Version 0.9.16</title>
       <pubDate>Sat, 07 Nov 2026 09:46:46 GMT</pubDate>
       <sparkle:version>53</sparkle:version>
@@ -455,24 +468,6 @@
 &lt;li&gt;Att välja i sidopanelen svarar direkt igen, var du än klickar på raden. I 0.7.3 svarade bara texten och klicken kändes sega.&lt;/li&gt;
 &lt;/ul&gt;</description>
       <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.7.4/Transkribera-v0.7.4.zip" length="14220685" type="application/octet-stream" sparkle:edSignature="3QGiWuW7Pnb+egBltbF+PLbWCjATELK668Kp3wyTj3SYHgKnFSJWL1j9G8uh6i9RsrkayQKlNbK4D3roWDhJDA==" />
-    </item>
-    <item>
-      <title>Version 0.7.3</title>
-      <pubDate>Sun, 01 Nov 2026 20:09:02 GMT</pubDate>
-      <sparkle:version>24</sparkle:version>
-      <sparkle:shortVersionString>0.7.3</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.7.3</sparkle:fullReleaseNotesLink>
-      <description>&lt;h3&gt;Nytt&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Du kan välja flera transkriberingar i sidopanelen med ⌘-klick (enstaka) eller ⇧-klick (följd). Huvudytan visar de valda med knapparna &lt;b&gt;Transkribera N igen&lt;/b&gt;, &lt;b&gt;Exportera för analys…&lt;/b&gt; och &lt;b&gt;Radera N…&lt;/b&gt;. Både omtagning och radering frågar först och säger hur många som berörs.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h3&gt;Rättat&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;b&gt;Transkribera igen&lt;/b&gt; är grå så länge valen är samma som filen transkriberades med, och blir blå när du ändrar modell, språk eller talare.&lt;/li&gt;
-&lt;li&gt;Ett klick på den transkribering som redan är vald avmarkerar den, och vyn blir tom.&lt;/li&gt;
-&lt;/ul&gt;</description>
-      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.7.3/Transkribera-v0.7.3.zip" length="14224948" type="application/octet-stream" sparkle:edSignature="F9rkkXovOuNldFIT6rUQmrps0uNUHW8yMMP+TPrpOFZZcbtLGKKFCIhISuAwl15VP6W3nGMAEb3+uRJ9woN4Cw==" />
     </item>
   </channel>
 </rss>
