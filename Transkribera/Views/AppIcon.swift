@@ -8,7 +8,7 @@ import SwiftUI
 enum AppIcon: String, CaseIterable {
     case check, checkCircle, cancel, chevronDown, chevronUp, unfold, circle, clock, copy, chip
     case download, downloadCircle, edit, fullscreen, fullscreenExit, group, hand, history, info
-    case lightbulb, memory, more, movie, openInFull, pause, personQuestion, play, playCircle
+    case lightbulb, memory, more, movie, openInFull, openInNew, closeFullscreen, pause, personQuestion, play, playCircle
     case record, refresh, search, share, sync, tune, visibility, visibilityOff, warning, waveform
 
     var assetName: String { "icon-\(rawValue)" }

@@ -10,6 +10,8 @@ struct PlayerBar: View {
     let isVideo: Bool
     @Binding var followPlayback: Bool
     @Binding var miniSizeRaw: String
+    /// Rubriken på videofönstret (filens namn).
+    var title = "Video"
 
     /// Reglaget blir aldrig smalare än så här, även i ett smalt fönster.
     static let sliderMinWidth: CGFloat = 80
@@ -50,15 +52,50 @@ struct PlayerBar: View {
         .help("Följ uppspelning: håll stycket som spelas upp i bild")
     }
 
+    private var videoWindow: VideoWindow { .shared }
+
+    /// Sant när videon visas i eget fönster. Då visas den inte här, så att den inte spelas på två ställen.
+    private var inOwnWindow: Bool { videoWindow.isShowing(player.player) }
+
     /// Videobilden i spelarraden. Liten som standard; Bildstorlek väljer mellan tre.
+    /// När videon visas i eget fönster står en platshållare i samma storlek här, med Tillbaka hit.
+    @ViewBuilder
     private var miniPlayer: some View {
         let size = MiniPlayerSize.resolved(miniSizeRaw)
-        return PlayerView(player: player.player, isVideo: true, compact: true)
-            .frame(width: size.width, height: size.height)
-            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        Group {
+            if inOwnWindow {
+                backHerePlaceholder
+            } else {
+                PlayerView(player: player.player, isVideo: true, compact: true)
+            }
+        }
+        .frame(width: size.width, height: size.height)
+        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
     }
 
-    /// Bilden med bildstorlek och helskärm närmast sig, till vänster om spelknapparna.
+    /// Platshållaren medan videon visas i eget fönster. Hela ytan är en knapp som lägger tillbaka videon.
+    private var backHerePlaceholder: some View {
+        Button {
+            videoWindow.close()
+        } label: {
+            VStack(spacing: 4) {
+                Icon(.closeFullscreen, size: 18)
+                Text("Tillbaka hit")
+                    .font(.app(.small))
+                    .lineLimit(1)
+                    .fixedSize()
+            }
+            .foregroundStyle(Color.textSecondary)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.line.opacity(0.5))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help("Videon visas i eget fönster. Klicka för att lägga tillbaka den här.")
+        .accessibilityLabel("Tillbaka hit: lägg tillbaka videon i spelarraden")
+    }
+
+    /// Bilden med bildstorlek och eget fönster närmast sig, till vänster om spelknapparna.
     private var videoWithControls: some View {
         HStack(alignment: .center, spacing: 8) {
             miniPlayer
@@ -66,7 +103,7 @@ struct PlayerBar: View {
         }
     }
 
-    /// Bildstorlek och helskärm i samma lilla meny.
+    /// Bildstorlek och eget fönster i samma lilla meny.
     private var sizeMenu: some View {
         Menu {
             Picker("Bildstorlek", selection: $miniSizeRaw) {
@@ -74,17 +111,25 @@ struct PlayerBar: View {
             }
             .pickerStyle(.inline)
             Divider()
-            Button {
-                VideoFullscreen.present(player: player.player)
-            } label: {
-                Label("Helskärm", icon: .fullscreen)
+            if inOwnWindow {
+                Button {
+                    videoWindow.close()
+                } label: {
+                    Label("Tillbaka till spelarraden", icon: .closeFullscreen)
+                }
+            } else {
+                Button {
+                    videoWindow.open(player: player.player, title: title)
+                } label: {
+                    Label("Visa i eget fönster", icon: .openInNew)
+                }
             }
         } label: {
             Icon(.openInFull, size: 18).accessibilityLabel("Bildstorlek")
         }
         .menuStyle(.borderlessButton)
         .fixedSize()
-        .help("Bildstorlek: liten, mellan eller stor, eller helskärm")
+        .help("Bildstorlek: liten, mellan eller stor, eller visa i eget fönster")
     }
 
     private var playPauseAndTime: some View {

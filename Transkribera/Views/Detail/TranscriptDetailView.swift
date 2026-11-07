@@ -761,7 +761,8 @@ struct TranscriptDetailView: View {
                 duration: transcript.duration,
                 isVideo: transcript.isVideo,
                 followPlayback: $followPlayback,
-                miniSizeRaw: $miniSizeRaw
+                miniSizeRaw: $miniSizeRaw,
+                title: transcript.title
             )
         }
     }
@@ -1263,6 +1264,8 @@ private struct DetailLifecycle: ViewModifier {
                 if player == nil { player = PlayerController(url: transcript.mediaURL) }
             }
             .onDisappear {
+                // Ett öppet videofönster hör till den här filen och stängs med den.
+                if let player { VideoWindow.shared.closeIfShowing(player.player) }
                 player?.invalidate()
                 player = nil
             }
