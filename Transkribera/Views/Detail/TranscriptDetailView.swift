@@ -398,7 +398,7 @@ struct TranscriptDetailView: View {
                 .layoutPriority(1)
         } else if lastEdit != nil {
             HStack(spacing: 6) {
-                Label("Sparat", icon: .check)
+                Label("Sparat", systemIcon: .saved)
                     .labelStyle(.titleAndIcon)
                     .font(.app(.small, weight: .semibold))
                     .foregroundStyle(Color.success)
@@ -422,7 +422,7 @@ struct TranscriptDetailView: View {
     /// Sökfältet i titelbaren. Det är alltid synligt och krymper när fönstret är smalt.
     private var toolbarSearch: some View {
         HStack(spacing: 6) {
-            Image(icon: .search).foregroundStyle(Color.textSecondary)
+            Image(systemIcon: .search).foregroundStyle(Color.textSecondary)
             TextField("Sök i texten", text: $query)
                 .textFieldStyle(.plain)
                 .focused($searchFocused)
@@ -441,13 +441,13 @@ struct TranscriptDetailView: View {
                     .fixedSize()
                 HStack(spacing: 2) {
                     Button { stepHit(forward: false) } label: {
-                        Image(icon: .chevronUp).frame(width: 18, height: 16)
+                        Image(systemIcon: .previousHit).frame(width: 18, height: 16)
                     }
                     .keyboardShortcut("g", modifiers: [.command, .shift])
                     .help("Förra träffen (⇧⌘G)")
                     .accessibilityLabel("Förra träffen")
                     Button { stepHit(forward: true) } label: {
-                        Image(icon: .chevronDown).frame(width: 18, height: 16)
+                        Image(systemIcon: .nextHit).frame(width: 18, height: 16)
                     }
                     .keyboardShortcut("g", modifiers: .command)
                     .help("Nästa träff (Retur eller ⌘G)")
@@ -492,7 +492,7 @@ struct TranscriptDetailView: View {
     @ViewBuilder
     private var olderVersionBadge: some View {
         if transcript.isViewingOlderVersion, let label = transcript.versionShortLabel {
-            Label(label, icon: .clock)
+            Label(label, systemIcon: .olderVersion)
                 .labelStyle(.titleAndIcon)
                 .font(.app(.small, weight: .semibold))
                 .foregroundStyle(Color.accentColor)
@@ -515,7 +515,7 @@ struct TranscriptDetailView: View {
                 }
                 .pickerStyle(.inline)
                 Toggle(isOn: $anonymize) {
-                    Label("Anonymisera", icon: anonymize ? .visibilityOff : .visibility)
+                    Label("Anonymisera", systemIcon: anonymize ? .anonymize : .showNames)
                 }
                 if !transcript.speakers.isEmpty {
                     Menu("Talare") { speakersMenuContent }
@@ -529,7 +529,7 @@ struct TranscriptDetailView: View {
             Button("Transkribera igen") { requestRetranscribe() }
                 .disabled(isWorking)
         } label: {
-            Image(icon: .more).accessibilityLabel("Fler val")
+            Image(systemIcon: .more).accessibilityLabel("Fler val")
         }
         .menuIndicator(.hidden)
         .help("Fler val")
@@ -586,7 +586,7 @@ struct TranscriptDetailView: View {
             Button {
                 beginEditingAll()
             } label: {
-                Label("Redigera", icon: .edit)
+                Label("Redigera", systemIcon: .edit)
                     .labelStyle(.titleAndIcon)
             }
             .help("Rätta hela texten direkt i transkriberingen. Du kan också hålla musen över ett stycke och välja Redigera för att rätta bara det")

@@ -1,5 +1,6 @@
-"""Ikonerna är Material Design Icons (Rounded), inte SF Symbols (Nicklas 2026-11-04).
-Stoppar att en SF Symbol smyger in igen och att en ikon saknar bild eller licens."""
+"""Appens egna ytor har Material Design Icons (Rounded) (Nicklas 2026-11-04); macOS egna ytor
+(Inställningar, titelbaren, menyerna) har SF Symbols via SystemIcon (Nicklas 2026-11-07).
+Stoppar att en SF Symbol smyger in någon annanstans och att en ikon saknar bild eller licens."""
 import json
 import re
 import sys
@@ -19,10 +20,51 @@ def swift_files():
 
 
 class IconTests(unittest.TestCase):
-    def test_no_sf_symbols_anywhere(self):
+    def test_sf_symbols_only_through_system_icon(self):
+        """SF Symbols hör hemma i macOS egna ytor (Nicklas 2026-11-07) och hämtas bara via SystemIcon."""
         banned = ("systemImage:", "systemName:", "systemSymbolName", "NSImage.Name")
-        hits = [f"{p.name}: {b}" for p in swift_files() for b in banned if b in p.read_text(encoding="utf-8")]
-        self.assertEqual(hits, [], "Använd AppIcon (Image(icon:), Label(_, icon:), Icon) i stället för SF Symbols")
+        hits = [f"{p.name}: {b}" for p in swift_files() if p.name != "SystemIcon.swift"
+                for b in banned if b in p.read_text(encoding="utf-8")]
+        self.assertEqual(hits, [], "SF Symbols bara via SystemIcon (Views/SystemIcon.swift)")
+
+    def test_system_icons_only_in_system_surfaces(self):
+        """Inställningars flikar, titelbaren och menyerna har SF Symbols; appens egna ytor har Material."""
+        allowed = {"SettingsView.swift", "TranscriptDetailView.swift", "PlayerBar.swift", "SystemIcon.swift"}
+        users = {p.name for p in swift_files() if re.search(r"systemIcon:", p.read_text(encoding="utf-8"))}
+        self.assertLessEqual(users, allowed, "SystemIcon används utanför systemytorna")
+        settings = (APP / "Views/Settings/SettingsView.swift").read_text(encoding="utf-8")
+        tabs = re.findall(r"\.tabItem \{([^}]*)\}", settings)
+        self.assertGreaterEqual(len(tabs), 4)
+        for tab in tabs:
+            self.assertIn("systemIcon:", tab, f"Inställningsflik utan SF Symbol: {tab.strip()}")
+        detail = (APP / "Views/Detail/TranscriptDetailView.swift").read_text(encoding="utf-8")
+        for part in ("olderVersionBadge", "toolbarSearch", "editStateLabel", "editToggle", "moreMenu"):
+            start = detail.index(f"private var {part}: some View")
+            body = detail[start:detail.index("\n    }\n", start)]
+            self.assertNotRegex(body, r"(?<![A-Za-z])icon: |Image\(icon:|Icon\(", f"{part} i titelbaren ska ha SF Symbols")
+            self.assertIn("systemIcon:", body, part)
+        player = (APP / "Views/Player/PlayerBar.swift").read_text(encoding="utf-8")
+        menu = player[player.index("private var sizeMenu"):player.index("} label: {", player.index("private var sizeMenu"))]
+        self.assertNotRegex(menu, r"(?<![A-Za-z])icon: \.", "Menyraderna i bildstorleksmenyn ska ha SF Symbols")
+
+    def test_every_app_icon_is_used(self):
+        """En ikon som ingen vy använder ska bort ur AppIcon, skriptet och resurskatalogen."""
+        used = set()
+        for p in swift_files():
+            if p.name in ("AppIcon.swift", "SystemIcon.swift"):
+                continue
+            for m in re.finditer(r"(?<![A-Za-z])(?:icon:|Icon\()\s*([^\n]*)", p.read_text(encoding="utf-8")):
+                depth, expr = 0, ""
+                for ch in m.group(1):
+                    if ch == "(":
+                        depth += 1
+                    if ch == ")":
+                        if depth == 0:
+                            break
+                        depth -= 1
+                    expr += ch
+                used.update(re.findall(r"\.(\w+)", expr))
+        self.assertEqual(sorted(set(material_icons.ICONS) - used), [], "Oanvända ikoner")
 
     def test_enum_matches_the_script_and_every_icon_has_an_image(self):
         enum = (APP / "Views/AppIcon.swift").read_text(encoding="utf-8")

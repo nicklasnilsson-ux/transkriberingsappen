@@ -115,13 +115,13 @@ struct PlayerBar: View {
                 Button {
                     videoWindow.close()
                 } label: {
-                    Label("Tillbaka till spelarraden", icon: .closeFullscreen)
+                    Label("Tillbaka till spelarraden", systemIcon: .backToPlayer)
                 }
             } else {
                 Button {
                     videoWindow.open(player: player.player, title: title)
                 } label: {
-                    Label("Visa i eget fönster", icon: .openInNew)
+                    Label("Visa i eget fönster", systemIcon: .ownWindow)
                 }
             }
         } label: {

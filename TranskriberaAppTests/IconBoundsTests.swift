@@ -3,6 +3,7 @@ import XCTest
 @testable import Transkribera
 
 /// Handen i Inställningar (2026-11-05) gick ut till bildens kant och nuddade fliktexten under.
+/// (Flikarna har nu SF Symbols, men samma fel får inte komma tillbaka i någon Material-ikon.)
 /// Här ritas varje ikon ur den byggda resurskatalogen, så som macOS faktiskt tolkar SVG:n,
 /// och den målade ytan ska ligga inom 1–23 av 24 (scripts/test_icons.py kontrollerar källfilen).
 @MainActor
@@ -41,10 +42,11 @@ final class IconBoundsTests: XCTestCase {
         }
     }
 
-    func testHandIsNoTallerThanTheOtherIcons() throws {
-        let hand = try paintedBounds(.hand)
-        let info = try paintedBounds(.info)
-        XCTAssertLessThanOrEqual(hand.bottom - hand.top, info.bottom - info.top + 0.5,
-                                 "handen \(hand.top)–\(hand.bottom), info \(info.top)–\(info.bottom)")
+    /// Varje SF Symbol i `SystemIcon` ska finnas i macOS 14, annars blir ytan tom (Nicklas 2026-11-07).
+    func testEverySystemIconExists() {
+        for icon in SystemIcon.allCases {
+            XCTAssertNotNil(NSImage(systemSymbolName: icon.symbolName, accessibilityDescription: nil),
+                            "SF Symbol saknas: \(icon.symbolName)")
+        }
     }
 }
