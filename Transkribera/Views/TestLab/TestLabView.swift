@@ -25,8 +25,14 @@ struct TestLabView: View {
                     }
                 }
                 .disabled(lab.isRunning)
+                Picker("Lista", selection: $lab.kind) {
+                    ForEach(TestLabPlan.Kind.allCases) { kind in
+                        Text(kind.title).tag(kind)
+                    }
+                }
+                .disabled(lab.isRunning)
             } footer: {
-                Text("Samma inspelning körs med varje markerad inställning. Varje körning sparas som en textfil (som Exportera för analys) och en logg utan text. Talarna identifieras en gång och används i alla körningar. Vanliga transkriberingar påverkas inte, men nya filer väntar i kön tills labbet är klart.")
+                Text(footer)
                     .foregroundStyle(Color.textSecondary)
             }
 
@@ -87,6 +93,16 @@ struct TestLabView: View {
         .frame(minWidth: 520, minHeight: 640)
     }
 
+    private var footer: String {
+        let common = "Varje körning sparas som en textfil (som Exportera för analys) och en logg utan text. Vanliga transkriberingar påverkas inte, men nya filer väntar i kön tills labbet är klart."
+        switch lab.kind {
+        case .comparison:
+            return "Samma inspelning körs med varje markerad inställning. Talarna identifieras en gång och används i alla körningar. " + common
+        case .timing:
+            return "Mäter hur lång tid hela kedjan tar med varje modell, med och utan talare: ljudet, transkriberingen, talarna och anonymiseringen, var för sig. Modeller som saknas laddas ner först, och den tiden räknas för sig. Övriga inställningar är dina vanliga. Sammanfattningen visar också tiden per timme ljud och vilken Mac den kördes på. " + common
+        }
+    }
+
     private func binding(for run: TestLabRun, in selected: Binding<Set<String>>) -> Binding<Bool> {
         Binding(
             get: { selected.wrappedValue.contains(run.id) },
@@ -97,10 +113,19 @@ struct TestLabView: View {
     }
 
     /// Grov uppskattning: KB Large tar ungefär en fjärdedel av inspelningens längd per
-    /// körning, Pianissimo en femtondel. Talarna en gång.
+    /// körning, Pianissimo en femtondel. Large v3 Turbo är inte uppmätt; en tiondel är en
+    /// gissning. Talarna en gång, plus en gång per körning med egna talare.
     private func estimate(for transcript: Transcript) -> String {
         let runs = lab.plan.filter { lab.selected.contains($0.id) }
-        let factor = runs.reduce(0.03) { $0 + ($1.engine == .pianissimo ? 0.07 : 0.25) }
+        let factor = runs.reduce(0.03) { total, run in
+            let engine: Double
+            switch run.engine {
+            case .pianissimo: engine = 0.07
+            case .kbLargeStrict: engine = 0.25
+            case .largeV3Turbo: engine = 0.1
+            }
+            return total + engine + (run.speakers == .own ? 0.03 : 0)
+        }
         let minutes = Int((transcript.duration * factor / 60).rounded())
         return minutes < 60 ? "cirka \(minutes) min" : "cirka \(minutes / 60) h \(minutes % 60) min"
     }
