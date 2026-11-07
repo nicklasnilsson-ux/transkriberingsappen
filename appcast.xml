@@ -6,6 +6,20 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.9.18</title>
+      <pubDate>Sat, 07 Nov 2026 11:24:47 GMT</pubDate>
+      <sparkle:version>55</sparkle:version>
+      <sparkle:shortVersionString>0.9.18</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.18</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Nytt&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Uppspelningshastighet i spelarraden, mellan längden och Följ uppspelning: 0,75×, 1× (Normal), 1,25×, 1,5×, 1,75× och 2×. Knappen blir indigo när hastigheten inte är normal. Hastigheten sparas och gäller alla filer, och rösterna behåller sin tonhöjd.&lt;/li&gt;
+&lt;li&gt;Ny meny Uppspelning med kortkommandon: Spela/Pausa (⌥⌘P), Snabbare (⌥⌘→), Långsammare (⌥⌘←) och Normal hastighet (⌥⌘0).&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.18/Transkribera-v0.9.18.zip" length="14555241" type="application/octet-stream" sparkle:edSignature="Ij2YT1jA5RjEsMBf44jZsj1MprM/Ybtw1aNJzRqhtb31CR8XxjBl8Dm2EwsxmH8Lntst7kcIBtfcC/pYFrGXCg==" />
+    </item>
+    <item>
       <title>Version 0.9.17</title>
       <pubDate>Sat, 07 Nov 2026 10:30:09 GMT</pubDate>
       <sparkle:version>54</sparkle:version>
@@ -450,24 +464,6 @@
 &lt;li&gt;Länken i rutan heter nu &amp;quot;Återställ till det filen har&amp;quot;.&lt;/li&gt;
 &lt;/ul&gt;</description>
       <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.7.5/Transkribera-v0.7.5.zip" length="14222212" type="application/octet-stream" sparkle:edSignature="TsjPF0LcQj0r5Gspr8iqjIxQnyJ/D9VJltY9KpL58xZ2Sut8hSoZ6ZH473i0IY1JIEOlo1vnRt0w/IvKh8LCBQ==" />
-    </item>
-    <item>
-      <title>Version 0.7.4</title>
-      <pubDate>Sun, 01 Nov 2026 21:16:55 GMT</pubDate>
-      <sparkle:version>25</sparkle:version>
-      <sparkle:shortVersionString>0.7.4</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.7.4</sparkle:fullReleaseNotesLink>
-      <description>&lt;h3&gt;Ändrat&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Inställningarna för nästa transkribering och släppytan ligger nu i samma ruta, &amp;quot;Ny transkribering&amp;quot;, överst i sidopanelen.&lt;/li&gt;
-&lt;li&gt;Val i sidopanelen följer macOS: ett klick väljer raden, ⌘-klick lägger till eller tar bort en rad, ⇧-klick väljer en följd, och Esc avmarkerar allt så att vyn blir tom. Ett vanligt klick på en vald rad avmarkerar inte längre.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h3&gt;Rättat&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Att välja i sidopanelen svarar direkt igen, var du än klickar på raden. I 0.7.3 svarade bara texten och klicken kändes sega.&lt;/li&gt;
-&lt;/ul&gt;</description>
-      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.7.4/Transkribera-v0.7.4.zip" length="14220685" type="application/octet-stream" sparkle:edSignature="3QGiWuW7Pnb+egBltbF+PLbWCjATELK668Kp3wyTj3SYHgKnFSJWL1j9G8uh6i9RsrkayQKlNbK4D3roWDhJDA==" />
     </item>
   </channel>
 </rss>
