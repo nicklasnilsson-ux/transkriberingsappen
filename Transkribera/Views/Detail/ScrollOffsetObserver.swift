@@ -28,6 +28,8 @@ struct ScrollOffsetObserver: NSViewRepresentable {
         weak var anchor: ScrollAnchor?
         private var observed: NSClipView?
         private var token: NSObjectProtocol?
+        private var liveScrollTokens: [NSObjectProtocol] = []
+        private var wheelMonitor: Any?
 
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
@@ -47,6 +49,27 @@ struct ScrollOffsetObserver: NSViewRepresentable {
                 self.report(scrollView)
             }
             report(scrollView)
+            watchUserScrolling(scrollView)
+        }
+
+        /// Noterar när du själv skrollar (mushjul, styrplatta eller rullningslisten), så att
+        /// "Följ uppspelning" inte drar tillbaka texten mitt i. Programmerad skrollning räknas inte.
+        private func watchUserScrolling(_ scrollView: NSScrollView) {
+            for name in [NSScrollView.willStartLiveScrollNotification, NSScrollView.didLiveScrollNotification, NSScrollView.didEndLiveScrollNotification] {
+                liveScrollTokens.append(NotificationCenter.default.addObserver(
+                    forName: name, object: scrollView, queue: .main
+                ) { [weak self] _ in
+                    MainActor.assumeIsolated { self?.anchor?.noteUserScroll() }
+                })
+            }
+            // Ett vanligt mushjul ger inga live-scroll-notiser, så hjulhändelserna läses också.
+            wheelMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { [weak self, weak scrollView] event in
+                if let self, let scrollView, event.window === scrollView.window,
+                   scrollView.bounds.contains(scrollView.convert(event.locationInWindow, from: nil)) {
+                    self.anchor?.noteUserScroll()
+                }
+                return event
+            }
         }
 
         private func report(_ scrollView: NSScrollView) {
@@ -56,6 +79,8 @@ struct ScrollOffsetObserver: NSViewRepresentable {
 
         deinit {
             if let token { NotificationCenter.default.removeObserver(token) }
+            liveScrollTokens.forEach { NotificationCenter.default.removeObserver($0) }
+            if let wheelMonitor { NSEvent.removeMonitor(wheelMonitor) }
         }
     }
 }
@@ -67,6 +92,18 @@ final class ScrollAnchor {
     weak var scrollView: NSScrollView?
     /// Radernas överkant i förhållande till fönstrets överkant, bara för rader som visas.
     var rowTops: [AnyHashable: CGFloat] = [:]
+    /// När du senast skrollade själv.
+    private(set) var lastUserScroll: Date?
+    /// Så länge efter att du slutat skrolla väntar "Följ uppspelning" innan texten följer med igen.
+    static let followPause: TimeInterval = 3
+
+    func noteUserScroll(at date: Date = Date()) { lastUserScroll = date }
+
+    /// Sant om du har skrollat själv inom `followPause` sekunder.
+    func userScrolledRecently(now: Date = Date()) -> Bool {
+        guard let lastUserScroll else { return false }
+        return now.timeIntervalSince(lastUserScroll) < Self.followPause
+    }
 
     /// Raden vid fönstrets överkant: den som börjar ovanför och närmast kanten, annars den första under.
     func currentAnchor() -> (id: AnyHashable, top: CGFloat)? {

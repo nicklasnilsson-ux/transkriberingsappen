@@ -48,7 +48,8 @@ struct SegmentRow: View {
     /// Vilken träff i den här raden man har stegat till med sökfältets pilar.
     var currentOccurrence: Int? = nil
     let isActive: Bool
-    let currentTime: Double?
+    /// Spelaren, bara för raden som spelas (se `ParagraphRow.clock`).
+    var clock: PlayerController? = nil
     let isEditing: Bool
     /// Texten som visas är anonymiserad; då rättas den visade texten och ändringen förs tillbaka till originalet.
     var isAnonymized = false
@@ -96,17 +97,20 @@ struct SegmentRow: View {
                 } else {
                     // Ordtidsstämplarna hör till originaltexten.
                     let showsOriginal = displayText == segment.text
-                    Text(SegmentText.attributed(
-                        text: displayText,
-                        query: query,
-                        words: isActive && showsOriginal ? segment.words : [],
-                        currentTime: isActive ? currentTime : nil,
-                        currentOccurrence: currentOccurrence
-                    ))
-                    .font(.reading(readingSize))
-                    .lineSpacing(3)
-                    .textSelection(.enabled)
-                    .frame(maxWidth: textWidth, alignment: .leading)
+                    // Bara texten läser tiden, och ritas om först när nästa ord markeras.
+                    PlaybackTimeReader(player: clock) { time in
+                        ReadingText(
+                            text: SegmentText.attributed(
+                                text: displayText,
+                                query: query,
+                                words: isActive && showsOriginal ? segment.words : [],
+                                currentTime: isActive && clock != nil ? time : nil,
+                                currentOccurrence: currentOccurrence
+                            ),
+                            font: .reading(readingSize), lineSpacing: 3, width: textWidth
+                        )
+                        .equatable()
+                    }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -135,7 +139,7 @@ extension SegmentRow: Equatable {
         l.segment.persistentModelID == r.segment.persistentModelID
             && l.displayText == r.displayText && l.displaySpeaker == r.displaySpeaker
             && l.query == r.query && l.currentOccurrence == r.currentOccurrence
-            && l.isActive == r.isActive && l.currentTime == r.currentTime
+            && l.isActive == r.isActive && l.clock === r.clock
             && l.isEditing == r.isEditing && l.isAnonymized == r.isAnonymized && l.editsAll == r.editsAll
             && l.menuSpeakers == r.menuSpeakers
     }

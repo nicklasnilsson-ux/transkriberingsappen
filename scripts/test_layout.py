@@ -1,6 +1,7 @@
 """Kontroll av grundstrukturen i fönstret: hela fönstret tar emot släppta filer (en enda
 släppyta, på roten) och lägesväxlaren sitter i verktygsfältet.
 Kör: python3 -m unittest discover -s scripts"""
+import re
 import unittest
 from pathlib import Path
 
@@ -329,7 +330,9 @@ class EditModeTests(unittest.TestCase):
         self.assertIn("ReadingTextSize.columnWidth(for: readingSize)", para)
         seg = row[row.index("struct SegmentRow"):row.index("struct RowEditActions")]
         self.assertIn("ReadingTextSize.columnWidth(for: readingSize)", seg)
-        self.assertEqual(seg.count("maxWidth: textWidth"), 2, "Både visning och redigering har spaltbredden")
+        # Visningen ger bredden till ReadingText (width:), redigeringen till .frame(maxWidth:).
+        self.assertEqual(len(re.findall(r"\b(?:maxWidth|width): textWidth\b", seg)), 2, "Både visning och redigering har spaltbredden")
+        self.assertIn("maxWidth: width", para[para.index("struct ReadingText"):], "ReadingText använder bredden")
 
     def test_hover_edit_button_matches_cancel_and_save(self):
         row = (self.DETAIL / "SegmentRow.swift").read_text(encoding="utf-8")

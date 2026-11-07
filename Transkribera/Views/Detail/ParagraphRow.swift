@@ -10,7 +10,9 @@ struct ParagraphRow: View {
     /// Träffen man har stegat till med sökfältets pilar, om den finns i det här stycket.
     var currentHit: SearchHit<PersistentIdentifier>? = nil
     let activeID: PersistentIdentifier?
-    let currentTime: Double?
+    /// Spelaren, bara för stycket som spelas: texten läser då själv tiden och markerar ordet
+    /// som spelas. Övriga stycken får `nil` och ritas inte om när tiden tickar.
+    var clock: PlayerController? = nil
     let isEditing: Bool
     var session: EditSession? = nil
     /// Knappen Redigera vid stycket öppnar det för rättning.
@@ -94,16 +96,19 @@ struct ParagraphRow: View {
                 .frame(maxWidth: textWidth, alignment: .leading)
                 .modifier(EditSurface())
         } else {
-            Text(attributedText)
-                .font(.reading(size))
-                .lineSpacing(4)
-                .textSelection(.enabled)
-                .frame(maxWidth: textWidth, alignment: .leading)
+            // Bara texten läser tiden, och ritas om först när nästa ord markeras.
+            PlaybackTimeReader(player: clock) { time in
+                ReadingText(
+                    text: attributedText(at: clock == nil ? nil : time),
+                    font: .reading(size), lineSpacing: 4, width: textWidth
+                )
+                .equatable()
+            }
         }
     }
 
     /// Segmentens text efter varandra, med sökträffar och det ord som spelas upp markerade.
-    private var attributedText: AttributedString {
+    private func attributedText(at currentTime: Double?) -> AttributedString {
         var result = AttributedString()
         for row in rows {
             let text = row.text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -129,10 +134,27 @@ struct ParagraphRow: View {
 extension ParagraphRow: Equatable {
     static func == (l: ParagraphRow, r: ParagraphRow) -> Bool {
         l.query == r.query && l.currentHit == r.currentHit && l.activeID == r.activeID
-            && l.currentTime == r.currentTime && l.isEditing == r.isEditing && l.editsAll == r.editsAll
+            && l.clock === r.clock && l.isEditing == r.isEditing && l.editsAll == r.editsAll
             && l.menuSpeakers == r.menuSpeakers
             && l.rows.count == r.rows.count
             && zip(l.rows, r.rows).allSatisfy { $0.sameContent(as: $1) }
+    }
+}
+
+/// Läsbar text som bara ritas om när texten eller stilen ändras. Under uppspelning räknas
+/// texten om vid varje tick, men ritas om först när nästa ord ska markeras.
+struct ReadingText: View, Equatable {
+    let text: AttributedString
+    let font: Font
+    let lineSpacing: CGFloat
+    let width: CGFloat
+
+    var body: some View {
+        Text(text)
+            .font(font)
+            .lineSpacing(lineSpacing)
+            .textSelection(.enabled)
+            .frame(maxWidth: width, alignment: .leading)
     }
 }
 

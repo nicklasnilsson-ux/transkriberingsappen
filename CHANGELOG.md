@@ -6,6 +6,12 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.9.26] – 2026-11-07
+
+### Rättat
+- Under uppspelning gick det segt och hoppigt att skrolla i texten, med och utan "Följ uppspelning". Nu ritas texten bara om när nästa stycke börjar spelas och när nästa ord markeras, inte tio gånger i sekunden.
+- Med "Följ uppspelning" påslaget drog appen tillbaka texten medan du skrollade. Nu får du skrolla fritt; texten följer med igen när du har låtit bli att skrolla i tre sekunder och nästa stycke börjar.
+
 ## [0.9.25] – 2026-11-07
 
 ### Ändrat

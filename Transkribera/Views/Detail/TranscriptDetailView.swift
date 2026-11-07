@@ -1,4 +1,5 @@
 import AppKit
+import Observation
 import SwiftData
 import SwiftUI
 import TranskriberaCore
@@ -31,6 +32,8 @@ struct TranscriptDetailView: View {
     /// Håller stycket du läser kvar på skärmen när redigeringsläget växlar.
     @State private var scrollAnchor = ScrollAnchor()
     @State private var followPlayback = true
+    /// Segmentet som spelas. Byts bara när uppspelningen når nästa segment, inte vid varje tick.
+    @State private var playbackFocus = PlaybackFocus()
     @State private var speakerToRename: String?
     @State private var newSpeakerName = ""
     @State private var copied = false
@@ -866,19 +869,20 @@ struct TranscriptDetailView: View {
             }
             .frame(maxWidth: .infinity, minHeight: 120)
         } else if let rows = displaySegments(segments) {
-            // Uppspelningstiden läses bara i PlaybackTimeReader. Annars räknas hela vyn om tio
-            // gånger i sekunden (sortering, anonymiseringsjämförelse, styckeindelning).
+            // Uppspelningstiden (tio tick i sekunden) når aldrig listan. Den läses i en osynlig vy
+            // som bara säger till när nästa segment börjar; listan byggs om då och inte vid varje
+            // tick. Annars hackar skrollningen under uppspelning (0.9.25) eller fryser (0.9.7).
             let paragraphs = layout == .paragraphs ? Self.paragraphs(rows) : []
             let hit = currentHit
-            PlaybackTimeReader(player: player) { currentTime in
-                let activeID = Self.activeSegment(in: segments, at: currentTime)?.persistentModelID
+            PlaybackFocusReader(focus: playbackFocus) { activeID in
                 switch layout {
                 case .paragraphs:
-                    paragraphRows(paragraphs: paragraphs, hit: hit, currentTime: currentTime, activeID: activeID, proxy: proxy)
+                    paragraphRows(paragraphs: paragraphs, hit: hit, activeID: activeID, proxy: proxy)
                 case .segments:
-                    segmentRows(rows: rows, hit: hit, currentTime: currentTime, activeID: activeID, proxy: proxy)
+                    segmentRows(rows: rows, hit: hit, activeID: activeID, proxy: proxy)
                 }
             }
+            .background(PlaybackFocusTracker(player: player, segments: segments, focus: playbackFocus))
         } else if AnonymizationWait.isWaiting(segmentCount: segments.count, hasCurrentResult: false) {
             ProgressView("Anonymiserar…")
                 .frame(maxWidth: .infinity, minHeight: 120)
@@ -887,12 +891,15 @@ struct TranscriptDetailView: View {
 
     private func follow(_ id: some Hashable, proxy: ScrollViewProxy) {
         guard followPlayback, player?.isPlaying == true, !isEditing else { return }
+        // Skrollar du själv följer texten inte med förrän du har släppt en stund; annars drar
+        // appen tillbaka texten medan du skrollar.
+        guard !scrollAnchor.userScrolledRecently() else { return }
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
             proxy.scrollTo(id, anchor: .center)
         }
     }
 
-    private func segmentRows(rows: [DisplaySegment], hit: SearchHit<PersistentIdentifier>?, currentTime: Double, activeID: PersistentIdentifier?, proxy: ScrollViewProxy) -> some View {
+    private func segmentRows(rows: [DisplaySegment], hit: SearchHit<PersistentIdentifier>?, activeID: PersistentIdentifier?, proxy: ScrollViewProxy) -> some View {
         // Hela texten visas alltid; sökningen markerar och stegar mellan träffarna.
         VStack(alignment: .leading, spacing: 0) {
             LazyVStack(alignment: .leading, spacing: 0) {
@@ -905,8 +912,8 @@ struct TranscriptDetailView: View {
                         query: query,
                         currentOccurrence: hit?.id == row.id ? hit?.occurrence : nil,
                         isActive: segment.persistentModelID == activeID,
-                        // Bara den spelade raden behöver tiden; övriga ritas inte om vid varje tick.
-                        currentTime: segment.persistentModelID == activeID ? currentTime : nil,
+                        // Bara den spelade raden läser tiden (för ordet som spelas); övriga ritas inte om.
+                        clock: segment.persistentModelID == activeID ? player : nil,
                         isEditing: editsAll || editingID == segment.persistentModelID,
                         isAnonymized: row.isAnonymized,
                         session: editSession,
@@ -931,21 +938,21 @@ struct TranscriptDetailView: View {
         }
     }
 
-    private func paragraphRows(paragraphs: [[DisplaySegment]], hit: SearchHit<PersistentIdentifier>?, currentTime: Double, activeID: PersistentIdentifier?, proxy: ScrollViewProxy) -> some View {
+    private func paragraphRows(paragraphs: [[DisplaySegment]], hit: SearchHit<PersistentIdentifier>?, activeID: PersistentIdentifier?, proxy: ScrollViewProxy) -> some View {
         // Hela texten visas alltid; sökningen markerar och stegar mellan träffarna.
         let activeParagraphID = paragraphs.first { paragraph in paragraph.contains { $0.id == activeID } }?.first?.id
 
         return VStack(alignment: .leading, spacing: 0) {
             LazyVStack(alignment: .leading, spacing: 0) {
                 ForEach(paragraphs, id: \.first?.id) { paragraph in
-                    // Bara det spelade stycket får tiden och det aktiva id:t (se ParagraphRow ==).
+                    // Bara det spelade stycket får spelaren och det aktiva id:t (se ParagraphRow ==).
                     let isActiveParagraph = activeParagraphID != nil && paragraph.first?.id == activeParagraphID
                     ParagraphRow(
                         rows: paragraph,
                         query: query,
                         currentHit: hit,
                         activeID: isActiveParagraph ? activeID : nil,
-                        currentTime: isActiveParagraph ? currentTime : nil,
+                        clock: isActiveParagraph ? player : nil,
                         isEditing: editsAll || editingID == paragraph.first?.segment.persistentModelID,
                         session: editSession,
                         onBeginEdit: {
@@ -1319,6 +1326,44 @@ struct PlaybackTimeReader<Content: View>: View {
 
     var body: some View {
         content(player?.currentTime ?? 0)
+    }
+}
+
+/// Segmentet som spelas just nu. Ändras bara när uppspelningen når ett nytt segment, så att det
+/// som läser det (listan med stycken) inte ritas om tio gånger i sekunden.
+@MainActor
+@Observable
+final class PlaybackFocus {
+    private(set) var activeID: PersistentIdentifier?
+
+    /// Skriver bara när segmentet faktiskt byts: varje skrivning ritar om listan.
+    func update(_ id: PersistentIdentifier?) {
+        if id != activeID { activeID = id }
+    }
+}
+
+/// Osynlig vy som läser uppspelningstiden och uppdaterar `PlaybackFocus` när nästa segment börjar.
+/// Den här lilla vyn är det enda i texten som räknas om vid varje tick.
+struct PlaybackFocusTracker: View {
+    let player: PlayerController?
+    let segments: [TranscriptSegment]
+    let focus: PlaybackFocus
+
+    var body: some View {
+        PlaybackTimeReader(player: player) { time in
+            let id = TranscriptDetailView.activeSegment(in: segments, at: time)?.persistentModelID
+            Color.clear.onChange(of: id, initial: true) { _, newID in focus.update(newID) }
+        }
+    }
+}
+
+/// Läser vilket segment som spelas, i en egen vy, så att bara listan ritas om när det byts.
+struct PlaybackFocusReader<Content: View>: View {
+    let focus: PlaybackFocus
+    @ViewBuilder let content: (PersistentIdentifier?) -> Content
+
+    var body: some View {
+        content(focus.activeID)
     }
 }
 
