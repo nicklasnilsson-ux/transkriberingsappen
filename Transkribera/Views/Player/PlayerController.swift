@@ -1,6 +1,8 @@
 import AVFoundation
 import Foundation
 import Observation
+import SwiftUI
+import TranskriberaCore
 
 /// Håller en AVPlayer och publicerar aktuell uppspelningstid till SwiftUI.
 @MainActor
@@ -13,8 +15,14 @@ final class PlayerController {
     @ObservationIgnored private var timeObserver: Any?
     @ObservationIgnored private var rateObservation: NSKeyValueObservation?
 
-    init(url: URL) {
-        player = AVPlayer(url: url)
+    /// - Parameter speed: uppspelningshastigheten (`PlaybackSpeed`), sparad i inställningarna.
+    init(url: URL, speed: Double = PlaybackSpeed.normal) {
+        let item = AVPlayerItem(url: url)
+        // Tonhöjden behålls alltid när hastigheten ändras (Nicklas 2026-11-07). `.timeDomain` behåller
+        // tonhöjden och passar tal; `.varispeed` skulle ge ljusare röster i högre hastighet.
+        item.audioTimePitchAlgorithm = Self.pitchAlgorithm
+        player = AVPlayer(playerItem: item)
+        player.defaultRate = Float(PlaybackSpeed.clamped(speed))
         timeObserver = player.addPeriodicTimeObserver(
             forInterval: CMTime(value: 1, timescale: 10),
             queue: .main
@@ -54,11 +62,32 @@ final class PlayerController {
         seek(to: currentTime + seconds, play: isPlaying)
     }
 
+    /// Algoritmen för hastighetsändring. Behåller tonhöjden (kontrolleras av `PlaybackSpeedTests`).
+    static let pitchAlgorithm: AVAudioTimePitchAlgorithm = .timeDomain
+
+    /// Hastigheten som `play()` använder. Ändras den under uppspelning gäller den direkt.
     var playbackRate: Float {
         get { player.defaultRate }
         set {
             player.defaultRate = newValue
             if player.rate != 0 { player.rate = newValue }
         }
+    }
+
+    /// Sätter hastigheten från ett sparat värde (rundas till närmaste giltiga steg).
+    func setSpeed(_ speed: Double) {
+        playbackRate = Float(PlaybackSpeed.clamped(speed))
+    }
+}
+
+/// Spelaren i det fönster som är i fokus, för menyn Uppspelning (Spela/Pausa).
+struct FocusedPlayerKey: FocusedValueKey {
+    typealias Value = PlayerController
+}
+
+extension FocusedValues {
+    var player: PlayerController? {
+        get { self[FocusedPlayerKey.self] }
+        set { self[FocusedPlayerKey.self] = newValue }
     }
 }

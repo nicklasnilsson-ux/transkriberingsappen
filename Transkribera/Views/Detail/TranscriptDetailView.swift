@@ -786,6 +786,8 @@ struct TranscriptDetailView: View {
                 miniSizeRaw: $miniSizeRaw,
                 title: transcript.title
             )
+            // Menyn Uppspelning (Spela/Pausa) styr spelaren i det fönster som är i fokus.
+            .focusedSceneValue(\.player, player)
         }
     }
 
@@ -1326,12 +1328,15 @@ private struct DetailLifecycle: ViewModifier {
     @Binding var player: PlayerController?
     let anonymizationKey: AnonymizationInput
     let refresh: () async -> Void
+    /// Sparad uppspelningshastighet; gäller alla filer (Nicklas 2026-11-07).
+    @AppStorage(SettingsKey.playbackSpeed) private var playbackSpeed = PlaybackSpeed.normal
 
     func body(content: Content) -> some View {
         content
             .onAppear {
-                if player == nil { player = PlayerController(url: transcript.mediaURL) }
+                if player == nil { player = PlayerController(url: transcript.mediaURL, speed: playbackSpeed) }
             }
+            .onChange(of: playbackSpeed) { _, speed in player?.setSpeed(speed) }
             .onDisappear {
                 // Ett öppet videofönster hör till den här filen och stängs med den.
                 if let player { VideoWindow.shared.closeIfShowing(player.player) }
