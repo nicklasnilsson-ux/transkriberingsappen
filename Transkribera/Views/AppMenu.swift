@@ -15,8 +15,8 @@ enum AppMenuEntry {
     case note(String)
     /// Ett val med bock när det gäller.
     case choice(String, checked: Bool, action: () -> Void)
-    /// En vanlig åtgärd.
-    case action(String, action: () -> Void)
+    /// En vanlig åtgärd, med SF Symbol som i appens övriga menyer (beslut 2026-11-07).
+    case action(String, symbol: SystemIcon? = nil, action: () -> Void)
     case separator
 }
 
@@ -38,8 +38,10 @@ enum AppMenu {
                 let item = actionItem(title, action: action, target: target)
                 item.state = checked ? .on : .off
                 menu.addItem(item)
-            case .action(let title, let action):
-                menu.addItem(actionItem(title, action: action, target: target))
+            case .action(let title, let symbol, let action):
+                let item = actionItem(title, action: action, target: target)
+                item.image = symbol?.nsImage
+                menu.addItem(item)
             case .separator:
                 menu.addItem(.separator())
             }

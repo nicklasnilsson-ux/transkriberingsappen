@@ -223,7 +223,7 @@ class EditModeTests(unittest.TestCase):
         # Nicklas 2026-11-04: text på alla knappar i titelbaren utom Sök och ⋯. macOS visar bara ikonen
         # för en Label om inte labelStyle(.titleAndIcon) sätts.
         text = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
-        for anchor in ('Label("Redigera", icon: .edit)', 'Label("Sparat", icon: .check)', "Label(label, icon: .clock)"):
+        for anchor in ('Label("Redigera", systemIcon: .edit)', 'Label("Sparat", systemIcon: .saved)', "Label(label, systemIcon: .olderVersion)"):
             i = text.index(anchor)
             self.assertIn(".labelStyle(.titleAndIcon)", text[i:i + 120], f"{anchor} måste visa text")
         for anchor in ('Button("Spara")', 'Button("Avbryt")', 'Button("Ångra")'):

@@ -177,8 +177,8 @@ struct VideoSizeMenuButton: View {
         var entries: [AppMenuEntry] = [.header("Bildstorlek")]
         entries += MiniPlayerSize.allCases.map { size -> AppMenuEntry in .choice(size.label, checked: size == selected) { pick(size) } }
         entries.append(.separator)
-        entries.append(inOwnWindow ? .action("Tillbaka till spelarraden", action: closeWindow)
-                                   : .action("Visa i eget fönster", action: openWindow))
+        entries.append(inOwnWindow ? .action("Tillbaka till spelarraden", symbol: .backToPlayer, action: closeWindow)
+                                   : .action("Visa i eget fönster", symbol: .ownWindow, action: openWindow))
         return entries
     }
 }
