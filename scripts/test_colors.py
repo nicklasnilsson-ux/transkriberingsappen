@@ -61,6 +61,16 @@ class DropZoneTests(unittest.TestCase):
                 colors[(check_colors.DROP_REST, mode, high)] = colors[(check_colors.DROP_CARD, mode, high)]
         self.assertTrue(any("släppytan mot kortet" in e for e in check_colors.check_drop_zone(colors)))
 
+    def test_drop_zone_matches_notice_card(self):
+        self.assertEqual(check_colors.check_notice_code(), [])
+
+    def test_old_tint_on_notice_card_is_caught(self):
+        # Före 2026-11-07 tonades rutan med accentfärg direkt, och släppytan hade en egen färg.
+        text = check_colors.DETAIL.read_text(encoding="utf-8")
+        old = text.replace(".background(Color.notice,", ".background(Color.accentColor.opacity(0.08),")
+        self.assertNotEqual(old, text)
+        self.assertTrue(check_colors.check_notice_code(old))
+
     def test_target_equal_to_rest_is_caught(self):
         colors = check_colors.load_all()
         key = (check_colors.DROP_TARGET, "dark", False)

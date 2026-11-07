@@ -17,9 +17,11 @@ extension Color {
     static let surface = Color("SurfaceBackground")
     /// Chips, tonade fält och inställningsknappar.
     static let chip = Color("ChipBackground")
-    /// Släppytan i kortet Ny transkribering: nedsänkt, mörkare än kortet (chip) i båda lägena.
-    static let dropZone = Color("DropZoneBackground")
-    /// Släppytan när en fil dras över: indigotonad. Skiljer sig från både vila och kortet.
+    /// Svagt indigotonad yta: notisrutan i transkriberingen ("Vem är intervjuare?") och släppytan i
+    /// kortet Ny transkribering i vila. Samma färg på båda ställena (Nicklas 2026-11-07); motsvarar
+    /// 8 % accent över AppBackground. Kontrolleras av scripts/check_colors.py (check_notice_code).
+    static let notice = Color("NoticeBackground")
+    /// Släppytan när en fil dras över: tydligare indigo (18 % accent). Skiljer sig från både vila och kortet.
     static let dropZoneTarget = Color("DropZoneTargetBackground")
     /// Tunna kanter och avdelare. Bär ingen information ensam.
     static let line = Color("LineColor")

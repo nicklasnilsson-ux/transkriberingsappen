@@ -174,8 +174,8 @@ struct SidebarView: View {
     }
 
     /// Släppyta med knappen Välj filer…. Hela fönstret tar emot filer; den här visar var.
-    /// Egen, nedsänkt bakgrund som skiljer sig från kortet (Nicklas 2026-11-06); när en fil dras
-    /// över blir den indigotonad med hel accentkant. Färgerna kontrolleras av scripts/check_colors.py
+    /// Samma bakgrund som notisrutan "Vem är intervjuare?" (Color.notice, Nicklas 2026-11-07), som skiljer
+    /// sig från kortet; när en fil dras över blir den tydligare indigo med hel accentkant. Färgerna kontrolleras av scripts/check_colors.py
     /// (check_drop_zone), som också kräver att ytan bara använder färgerna nedan.
     private var dropArea: some View {
         VStack(spacing: 8) {
@@ -192,7 +192,7 @@ struct SidebarView: View {
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(appState.isDropTargeted ? Color.dropZoneTarget : Color.dropZone)
+                .fill(appState.isDropTargeted ? Color.dropZoneTarget : Color.notice)
         )
         .overlay {
             RoundedRectangle(cornerRadius: 10, style: .continuous)

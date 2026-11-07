@@ -6,11 +6,19 @@ import TranskriberaCore
 /// Här låg tidigare en rad med väljare som trycktes ihop och bröts mitt i orden när fönstret var smalt.
 /// Filer släpps var som helst i fönstret (se ContentView), därför ingen egen släppyta här.
 struct FileModeEmptyView: View {
+    static let message = "Släpp ljud- eller videofiler i fönstret eller välj filer i sidopanelen. Allt transkriberas lokalt, inget lämnar din Mac."
+    static let iconSize: CGFloat = 64
+
     var body: some View {
         ContentUnavailableView {
-            Label("Ingen transkribering vald", icon: .waveform)
+            Label {
+                Text("Ingen transkribering vald")
+            } icon: {
+                // 64 pt, fyra gånger standardikonen (Nicklas 2026-11-07).
+                Icon(.waveform, size: Self.iconSize)
+            }
         } description: {
-            Text("Släpp ljud- eller videofiler i fönstret, eller välj Välj filer… i sidopanelen. Allt transkriberas lokalt, inget lämnar din Mac.")
+            Text(Self.message)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .navigationTitle("Ny transkribering")
