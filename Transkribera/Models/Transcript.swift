@@ -148,6 +148,43 @@ final class Transcript {
         applySpeakerNames(SpeakerRoles.names(for: speakers, interviewers: interviewers))
     }
 
+    /// Flyttar bara de här segmenten (ett stycke eller en rad) till en annan talare, t.ex. när
+    /// talaridentifieringen lagt en replik hos fel person. ⚠ tas bort: användaren har själv bestämt.
+    /// Ger läget före bytet, så att det går att ångra; `nil` om ingenting ändrades.
+    func moveSegments(_ indices: Set<Int>, to speaker: String) -> SpeakerMove.Undo? {
+        let name = speaker.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return nil }
+        var entries: [SpeakerMove.Undo.Entry] = []
+        for segment in sortedSegments where indices.contains(segment.index) {
+            let words = SpeakerMove.clearingUncertainty(segment.wordsData)
+            guard segment.speaker != name || words != segment.wordsData else { continue }
+            entries.append(.init(index: segment.index, speaker: segment.speaker, wordsData: segment.wordsData))
+            segment.speaker = name
+            segment.wordsData = words
+        }
+        return entries.isEmpty ? nil : SpeakerMove.Undo(entries: entries, speaker: name)
+    }
+
+    /// Sant så länge bytet går att ångra (talaren har inte bytt namn eller fått en roll sedan dess).
+    func canUndo(_ move: SpeakerMove.Undo) -> Bool {
+        let wanted = Set(move.entries.map(\.index))
+        var current: [Int: String?] = [:]
+        for segment in segments where wanted.contains(segment.index) {
+            current[segment.index] = .some(segment.speaker)
+        }
+        return move.canUndo(currentSpeakers: current)
+    }
+
+    /// Ger segmenten tillbaka talaren och ⚠ som de hade före bytet.
+    func undo(_ move: SpeakerMove.Undo) {
+        guard canUndo(move) else { return }
+        for entry in move.entries {
+            guard let segment = segments.first(where: { $0.index == entry.index }) else { continue }
+            segment.speaker = entry.speaker
+            segment.wordsData = entry.wordsData
+        }
+    }
+
     func renameSpeaker(_ oldName: String, to newName: String) {
         let trimmed = newName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }

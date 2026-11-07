@@ -21,6 +21,11 @@ struct TranscriptDetailView: View {
     @State private var editsAll = false
     /// Den senaste sparade rättningen, så att den går att ångra tills ett nytt stycke öppnas.
     @State private var lastEdit: EditUndo?
+    /// Det senaste bytet av talare på ett stycke eller en rad, så att det går att ångra.
+    @State private var lastMove: SpeakerMove.Undo?
+    /// Stycket eller raden som ska flyttas till en ny talare (frågan om namnet är öppen).
+    @State private var newSpeakerTarget: NewSpeakerTarget?
+    @State private var newSpeakerDraft = ""
     /// Kopplar fältet i det öppna stycket till titelbaren (Spara, Avbryt) och tillbaka.
     @State private var editSession = EditSession()
     /// Håller stycket du läser kvar på skärmen när redigeringsläget växlar.
@@ -80,7 +85,10 @@ struct TranscriptDetailView: View {
             confirmRetranscribe: $confirmRetranscribe,
             speakerToRename: $speakerToRename,
             newSpeakerName: $newSpeakerName,
+            newSpeakerTarget: $newSpeakerTarget,
+            newSpeakerDraft: $newSpeakerDraft,
             transcript: transcript,
+            onMoveToNewSpeaker: { target, name in move(target.indices, to: name) },
             onRetranscribe: { retranscribe() }
         ))
     }
@@ -407,6 +415,18 @@ struct TranscriptDetailView: View {
                     .help("Ge tillbaka stycket som det var före rättningen")
             }
             .layoutPriority(1)
+        } else if let move = lastMove, transcript.canUndo(move) {
+            HStack(spacing: 6) {
+                Label("Flyttat till \(move.speaker)", icon: .check)
+                    .labelStyle(.titleAndIcon)
+                    .font(.app(.small, weight: .semibold))
+                    .foregroundStyle(Color.success)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                Button("Ångra") { undoLastMove() }
+                    .help("Ge tillbaka talaren som det var före bytet")
+            }
+            .layoutPriority(1)
         }
     }
 
@@ -608,6 +628,7 @@ struct TranscriptDetailView: View {
         guard !editsAll, editingID != id else { return }
         editSession.saveAll()
         lastEdit = nil
+        lastMove = nil
         editSession.autofocus = true
         editingID = id
     }
@@ -616,6 +637,7 @@ struct TranscriptDetailView: View {
     private func beginEditingAll() {
         editSession.saveAll()
         lastEdit = nil
+        lastMove = nil
         editSession.autofocus = false
         editingID = nil
         editsAll = true
@@ -892,7 +914,9 @@ struct TranscriptDetailView: View {
                         editsAll: editsAll,
                         onSave: { saveEditing() },
                         onCancel: { cancelEditing() },
-                        onSeek: { player?.seek(to: segment.start) }
+                        onSeek: { player?.seek(to: segment.start) },
+                        speakerMenu: { AnyView(speakerActions([row], noun: "raden")) },
+                        menuSpeakers: transcript.speakers
                     )
                     .equatable()
                     .id(segment.persistentModelID)
@@ -931,12 +955,8 @@ struct TranscriptDetailView: View {
                         onSave: { saveEditing() },
                         onCancel: { cancelEditing() },
                         onSeek: { player?.seek(to: $0) },
-                        speakerMenu: { speaker in
-                            AnyView(Group {
-                                Button("Byt namn på \(speaker)…") { beginRename(speaker) }
-                                interviewerButton(speaker)
-                            })
-                        }
+                        speakerMenu: { _ in AnyView(speakerActions(paragraph, noun: "stycket")) },
+                        menuSpeakers: transcript.speakers
                     )
                     .equatable()
                     .id(paragraph.first?.id)
@@ -971,10 +991,9 @@ struct TranscriptDetailView: View {
                 if let speaker = first.speaker { line += "\(speaker): " }
                 copyToPasteboard(line + text)
             }
-            if let speaker = first.segment.speaker {
+            if first.segment.speaker != nil {
                 Divider()
-                Button("Byt namn på \(speaker)…") { beginRename(speaker) }
-                interviewerButton(speaker)
+                speakerActions(paragraph, noun: "stycket")
             }
         }
     }
@@ -988,11 +1007,54 @@ struct TranscriptDetailView: View {
         Button("Kopiera med tidsstämpel") {
             copyToPasteboard("[\(TimeFormatting.short(segment.start))] \(row.text)")
         }
-        if let speaker = segment.speaker {
+        if segment.speaker != nil {
             Divider()
-            Button("Byt namn på \(speaker)…") { beginRename(speaker) }
-            interviewerButton(speaker)
+            speakerActions([row], noun: "raden")
         }
+    }
+
+    // MARK: - Byta talare på ett stycke eller en rad
+
+    /// ▾-menyn vid talarens namn och samma val i högerklicksmenyn: flytta bara det här stycket
+    /// (eller raden) till en annan talare, byta namn på talaren överallt och ange intervjuare.
+    @ViewBuilder
+    private func speakerActions(_ rows: [DisplaySegment], noun: String) -> some View {
+        let indices = rows.map(\.segment.index)
+        let current = rows.first?.segment.speaker
+        Menu("Flytta \(noun) till") {
+            ForEach(SpeakerMove.targets(speakers: transcript.speakers, current: current), id: \.self) { speaker in
+                Button(speaker) { move(indices, to: speaker) }
+            }
+            Divider()
+            Button("Ny talare…") { beginNewSpeaker(indices, noun: noun) }
+        }
+        if let current {
+            Divider()
+            Button("Byt namn på \(current) (överallt)…") { beginRename(current) }
+            interviewerButton(current)
+        }
+    }
+
+    /// Flyttar segmenten till `speaker`. Stycken från samma talare slås ihop av sig själva.
+    private func move(_ indices: [Int], to speaker: String) {
+        if isEditing { saveEditing() }
+        guard let undo = transcript.moveSegments(Set(indices), to: speaker) else { return }
+        lastEdit = nil
+        roleChoice = nil
+        lastMove = undo
+        try? transcript.modelContext?.save()
+    }
+
+    private func undoLastMove() {
+        guard let move = lastMove else { return }
+        transcript.undo(move)
+        lastMove = nil
+        try? transcript.modelContext?.save()
+    }
+
+    private func beginNewSpeaker(_ indices: [Int], noun: String) {
+        newSpeakerDraft = SpeakerMove.suggestedNewName(existing: transcript.speakers)
+        newSpeakerTarget = NewSpeakerTarget(indices: indices, noun: noun)
     }
 
     // MARK: - Roller
@@ -1220,6 +1282,13 @@ private struct AnonymizedState {
     var result: AnonymizationResult
 }
 
+/// Stycket eller raden som flyttas till en ny talare medan namnet frågas efter.
+struct NewSpeakerTarget {
+    let indices: [Int]
+    /// "stycket" eller "raden".
+    let noun: String
+}
+
 /// Ett rollval som går att ångra: vem som valdes och talarna per segment före valet.
 private struct RoleChoice {
     let speaker: String
@@ -1283,7 +1352,10 @@ private struct DetailDialogs: ViewModifier {
     @Binding var confirmRetranscribe: Bool
     @Binding var speakerToRename: String?
     @Binding var newSpeakerName: String
+    @Binding var newSpeakerTarget: NewSpeakerTarget?
+    @Binding var newSpeakerDraft: String
     let transcript: Transcript
+    let onMoveToNewSpeaker: (NewSpeakerTarget, String) -> Void
     let onRetranscribe: () -> Void
 
     func body(content: Content) -> some View {
@@ -1314,6 +1386,21 @@ private struct DetailDialogs: ViewModifier {
                 Button("Avbryt", role: .cancel) { speakerToRename = nil }
             } message: {
                 Text("Det nya namnet används överallt där \(speakerToRename ?? "") pratar.")
+            }
+            .alert("Ny talare", isPresented: Binding(
+                get: { newSpeakerTarget != nil },
+                set: { if !$0 { newSpeakerTarget = nil } }
+            )) {
+                TextField("Namn", text: $newSpeakerDraft)
+                Button("Flytta") {
+                    if let target = newSpeakerTarget {
+                        onMoveToNewSpeaker(target, newSpeakerDraft)
+                    }
+                    newSpeakerTarget = nil
+                }
+                Button("Avbryt", role: .cancel) { newSpeakerTarget = nil }
+            } message: {
+                Text("Bara \(newSpeakerTarget?.noun ?? "stycket") flyttas till den nya talaren. Namnet går att ändra senare.")
             }
     }
 }
