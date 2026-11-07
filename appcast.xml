@@ -6,6 +6,20 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.9.16</title>
+      <pubDate>Sat, 07 Nov 2026 09:46:46 GMT</pubDate>
+      <sparkle:version>53</sparkle:version>
+      <sparkle:shortVersionString>0.9.16</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.16</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Ändrat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Helskärm i bildstorleksmenyn är ersatt av Visa i eget fönster. Videon öppnas i ett vanligt fönster som du kan flytta och ändra storlek på genom att dra i hörnet. Fönstret kommer ihåg sin storlek och plats till nästa gång, och helskärm går fortfarande att välja med fönstrets gröna knapp.&lt;/li&gt;
+&lt;li&gt;Medan videon visas i eget fönster syns den inte i spelarraden. Där står i stället Tillbaka hit. Klicka på den, välj Tillbaka till spelarraden i menyn eller stäng fönstret, så ligger videon i spelarraden igen.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.16/Transkribera-v0.9.16.zip" length="14525378" type="application/octet-stream" sparkle:edSignature="xJGz25nLxVwnvvmsEM+3Z986AZygsv9z4tgk5SeSEKVV+kZ6EU/JVcijI9zQioAuc5p+QosIKXLxSRtDU7xUCg==" />
+    </item>
+    <item>
       <title>Version 0.9.15</title>
       <pubDate>Fri, 06 Nov 2026 20:03:40 GMT</pubDate>
       <sparkle:version>52</sparkle:version>
@@ -459,20 +473,6 @@
 &lt;li&gt;Ett klick på den transkribering som redan är vald avmarkerar den, och vyn blir tom.&lt;/li&gt;
 &lt;/ul&gt;</description>
       <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.7.3/Transkribera-v0.7.3.zip" length="14224948" type="application/octet-stream" sparkle:edSignature="F9rkkXovOuNldFIT6rUQmrps0uNUHW8yMMP+TPrpOFZZcbtLGKKFCIhISuAwl15VP6W3nGMAEb3+uRJ9woN4Cw==" />
-    </item>
-    <item>
-      <title>Version 0.7.2</title>
-      <pubDate>Sun, 01 Nov 2026 19:23:16 GMT</pubDate>
-      <sparkle:version>23</sparkle:version>
-      <sparkle:shortVersionString>0.7.2</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.7.2</sparkle:fullReleaseNotesLink>
-      <description>&lt;h3&gt;Rättat&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Raden med inställningar för nästa transkribering sitter nu kloss i toppen av vyn i stället för mitt i fönstret.&lt;/li&gt;
-&lt;li&gt;Titelkortet och videobilden fälls ihop när du skrollar i en transkribering. Skrollpositionen läses nu direkt från skrollytan.&lt;/li&gt;
-&lt;/ul&gt;</description>
-      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.7.2/Transkribera-v0.7.2.zip" length="14185243" type="application/octet-stream" sparkle:edSignature="FxKhRb2jD/K6sMGNkaqVZMamUX0FLeAsArbovPpwjbXYXeMH0YmyBsCFbuoTpIEqp0tlP2qqh/uxRb/MYCC9CQ==" />
     </item>
   </channel>
 </rss>
