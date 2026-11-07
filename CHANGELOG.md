@@ -6,14 +6,16 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.9.19] – 2026-11-07
+
+### Ändrat
+- Inställningarnas flikar, titelbaren och menyerna har nu macOS egna ikoner (SF Symbols). De följer systemets text i storlek, tyngd och linje. Sidopanelen, spelarraden och texten behåller appens egna ikoner.
+
 ## [0.9.18] – 2026-11-07
 
 ### Nytt
 - Uppspelningshastighet i spelarraden, mellan längden och Följ uppspelning: 0,75×, 1× (Normal), 1,25×, 1,5×, 1,75× och 2×. Knappen blir indigo när hastigheten inte är normal. Hastigheten sparas och gäller alla filer, och rösterna behåller sin tonhöjd.
 - Ny meny Uppspelning med kortkommandon: Spela/Pausa (⌥⌘P), Snabbare (⌥⌘→), Långsammare (⌥⌘←) och Normal hastighet (⌥⌘0).
-
-### Ändrat
-- Inställningarnas flikar, titelbaren och menyerna har nu macOS egna ikoner (SF Symbols). De följer systemets text i storlek, tyngd och linje. Sidopanelen, spelarraden och texten behåller appens egna ikoner.
 
 ## [0.9.17] – 2026-11-07
 
