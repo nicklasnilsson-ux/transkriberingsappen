@@ -6,6 +6,11 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.9.24] – 2026-11-07
+
+### Ändrat
+- Platshållartexten i sökfälten och i fälten för ordlista och undantag syntes knappt, eftersom macOS ritade den ljusgrå. Nu är den mörkare och lätt att läsa, i både ljust och mörkt läge.
+
 ## [0.9.22] – 2026-11-07
 
 ### Ändrat

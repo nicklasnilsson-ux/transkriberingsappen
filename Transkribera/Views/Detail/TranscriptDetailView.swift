@@ -440,7 +440,7 @@ struct TranscriptDetailView: View {
     private var toolbarSearch: some View {
         HStack(spacing: 6) {
             Image(systemIcon: .search).foregroundStyle(Color.textSecondary)
-            TextField("Sök i texten", text: $query)
+            TextField("Sök i texten", text: $query, prompt: .prompt("Sök i texten"))
                 .textFieldStyle(.plain)
                 .focused($searchFocused)
                 // Retur: nästa träff. Esc: stäng.

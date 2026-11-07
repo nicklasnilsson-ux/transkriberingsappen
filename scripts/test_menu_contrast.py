@@ -17,8 +17,8 @@ ROOT = Path(__file__).resolve().parent.parent
 APP = ROOT / "Transkribera"
 # Formulären i Inställningar och Testlabbet ritar sina rubriker med normal kontrast.
 FORMS = {"Settings", "TestLab"}
-# Menyns bakgrund i ljust läge, uppmätt i Nicklas skärmbild 2026-11-07 (macOS 26). Mörkt läge är
-# uppskattat (#323232) och inte uppmätt.
+# Menyns bakgrund, uppmätt i Nicklas skärmbilder 2026-11-07 (macOS 26): ljust (236,236,236),
+# mörkt (50,50,50). Rubriken i mörkt läge mättes till 6,24:1 i samma skärmbild.
 MENU_BG = {"light": (236 / 255,) * 3, "dark": (0x32 / 255,) * 3}
 
 
@@ -80,6 +80,29 @@ class MenuContrastTests(unittest.TestCase):
         self.assertIn('.header("Uppspelningshastighet")', speed)
         detail = (APP / "Views/Detail/TranscriptDetailView.swift").read_text(encoding="utf-8")
         self.assertIn('.note("De \\(VersionHistory.capacity) senaste versionerna sparas', detail)
+
+
+    def test_text_fields_have_readable_placeholders(self):
+        """macOS ritar platshållare ljusgrått. Varje TextField tar sin platshållare från
+        `.prompt(…)` (TextSecondary). Undantag: fälten i systemets .alert, som macOS ritar själv."""
+        alert_fields = {("TranscriptDetailView.swift", 'TextField("Namn", text: $newSpeakerName)'),
+                        ("TranscriptDetailView.swift", 'TextField("Namn", text: $newSpeakerDraft)')}
+        found, seen = [], 0
+        for path in swift_files():
+            for line in path.read_text(encoding="utf-8").splitlines():
+                if not re.search(r'\bTextField\(\s*"', line):
+                    continue
+                seen += 1
+                code = line.strip()
+                if (path.name, code) in alert_fields:
+                    continue
+                if "prompt: .prompt(" not in code:
+                    found.append(f"{path.name}: {code[:80]}")
+        self.assertGreaterEqual(seen, 8, "Kontrollen hittar inte textfälten")
+        self.assertEqual(found, [], "Platshållaren blir ljusgrå; ange prompt: .prompt(\"…\")")
+        theme = (APP / "Views/Theme.swift").read_text(encoding="utf-8")
+        self.assertIn("static func prompt(_ text: String) -> Text", theme)
+        self.assertIn("Text(text).foregroundStyle(Color.textSecondary)", theme)
 
 
 if __name__ == "__main__":
