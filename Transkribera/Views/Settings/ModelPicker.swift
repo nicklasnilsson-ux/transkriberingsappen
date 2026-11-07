@@ -97,6 +97,11 @@ struct ModelInfoRow: View {
             Text(model.swedishErrorText)
                 .font(.app(.small).monospacedDigit())
                 .foregroundStyle(Color.textSecondary)
+            if let time = model.processingTimeText {
+                Label(time, icon: .clock)
+                    .font(.app(.small).monospacedDigit())
+                    .foregroundStyle(Color.textSecondary)
+            }
             if let warning = model.memoryWarning {
                 Label(warning, icon: .memory)
                     .font(.app(.small))
@@ -104,7 +109,6 @@ struct ModelInfoRow: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             HStack(spacing: 14) {
-                Meter(label: "Fart", value: model.speed)
                 Meter(label: "Svenska", value: model.swedishAccuracy)
                     .help(model.swedishErrorText)
                 Spacer()
@@ -149,6 +153,7 @@ struct ModelSourceNote: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text("Felsiffrorna är KBLab:s mätningar (Pianissimo: Klangs) på det svenska testet FLEURS. Riktigt ljud med brus eller dialekt ger fler fel för alla modeller, men ordningen mellan dem brukar hålla.")
+            Text("Tiderna är uppmätta på en Mac med M4-chip och gäller transkribering och talarigenkänning. Äldre datorer är långsammare. Första gången tar det längre, eftersom modellen förbereds.")
             Link("Källa: KBLab, Kungliga biblioteket", destination: URL(string: "https://kb-labb.github.io/posts/2025-03-07-welcome-KB-Whisper/")!)
         }
         .font(.app(.small))
