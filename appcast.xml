@@ -6,6 +6,21 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.9.25</title>
+      <pubDate>Sat, 07 Nov 2026 16:16:50 GMT</pubDate>
+      <sparkle:version>62</sparkle:version>
+      <sparkle:shortVersionString>0.9.25</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.25</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Ändrat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;När ingen transkribering är vald står det nu &amp;quot;Släpp ljud- eller videofiler i fönstret eller välj filer i sidopanelen. Allt transkriberas lokalt, inget lämnar din Mac.&amp;quot; Ljudvågsikonen ovanför är fyra gånger så stor.&lt;/li&gt;
+&lt;li&gt;Släppytan i kortet Ny transkribering har samma svagt indigo bakgrund som rutan &amp;quot;Vem är intervjuare?&amp;quot;, i både ljust och mörkt läge. När en fil dras över blir den tydligare indigo.&lt;/li&gt;
+&lt;li&gt;Frågan om talarna heter nu &amp;quot;Vem är intervjuare?&amp;quot; i stället för &amp;quot;Vem av talarna är du?&amp;quot;.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.25/Transkribera-v0.9.25.zip" length="14619709" type="application/octet-stream" sparkle:edSignature="YNqugIs8j1JXHd9HU1vXrNRfpOZaEypDGylt9Rh04jxImNDazwt5UTFJ4LVjLW97bIMgQCwpI66vL6672MUuDg==" />
+    </item>
+    <item>
       <title>Version 0.9.24</title>
       <pubDate>Sat, 07 Nov 2026 15:51:54 GMT</pubDate>
       <sparkle:version>61</sparkle:version>
@@ -449,19 +464,6 @@
 &lt;li&gt;Det står nu &amp;quot;Redigerar anonymiserad text&amp;quot; (eller &amp;quot;Redigerar originaltexten&amp;quot;) i stället för &amp;quot;Rättar …&amp;quot;.&lt;/li&gt;
 &lt;/ul&gt;</description>
       <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.7.12/Transkribera-v0.7.12.zip" length="14295791" type="application/octet-stream" sparkle:edSignature="nT6dTGSY+6NqQrE9O/gv3XrhVAkQUm5EjC9POl1D0iy+/1RfL2mJRjXb5iK+MBlB0h6WZLCVT1w73qp28MMhCQ==" />
-    </item>
-    <item>
-      <title>Version 0.7.11</title>
-      <pubDate>Mon, 02 Nov 2026 12:47:39 GMT</pubDate>
-      <sparkle:version>32</sparkle:version>
-      <sparkle:shortVersionString>0.7.11</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.7.11</sparkle:fullReleaseNotesLink>
-      <description>&lt;h3&gt;Ändrat&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;När titelkortet är hopfällt ligger ljud och video längst till vänster, med titeln, Sök i texten och Redigera efter. Med mellanstor och stor bild ligger spelkontrollerna längst ned under knapparna.&lt;/li&gt;
-&lt;/ul&gt;</description>
-      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.7.11/Transkribera-v0.7.11.zip" length="14285809" type="application/octet-stream" sparkle:edSignature="4RUvdqU7PN7cWNIhmsvgZMHKjH0aTc3W6moikaGzjNULHO+RWdt6m+UeJa3Z89hoihHmFGEP+GJYKpoY6xn+Dw==" />
     </item>
   </channel>
 </rss>
