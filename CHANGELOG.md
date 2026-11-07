@@ -6,6 +6,10 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+### Ändrat
+- Helskärm i bildstorleksmenyn är ersatt av Visa i eget fönster. Videon öppnas i ett vanligt fönster som du kan flytta och ändra storlek på genom att dra i hörnet. Fönstret kommer ihåg sin storlek och plats till nästa gång, och helskärm går fortfarande att välja med fönstrets gröna knapp.
+- Medan videon visas i eget fönster syns den inte i spelarraden. Där står i stället Tillbaka hit. Klicka på den, välj Tillbaka till spelarraden i menyn eller stäng fönstret, så ligger videon i spelarraden igen.
+
 ## [0.9.15] – 2026-11-06
 
 ### Ändrat

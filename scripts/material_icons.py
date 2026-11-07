@@ -51,6 +51,8 @@ ICONS = {
     "more": "more_horiz",
     "movie": "movie",
     "openInFull": "open_in_full",
+    "openInNew": "open_in_new",
+    "closeFullscreen": "close_fullscreen",
     "pause": "pause",
     "personQuestion": "contact_support",
     "play": "play_arrow",

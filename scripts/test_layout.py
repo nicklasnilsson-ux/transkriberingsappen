@@ -248,18 +248,31 @@ class EditModeTests(unittest.TestCase):
         self.assertIn("minWidth: Self.sliderMinWidth, idealWidth: Self.sliderMinWidth, maxWidth: .infinity", bar_src)
         video = bar_src[bar_src.index("private var videoWithControls"):][:400]
         self.assertLess(video.index("miniPlayer"), video.index("sizeMenu"))
-        # Helskärm ligger i samma lilla meny som bildstorlekarna (Nicklas 2026-11-04).
-        menu = bar_src[bar_src.index("private var sizeMenu"):][:900]
-        self.assertIn("VideoFullscreen.present(player: player.player)", menu)
+        # Eget fönster ligger i samma lilla meny som bildstorlekarna och ersätter Helskärm (Nicklas 2026-11-07).
+        menu = bar_src[bar_src.index("private var sizeMenu"):][:1100]
         self.assertIn("Picker(\"Bildstorlek\"", menu)
-        full = (VIEWS / "Player/VideoFullscreen.swift").read_text(encoding="utf-8")
-        self.assertIn("toggleFullScreen", full)
-        self.assertIn("didExitFullScreenNotification", full, "Esc lämnar helskärmen och stänger fönstret")
-        # AVKits egen knapp lämnade fönstret kvar (Nicklas 2026-11-04): egen knapp som lämnar helskärmen och stänger fönstret.
-        self.assertIn("showsFullScreenToggleButton = false", full)
-        self.assertIn("Tillbaka till appen", full)
-        self.assertIn("window.toggleFullScreen(nil)", full[full.index("class CloseTarget"):])
-        self.assertIn("window.close()", full[full.index("class CloseTarget"):], "Knappen stänger videofönstret")
+        self.assertIn("Visa i eget fönster", menu)
+        self.assertIn("videoWindow.open(player: player.player", menu)
+        self.assertIn("Tillbaka till spelarraden", menu, "Menyn lägger tillbaka videon när den visas i eget fönster")
+        self.assertNotIn("Helskärm", menu, "Helskärm är ersatt av eget fönster")
+        self.assertFalse((VIEWS / "Player/VideoFullscreen.swift").exists())
+        # Videon spelas aldrig på två ställen: i eget fönster står en platshållare i spelarraden.
+        mini = bar_src[bar_src.index("private var miniPlayer"):][:700]
+        self.assertIn("if inOwnWindow", mini)
+        self.assertLess(mini.index("backHerePlaceholder"), mini.index("PlayerView("),
+                        "PlayerView visas bara när videon inte är i eget fönster")
+        holder = bar_src[bar_src.index("private var backHerePlaceholder"):][:500]
+        self.assertIn("videoWindow.close()", holder)
+        self.assertIn("Tillbaka hit", holder)
+        win = (VIEWS / "Player/VideoWindow.swift").read_text(encoding="utf-8")
+        self.assertIn(".resizable", win, "Fönstret går att dra i hörnet")
+        self.assertIn("setFrameAutosaveName", win, "Storlek och plats sparas")
+        self.assertIn("willCloseNotification", win, "Stängt fönster lägger tillbaka videon")
+        self.assertNotIn("toggleFullScreen", win, "Fönstret öppnas som vanligt fönster, inte i helskärm")
+        # Fönstret hör till filen: det stängs när filen byts eller vyn försvinner.
+        detail = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
+        gone = detail[detail.index(".onDisappear {", detail.index("private struct DetailLifecycle")):][:300]
+        self.assertIn("VideoWindow.shared.closeIfShowing(player.player)", gone)
 
     def test_edit_all_and_edit_one_both_work(self):
         # Nicklas 2026-11-04: Redigera i titelbaren öppnar alla stycken, knappen vid ett stycke öppnar bara det.
