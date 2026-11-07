@@ -43,7 +43,7 @@ struct Icon: View {
     }
 
     var body: some View {
-        Image(icon: icon)
+        icon.crispImage(size: size)
             .resizable()
             .scaledToFit()
             .frame(width: size, height: size)

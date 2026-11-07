@@ -5,8 +5,9 @@ varianterna för Öka kontrast minst 7:1. Texten på den neutrala (svarta) knapp
 kontrast mot knappen. Linjerna ska synas mot bakgrunden. Varje färg som koden hämtar med
 `Color("Namn")` ska finnas som färguppsättning med alla fyra varianter. Dessutom får `.orange`
 inte användas på text (systemets orange ger 2,2:1 på vitt). Valt alternativ i en lista ska ha
-en accentkant med minst 3:1 mot plattan och bakgrunden (check_selection). Släppytan i sidopanelen ska synas
-som en egen yta mot kortet den ligger i, både i vila och när en fil dras över (check_drop_zone).
+en accentkant med minst 3:1 mot plattan och bakgrunden (check_selection). Släppytan i sidopanelen ska i vila ha
+samma färg som notisrutan "Vem är intervjuare?" (NoticeBackground) och ändå synas mot kortet den
+ligger i; när en fil dras över ska den skilja sig från vila (check_drop_zone, check_notice_code).
 Kör: python3 scripts/check_colors.py"""
 import json
 import re
@@ -17,7 +18,7 @@ ROOT = Path(__file__).resolve().parent.parent
 ASSETS = ROOT / "Transkribera" / "Resources" / "Assets.xcassets"
 LIGHT_BG, DARK_BG = (1.0, 1.0, 1.0), (0x1C / 255, 0x1C / 255, 0x21 / 255)
 TEXT = ["AccentColor", "WarningColor", "SuccessColor", "TextPrimary", "TextSecondary", "TextTertiary"]
-BACKGROUNDS = ["AppBackground", "SidebarBackground", "SurfaceBackground", "ChipBackground"]
+BACKGROUNDS = ["AppBackground", "SidebarBackground", "SurfaceBackground", "ChipBackground", "NoticeBackground"]
 THEME = ROOT / "Transkribera" / "Views" / "Theme.swift"
 
 
@@ -26,6 +27,20 @@ def luminance(rgb):
         return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
     r, g, b = (lin(c) for c in rgb)
     return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+def delta_e(a, b):
+    """Färgskillnad i CIELAB (CIE76). Kring 2,3 är den minsta skillnad ett öga ser."""
+    def lab(rgb):
+        def lin(c):
+            return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+        r, g, b = (lin(c) for c in rgb)
+        x = (0.4124 * r + 0.3576 * g + 0.1805 * b) / 0.95047
+        y = 0.2126 * r + 0.7152 * g + 0.0722 * b
+        z = (0.0193 * r + 0.1192 * g + 0.9505 * b) / 1.08883
+        f = lambda t: t ** (1 / 3) if t > 0.008856 else 7.787 * t + 16 / 116
+        return 116 * f(y) - 16, 500 * (f(x) - f(y)), 200 * (f(y) - f(z))
+    return sum((p - q) ** 2 for p, q in zip(lab(a), lab(b))) ** 0.5
 
 
 def contrast(a, b):
@@ -93,15 +108,18 @@ def check_theme_names():
 
 
 SIDEBAR = ROOT / "Transkribera" / "Views" / "Sidebar" / "SidebarView.swift"
-# Släppytan (Nicklas 2026-11-06): egen bakgrund mot kortet (ChipBackground), och dra-över-läget ska
-# skilja sig från vila. 1,10:1 är den svagaste skillnad vi godtar mellan två ytor.
-DROP_REST, DROP_TARGET, DROP_CARD = "DropZoneBackground", "DropZoneTargetBackground", "ChipBackground"
+# Släppytan (Nicklas 2026-11-06, ändrat 2026-11-07): i vila samma färg som notisrutan i transkriberingen
+# (NoticeBackground, svag indigo), och dra-över-läget ska skilja sig från vila. 1,10:1 är den svagaste
+# ljushetsskillnad vi godtar mellan två ytor. Notisfärgen är lika ljus som kortet (ChipBackground) och
+# skiljer sig bara i ton, så mot kortet mäts färgskillnad (CIELAB) i stället: minst NOTICE_VS_CARD.
+DROP_REST, DROP_TARGET, DROP_CARD = "NoticeBackground", "DropZoneTargetBackground", "ChipBackground"
 SURFACE_STEP = 1.10
+NOTICE_VS_CARD = 2.5
 # Det som står på släppytan: text ska klara textkravet, ikonerna 3:1 (WCAG för grafik).
 DROP_TEXT = {DROP_REST: ["TextPrimary"], DROP_TARGET: ["TextPrimary"]}
 DROP_ICON = {DROP_REST: ["TextSecondary"], DROP_TARGET: ["AccentColor"]}
 # Färger som får användas i dropArea; en ny färg där måste först läggas in i kontrollen ovan.
-DROP_ALLOWED = {"Color.textPrimary", "Color.textSecondary", "Color.accentColor", "Color.dropZone", "Color.dropZoneTarget"}
+DROP_ALLOWED = {"Color.textPrimary", "Color.textSecondary", "Color.accentColor", "Color.notice", "Color.dropZoneTarget"}
 
 
 def check_drop_zone(colors=None):
@@ -122,6 +140,10 @@ def check_drop_zone(colors=None):
                 if what == "dra-över mot kortet":
                     if colors[key(a)] == colors[key(b)]:
                         errors.append(f"{what}: samma färg ({label})")
+                elif what == "släppytan mot kortet":
+                    diff = delta_e(colors[key(a)], colors[key(b)])
+                    if diff < NOTICE_VS_CARD:
+                        errors.append(f"{what}: {label} ger färgskillnad {diff:.1f}, kravet är {NOTICE_VS_CARD}")
                 elif ratio < SURFACE_STEP:
                     errors.append(f"{what}: {label} ger {ratio:.2f}:1, kravet är {SURFACE_STEP}:1")
             need = 7.0 if high else 4.5
@@ -152,12 +174,40 @@ def check_drop_area_code():
     if body is None:
         return ["hittar inte dropArea i SidebarView.swift"]
     errors = []
-    for needed in ("Color.dropZone ", "Color.dropZoneTarget"):
+    for needed in ("Color.notice", "Color.dropZoneTarget"):
         if needed.strip() not in body:
             errors.append(f"dropArea använder inte {needed.strip()}")
     used = set(re.findall(r"Color\.[a-zA-Z]+", body))
     for extra in sorted(used - DROP_ALLOWED):
         errors.append(f"dropArea använder {extra}, som inte kontrolleras mot släppytan")
+    return errors
+
+
+DETAIL = ROOT / "Transkribera" / "Views" / "Detail" / "TranscriptDetailView.swift"
+
+
+def notice_card_source(text=None):
+    text = text if text is not None else DETAIL.read_text(encoding="utf-8")
+    start = text.find("private var noticeCard: some View")
+    if start < 0:
+        return None
+    end = text.find("\n    private ", start + 1)
+    return text[start:end if end > 0 else len(text)]
+
+
+def check_notice_code(detail_text=None):
+    """Släppytan i vila och notisrutan ska ha samma färg (Nicklas 2026-11-07): båda använder Color.notice."""
+    body = notice_card_source(detail_text)
+    if body is None:
+        return ["hittar inte noticeCard i TranscriptDetailView.swift"]
+    errors = []
+    if ".background(Color.notice" not in body:
+        errors.append("noticeCard använder inte Color.notice som bakgrund")
+    if re.search(r"\.background\(Color\.(?!notice\b)", body):
+        errors.append("noticeCard har en annan bakgrund än Color.notice")
+    drop = drop_area_source() or ""
+    if not re.search(r"isDropTargeted \? Color\.dropZoneTarget : Color\.notice\b", drop):
+        errors.append("dropArea ska använda Color.notice i vila och Color.dropZoneTarget vid dra-över")
     return errors
 
 
@@ -236,7 +286,7 @@ def check_selection_code():
 
 
 def main():
-    errors = check_colorsets() + check_theme_names() + check_orange() + check_drop_zone() + check_drop_area_code()\
+    errors = check_colorsets() + check_theme_names() + check_orange() + check_drop_zone() + check_drop_area_code() + check_notice_code()\
         + check_selection() + check_selection_code()
     if not list(ASSETS.glob("*.colorset")):
         errors.append("Hittar inga färguppsättningar")

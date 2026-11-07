@@ -808,7 +808,7 @@ struct TranscriptDetailView: View {
             }
             .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.accentColor.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .background(Color.notice, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
 
@@ -1066,7 +1066,7 @@ struct TranscriptDetailView: View {
         if !rolesDismissed, !isEditing, SpeakerRoles.needsRoles(speakers) {
             HStack(spacing: 8) {
                 Image(icon: .personQuestion)
-                Text("Vem av talarna är du?")
+                Text("Vem är intervjuare?")
                 ForEach(speakers, id: \.self) { speaker in
                     HStack(spacing: 2) {
                         Circle().fill(SpeakerPalette.color(for: speaker)).frame(width: 8, height: 8)

@@ -3,7 +3,7 @@ import XCTest
 import TranskriberaCore
 @testable import Transkribera
 
-/// Rollvalet ("Vem av talarna är du?") går att ångra: talarna återställs exakt som de var.
+/// Rollvalet ("Vem är intervjuare?") går att ångra: talarna återställs exakt som de var.
 /// Texterna är påhittade.
 @MainActor
 final class RoleChoiceTests: XCTestCase {
