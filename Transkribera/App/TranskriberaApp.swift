@@ -90,13 +90,13 @@ struct TranskriberaApp: App {
                 Button("Normal hastighet") { playbackSpeed = PlaybackSpeed.normal }
                     .keyboardShortcut("0", modifiers: [.command, .option])
                 Divider()
-                Picker("Hastighet", selection: Binding(
-                    get: { PlaybackSpeed.clamped(playbackSpeed) },
-                    set: { playbackSpeed = $0 }
-                )) {
-                    ForEach(PlaybackSpeed.steps, id: \.self) { Text(PlaybackSpeed.menuLabel($0)).tag($0) }
+                // Bockade val utan rubrik (macOS ritar en inline-väljares rubrik ljusgrå).
+                ForEach(PlaybackSpeed.steps, id: \.self) { step in
+                    Toggle(PlaybackSpeed.menuLabel(step), isOn: Binding(
+                        get: { PlaybackSpeed.clamped(playbackSpeed) == step },
+                        set: { if $0 { playbackSpeed = step } }
+                    ))
                 }
-                .pickerStyle(.inline)
             }
         }
 

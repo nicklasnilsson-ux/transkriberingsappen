@@ -320,19 +320,9 @@ struct TranscriptDetailView: View {
     private var versionPicker: some View {
         if let label = transcript.versionShortLabel {
             let older = transcript.isViewingOlderVersion
-            Menu {
-                Picker("Version", selection: Binding(
-                    get: { transcript.id },
-                    set: { switchVersion(to: $0) }
-                )) {
-                    ForEach(transcript.versionInfos.reversed()) { info in
-                        Text(versionMenuTitle(info)).tag(info.id)
-                    }
-                }
-                .pickerStyle(.inline)
-                Divider()
-                Text("De \(VersionHistory.capacity) senaste versionerna sparas. Äldre raderas.")
-            } label: {
+            // AppMenu: förklaringen om hur många versioner som sparas ritas av appen med tillräcklig
+            // kontrast (macOS ritade den ljusgrå, Nicklas 2026-11-07).
+            AppMenuButton(entries: { versionMenuEntries() }) {
                 Text(label)
                     .monospacedDigit()
                     .fontWeight(older ? .semibold : .regular)
@@ -342,12 +332,19 @@ struct TranscriptDetailView: View {
                     .background(Color.accentColor.opacity(older ? 0.15 : 0), in: Capsule())
                     .overlay(Capsule().strokeBorder(Color.accentColor, lineWidth: 1))
             }
-            .menuStyle(.borderlessButton)
-            .menuIndicator(.hidden)
             .fixedSize()
             .disabled(isWorking)
             .help("Byt mellan sparade versioner av texten. Varje version har egna rättningar och talarnamn.")
         }
+    }
+
+    private func versionMenuEntries() -> [AppMenuEntry] {
+        var entries: [AppMenuEntry] = transcript.versionInfos.reversed().map { info -> AppMenuEntry in
+            .choice(versionMenuTitle(info), checked: info.id == transcript.id) { switchVersion(to: info.id) }
+        }
+        entries.append(.separator)
+        entries.append(.note("De \(VersionHistory.capacity) senaste versionerna sparas. Äldre raderas."))
+        return entries
     }
 
     private func versionMenuTitle(_ info: VersionInfo) -> String {
@@ -528,12 +525,15 @@ struct TranscriptDetailView: View {
     private var moreMenu: some View {
         Menu {
             if hasText {
-                Picker("Visning", selection: $layout) {
-                    ForEach(TranscriptLayout.allCases) { layout in
-                        Text(layout.displayName).tag(layout)
+                // Undermeny i stället för en inline-väljare: macOS ritar väljarens rubrik ljusgrå.
+                Menu("Visning") {
+                    ForEach(TranscriptLayout.allCases) { option in
+                        Toggle(option.displayName, isOn: Binding(
+                            get: { layout == option },
+                            set: { if $0 { layout = option } }
+                        ))
                     }
                 }
-                .pickerStyle(.inline)
                 Toggle(isOn: $anonymize) {
                     Label("Anonymisera", systemIcon: anonymize ? .anonymize : .showNames)
                 }
@@ -705,13 +705,12 @@ struct TranscriptDetailView: View {
             Button("Byt namn på \(speaker)…") { beginRename(speaker) }
         }
         Divider()
-        Section("Intervjuare") {
-            ForEach(transcript.speakers, id: \.self) { speaker in
-                Toggle(speaker, isOn: Binding(
-                    get: { SpeakerRoles.isInterviewer(speaker) },
-                    set: { transcript.setInterviewer(speaker, to: $0) }
-                ))
-            }
+        // Utan rubrik (macOS ritar sektionsrubriker ljusgrå); varje rad säger själv vad den gäller.
+        ForEach(transcript.speakers, id: \.self) { speaker in
+            Toggle("\(speaker) är intervjuare", isOn: Binding(
+                get: { SpeakerRoles.isInterviewer(speaker) },
+                set: { transcript.setInterviewer(speaker, to: $0) }
+            ))
         }
         Divider()
         Button("Visa talarturer i Finder (för felsökning)") {
