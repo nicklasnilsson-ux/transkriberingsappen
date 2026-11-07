@@ -6,6 +6,19 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.9.24</title>
+      <pubDate>Sat, 07 Nov 2026 15:51:54 GMT</pubDate>
+      <sparkle:version>61</sparkle:version>
+      <sparkle:shortVersionString>0.9.24</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.24</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Ändrat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Platshållartexten i sökfälten och i fälten för ordlista och undantag syntes knappt, eftersom macOS ritade den ljusgrå. Nu är den mörkare och lätt att läsa, i både ljust och mörkt läge.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.24/Transkribera-v0.9.24.zip" length="14619162" type="application/octet-stream" sparkle:edSignature="GNI5o5J1LivuPRLCgZNT3bKPVzz1K4H2y6khEK+eHejQly0L+uq8Ch7rZK+Wrt+TBIomdxPPUCtrGzXjw/JZBQ==" />
+    </item>
+    <item>
       <title>Version 0.9.23</title>
       <pubDate>Sat, 07 Nov 2026 15:30:31 GMT</pubDate>
       <sparkle:version>60</sparkle:version>
@@ -449,22 +462,6 @@
 &lt;li&gt;När titelkortet är hopfällt ligger ljud och video längst till vänster, med titeln, Sök i texten och Redigera efter. Med mellanstor och stor bild ligger spelkontrollerna längst ned under knapparna.&lt;/li&gt;
 &lt;/ul&gt;</description>
       <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.7.11/Transkribera-v0.7.11.zip" length="14285809" type="application/octet-stream" sparkle:edSignature="4RUvdqU7PN7cWNIhmsvgZMHKjH0aTc3W6moikaGzjNULHO+RWdt6m+UeJa3Z89hoihHmFGEP+GJYKpoY6xn+Dw==" />
-    </item>
-    <item>
-      <title>Version 0.7.10</title>
-      <pubDate>Mon, 02 Nov 2026 11:15:12 GMT</pubDate>
-      <sparkle:version>31</sparkle:version>
-      <sparkle:shortVersionString>0.7.10</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.7.10</sparkle:fullReleaseNotesLink>
-      <description>&lt;h3&gt;Ändrat&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Titelkortet har fått en ny uppställning. Titeln står till vänster och status, datum och längd till höger. Under den ligger Talare, Anonymisera och Stycken/Rader, och till höger Kopiera text och Exportera. Under avdelaren ligger Sök i texten och Redigera.&lt;/li&gt;
-&lt;li&gt;När titelkortet är hopfällt visas titeln med Sök i texten och Redigera till vänster och spelaren till höger. Anonymisera, Talare, Kopiera och Exportera finns bara i det utfällda titelkortet.&lt;/li&gt;
-&lt;li&gt;Anonymisera och Klar är fyllda med accentfärgen när de är på, så att det syns vilket läge du är i. Texten &amp;quot;Rättar anonymiserad text&amp;quot; står direkt efter Klar.&lt;/li&gt;
-&lt;li&gt;Märket med intervjuaren efter titeln är borttaget. Intervjuaren väljs under Talare.&lt;/li&gt;
-&lt;/ul&gt;</description>
-      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.7.10/Transkribera-v0.7.10.zip" length="14278990" type="application/octet-stream" sparkle:edSignature="l2z/YS2ZdQRzN2CdD02mSO+hSTNUHe48hezlghSDgowEKDhIXHMPrBl2uWW6y2bQy5g/0SQz+idwQNq4v+nVAQ==" />
     </item>
   </channel>
 </rss>
