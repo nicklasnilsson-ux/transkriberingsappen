@@ -8,7 +8,9 @@ Fångar det som annars syns först när sidan är ute:
 - länkar till fel repo, t.ex. efter ett namnbyte (jämförs med SUFeedURL i project.yml),
 - bilder utan alt-text, saknat lang="sv",
 - andra filtyper än de som hör till en statisk sida (så att inget annat råkar publiceras),
-- ikon och favicon som inte är exakt appens ikon (byts appikonen ska sidan följa med).
+- ikon och favicon som inte är exakt appens ikon (byts appikonen ska sidan följa med),
+- texter som Nicklas har bestämt ska stå kvar (förbehållet, sidfoten) och klarspråk:
+  förkortningar som t.ex. skrivs ut, inga onödigt långa meningar.
 
 Kör: python3 scripts/check_site.py
 """
@@ -57,13 +59,19 @@ class Collector(HTMLParser):
         super().__init__()
         self.tags: list[tuple[str, dict[str, str | None]]] = []
         self.scripts: list[str] = []
+        self.text: list[str] = []
         self._in_script = False
+        self._in_style = False
 
     def handle_starttag(self, tag, attrs):
         self.tags.append((tag, dict(attrs)))
         if tag == "script":
             self._in_script = True
             self.scripts.append("")
+        if tag == "style":
+            self._in_style = True
+        if tag in BLOCK_TAGS:
+            self.text.append("\n")
 
     def handle_startendtag(self, tag, attrs):
         self.tags.append((tag, dict(attrs)))
@@ -71,10 +79,58 @@ class Collector(HTMLParser):
     def handle_endtag(self, tag):
         if tag == "script":
             self._in_script = False
+        if tag == "style":
+            self._in_style = False
+        if tag in BLOCK_TAGS:
+            self.text.append("\n")
 
     def handle_data(self, data):
         if self._in_script:
             self.scripts[-1] += data
+        elif not self._in_style:
+            self.text.append(data)
+
+
+# Texter som ska finnas kvar på sidan (beslut av Nicklas 2026-11-03).
+REQUIRED_TEXT = [
+    "Tidig version.",
+    "Anonymiseringen hjälper men bör granskas.",
+    "Gjord av Nicklas Nilsson",
+]
+REQUIRED_LINK = "https://www.linkedin.com/in/nicklas-nilsson-b3408296/"
+# Klarspråk: skriv ut förkortningar och använd Språkrådets stavning.
+AVOID = {
+    r"\bt\.\s?ex\.": "skriv ut ”till exempel”",
+    r"\bbl\.\s?a\.": "skriv ut ”bland annat”",
+    r"\bm\.\s?m\.": "skriv ut ”med mera” eller ”och liknande”",
+    r"\bosv\.": "skriv ut ”och så vidare”",
+    r"\bs\.\s?k\.": "skriv ut ”så kallad”",
+    r"\bscroll": "skriv ”skrolla”",
+}
+MAX_WORDS_PER_SENTENCE = 30
+BLOCK_TAGS = {"p", "li", "dt", "dd", "h1", "h2", "h3", "summary", "title", "div", "section"}
+
+
+def check_language(name, c: Collector, html: str) -> list[str]:
+    errors: list[str] = []
+    text = re.sub(r"[ \t]+", " ", "".join(c.text))
+    flat = " ".join(text.split())
+    for phrase in REQUIRED_TEXT:
+        if phrase not in flat:
+            errors.append(f"{name}: texten ”{phrase}” ska finnas kvar")
+    if REQUIRED_LINK not in html:
+        errors.append(f"{name}: länken till LinkedIn i sidfoten ska finnas kvar")
+    metas = [a.get("content") or "" for t, a in c.tags if t == "meta" and a.get("content")
+             and (a.get("name") == "description" or (a.get("property") or "").endswith(("title", "description")))]
+    for block in text.split("\n") + metas:
+        for pattern, hint in AVOID.items():
+            for m in re.finditer(pattern, block, re.IGNORECASE):
+                errors.append(f"{name}: ”{m.group(0)}” – {hint}")
+        for sentence in re.split(r"(?<=[.!?:])\s+", block.strip()):
+            words = len(sentence.split())
+            if words > MAX_WORDS_PER_SENTENCE:
+                errors.append(f"{name}: meningen har {words} ord (högst {MAX_WORDS_PER_SENTENCE}), dela upp den: ”{sentence[:70]}…”")
+    return errors
 
 
 def check_page(page: Path, slug: str) -> list[str]:
@@ -87,6 +143,8 @@ def check_page(page: Path, slug: str) -> list[str]:
     html_tags = [a for t, a in c.tags if t == "html"]
     if not html_tags or html_tags[0].get("lang") != "sv":
         errors.append(f"{name}: <html> ska ha lang=\"sv\"")
+
+    errors.extend(check_language(name, c, html))
 
     ids = {a["id"] for _, a in c.tags if a.get("id")}
 
