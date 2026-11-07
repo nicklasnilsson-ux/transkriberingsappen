@@ -66,3 +66,22 @@ class DropZoneTests(unittest.TestCase):
         key = (check_colors.DROP_TARGET, "dark", False)
         colors[key] = colors[(check_colors.DROP_REST, "dark", False)]
         self.assertTrue(any("dra-över mot vila" in e for e in check_colors.check_drop_zone(colors)))
+
+
+class SelectionTests(unittest.TestCase):
+    """Valt alternativ: accentkant med minst 3:1 mot plattan och bakgrunden (Nicklas 2026-11-07)."""
+
+    def test_selection_border_contrast(self):
+        self.assertEqual(check_colors.check_selection(), [])
+
+    def test_selection_code(self):
+        self.assertEqual(check_colors.check_selection_code(), [])
+
+    def test_stronger_plate_would_fail(self):
+        # Plattan i 0.9.19 (0,15) ger 2,97:1 mot kanten på mörkast tänkbara ljusa popover-grå (0,24).
+        self.assertTrue(check_colors.check_selection(fill=0.15))
+
+    def test_plate_only_pattern(self):
+        old = "model == selection ? Color.accentColor.opacity(0.15) : .clear,"
+        self.assertTrue(check_colors.PLATE_ONLY.search(old))
+        self.assertFalse(check_colors.PLATE_ONLY.search(".selectionHighlight(model == selection)"))

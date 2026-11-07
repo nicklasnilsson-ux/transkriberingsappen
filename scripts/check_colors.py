@@ -4,7 +4,8 @@ Textfärgerna (TEXT) ska ha minst 4,5:1 mot varje bakgrund (BACKGROUNDS) i samma
 varianterna för Öka kontrast minst 7:1. Texten på den neutrala (svarta) knappen ska ha samma
 kontrast mot knappen. Linjerna ska synas mot bakgrunden. Varje färg som koden hämtar med
 `Color("Namn")` ska finnas som färguppsättning med alla fyra varianter. Dessutom får `.orange`
-inte användas på text (systemets orange ger 2,2:1 på vitt). Släppytan i sidopanelen ska synas
+inte användas på text (systemets orange ger 2,2:1 på vitt). Valt alternativ i en lista ska ha
+en accentkant med minst 3:1 mot plattan och bakgrunden (check_selection). Släppytan i sidopanelen ska synas
 som en egen yta mot kortet den ligger i, både i vila och när en fil dras över (check_drop_zone).
 Kör: python3 scripts/check_colors.py"""
 import json
@@ -171,8 +172,72 @@ def check_orange():
             if ORANGE.search(line)]
 
 
+# Valt alternativ i en lista (Nicklas 2026-11-07): accentkant utöver den ljusa plattan. Kanten ska ha
+# minst 3:1 (WCAG 1.4.11) mot plattan innanför och mot bakgrunden utanför. Popovern har systemets
+# bakgrund, som inte finns i Assets; därför ett spann av gråtoner som täcker den (ljust 0,90–1,0,
+# mörkt 0,12–0,24 ≈ #1F1F1F–#3D3D3D) utöver appens egna bakgrunder.
+SELECTION_NEED = 3.0
+POPOVER_GRAYS = {"light": (0.90, 0.95, 1.0), "dark": (0.12, 0.18, 0.24)}
+# En markerad rad med bara accentplatta (`== selection ? Color.accentColor.opacity(...)`) är felet
+# som rättades; använd `.selectionHighlight(...)`.
+PLATE_ONLY = re.compile(r"(==\s*selection|isSelected)\s*\?\s*Color\.accentColor\.opacity")
+SELECTION_USERS = [ROOT / "Transkribera" / "Views" / "Settings" / "ModelPicker.swift"]
+
+
+def selection_style():
+    """(fyllnadens opacitet, kantens bredd) ur SelectionHighlight i Theme.swift."""
+    src = THEME.read_text(encoding="utf-8")
+    fill = re.search(r"static let fillOpacity = ([0-9.]+)", src)
+    width = re.search(r"static let borderWidth: CGFloat = ([0-9.]+)", src)
+    if not fill or not width:
+        return None
+    return float(fill.group(1)), float(width.group(1))
+
+
+def check_selection(colors=None, fill=None):
+    colors = colors if colors is not None else load_all()
+    style = selection_style()
+    if style is None:
+        return ["SelectionHighlight (fillOpacity/borderWidth) saknas i Theme.swift"]
+    fill = style[0] if fill is None else fill
+    errors = []
+    if style[1] < 1.0:
+        errors.append(f"Valt alternativ: kanten är {style[1]} pt, minst 1 pt")
+    for mode in ("light", "dark"):
+        for high in (False, True):
+            label = f"{mode}{' hög kontrast' if high else ''}"
+            accent = colors.get(("AccentColor", mode, high))
+            if accent is None:
+                errors.append(f"AccentColor saknas ({label})")
+                continue
+            bgs = [(bg, colors[(bg, mode, high)]) for bg in BACKGROUNDS if (bg, mode, high) in colors]
+            bgs += [(f"popover grå {g}", (g, g, g)) for g in POPOVER_GRAYS[mode]]
+            for name, bg in bgs:
+                plate = tuple(fill * a + (1 - fill) * b for a, b in zip(accent, bg))
+                for what, other in (("bakgrunden", bg), ("plattan", plate)):
+                    ratio = contrast(accent, other)
+                    if ratio < SELECTION_NEED:
+                        errors.append(f"Valt alternativ: kanten mot {what} på {name} ({label}) ger "
+                                      f"{ratio:.2f}:1, kravet är {SELECTION_NEED}:1")
+    return errors
+
+
+def check_selection_code():
+    errors = []
+    for p in (ROOT / "Transkribera").rglob("*.swift"):
+        for n, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):
+            if PLATE_ONLY.search(line):
+                errors.append(f"{p.relative_to(ROOT)}:{n}: markerad rad med bara accentplatta, "
+                              "använd .selectionHighlight(...)")
+    for p in SELECTION_USERS:
+        if ".selectionHighlight(" not in p.read_text(encoding="utf-8"):
+            errors.append(f"{p.relative_to(ROOT)}: valt alternativ saknar .selectionHighlight(...)")
+    return errors
+
+
 def main():
-    errors = check_colorsets() + check_theme_names() + check_orange() + check_drop_zone() + check_drop_area_code()
+    errors = check_colorsets() + check_theme_names() + check_orange() + check_drop_zone() + check_drop_area_code()\
+        + check_selection() + check_selection_code()
     if not list(ASSETS.glob("*.colorset")):
         errors.append("Hittar inga färguppsättningar")
     for e in errors:

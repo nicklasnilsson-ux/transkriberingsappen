@@ -99,3 +99,29 @@ extension View {
             .truncationMode(.tail)
     }
 }
+
+/// Valt alternativ i en lista (modellväljaren): svag accentplatta och en accentkant. Plattan ensam
+/// räckte inte (Nicklas 2026-11-07): ljus indigo mot ljus popover är långt under 3:1. Kanten ska ha
+/// minst 3:1 mot både plattan och bakgrunden utanför (WCAG 1.4.11). scripts/check_colors.py
+/// (check_selection) räknar på värdena här; `SelectionHighlightTests` mäter den ritade kanten.
+struct SelectionHighlight: ViewModifier {
+    static let fillOpacity = 0.12
+    static let borderWidth: CGFloat = 1.5
+    static let cornerRadius: CGFloat = 8
+
+    let isSelected: Bool
+
+    func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous)
+        content
+            .background(shape.fill(Color.accentColor.opacity(isSelected ? Self.fillOpacity : 0)))
+            .overlay(shape.strokeBorder(Color.accentColor, lineWidth: Self.borderWidth).opacity(isSelected ? 1 : 0))
+    }
+}
+
+extension View {
+    /// Markerar valt alternativ med accentplatta och accentkant, se `SelectionHighlight`.
+    func selectionHighlight(_ isSelected: Bool) -> some View {
+        modifier(SelectionHighlight(isSelected: isSelected))
+    }
+}
