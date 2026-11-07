@@ -6,6 +6,19 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.9.20</title>
+      <pubDate>Sat, 07 Nov 2026 14:06:10 GMT</pubDate>
+      <sparkle:version>57</sparkle:version>
+      <sparkle:shortVersionString>0.9.20</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.20</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Ändrat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Inställningarnas flikar, titelbaren och menyerna har nu macOS egna ikoner (SF Symbols). De följer systemets text i storlek, tyngd och linje. Sidopanelen, spelarraden och texten behåller appens egna ikoner.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.20/Transkribera-v0.9.20.zip" length="14595162" type="application/octet-stream" sparkle:edSignature="JNiZWMNC+SqSrtfTeLhCLHuFSudH4jvWjzP4IK6h11mbKju6ALtd11m4vkWK7UEkd+Cj0XbjUP2E4v4N8b0PDQ==" />
+    </item>
+    <item>
       <title>Version 0.9.19</title>
       <pubDate>Sat, 07 Nov 2026 11:55:50 GMT</pubDate>
       <sparkle:version>56</sparkle:version>
@@ -454,19 +467,6 @@
 &lt;li&gt;Tidskoden för stycken och rader visar en play-ikon och en mjuk bakgrund när du pekar på den, så att det syns att den går att klicka på. Träffytan är lika stor i stycken och rader.&lt;/li&gt;
 &lt;/ul&gt;</description>
       <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.7.7/Transkribera-v0.7.7.zip" length="14260577" type="application/octet-stream" sparkle:edSignature="9R6lrEaZdrDSvhKiSYI5bYjFaeqniSnSrVuQH8ifvX+RoWL1VhILgM9NMbvq10fCwVNCuCZAb1KSXKyfOl2iAg==" />
-    </item>
-    <item>
-      <title>Version 0.7.6</title>
-      <pubDate>Sun, 01 Nov 2026 22:44:17 GMT</pubDate>
-      <sparkle:version>27</sparkle:version>
-      <sparkle:shortVersionString>0.7.6</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.7.6</sparkle:fullReleaseNotesLink>
-      <description>&lt;h3&gt;Rättat&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Inställningsraden och dess popover heter nu &amp;quot;Ny transkribering&amp;quot;, som i sidopanelen och menyn, i stället för &amp;quot;Nästa transkribering&amp;quot;.&lt;/li&gt;
-&lt;/ul&gt;</description>
-      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.7.6/Transkribera-v0.7.6.zip" length="14222071" type="application/octet-stream" sparkle:edSignature="+oZiH2yhywuwVErlE13VIAk9xnFjfCmZrgLUlXgzYexR7P3rLHeuXriUNPhC5GsdAQJzQG8/FPzqsfRJXS/7Bg==" />
     </item>
   </channel>
 </rss>
