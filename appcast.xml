@@ -6,6 +6,19 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.9.23</title>
+      <pubDate>Sat, 07 Nov 2026 15:30:31 GMT</pubDate>
+      <sparkle:version>60</sparkle:version>
+      <sparkle:shortVersionString>0.9.23</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.23</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Nytt&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Testlabbet (⌥⇧⌘T) har en ny lista, Tidsmätning. Den kör samma inspelning med Pianissimo, KB Large ordagrann och Large v3 Turbo, var och en med och utan talare, och mäter varje steg för sig: ljudet, transkriberingen, talarna och anonymiseringen. Sammanfattningen visar också tiden per timme ljud och vilken Mac den kördes på. Tiderna ska användas till exempeltider i modellväljaren.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.23/Transkribera-v0.9.23.zip" length="14608401" type="application/octet-stream" sparkle:edSignature="bfwobafKTToX8dzaNksEj6b0xL83TR+ftgZbP0sxtREIVuvYVjxA2pOe1GtW6rt9ZkfJtqtCAefvrX5klHLKAg==" />
+    </item>
+    <item>
       <title>Version 0.9.22</title>
       <pubDate>Sat, 07 Nov 2026 14:50:43 GMT</pubDate>
       <sparkle:version>59</sparkle:version>
@@ -452,19 +465,6 @@
 &lt;li&gt;Märket med intervjuaren efter titeln är borttaget. Intervjuaren väljs under Talare.&lt;/li&gt;
 &lt;/ul&gt;</description>
       <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.7.10/Transkribera-v0.7.10.zip" length="14278990" type="application/octet-stream" sparkle:edSignature="l2z/YS2ZdQRzN2CdD02mSO+hSTNUHe48hezlghSDgowEKDhIXHMPrBl2uWW6y2bQy5g/0SQz+idwQNq4v+nVAQ==" />
-    </item>
-    <item>
-      <title>Version 0.7.9</title>
-      <pubDate>Mon, 02 Nov 2026 10:37:18 GMT</pubDate>
-      <sparkle:version>30</sparkle:version>
-      <sparkle:shortVersionString>0.7.9</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.7.9</sparkle:fullReleaseNotesLink>
-      <description>&lt;h3&gt;Rättat&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Texten hoppar inte längre när du växlar mellan visning och redigering. Fältet har samma radavstånd som texten du läser, både i stycken och rader. Ett helt stycke redigeras i ett enda fält med samma radbrytning som när du läser, och ändringen sparas på rätt ställe i transkriberingen. Stycket du läser står kvar på samma plats i fönstret när du växlar läge.&lt;/li&gt;
-&lt;/ul&gt;</description>
-      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.7.9/Transkribera-v0.7.9.zip" length="14281867" type="application/octet-stream" sparkle:edSignature="ERLOMdh6fi6DaU+k1ZVqKw6S61lE8ij7b+CXHdCBNNHZ168skPqgoXTec66j3zDNRsG3DbNgoECP6HYVplLMBA==" />
     </item>
   </channel>
 </rss>
