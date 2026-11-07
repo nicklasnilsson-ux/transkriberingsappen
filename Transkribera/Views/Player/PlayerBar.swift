@@ -1,9 +1,9 @@
 import SwiftUI
 import TranskriberaCore
 
-/// Spelarraden, fast under titelbaren: bild (video) med bildstorlek, spela, tid, reglage, längd och
-/// Följ uppspelning. Reglaget är det enda som växer och krymper; allt annat har sin egen bredd, så att
-/// ett smalare fönster tar plats från reglaget och inte klipper texterna (se `PlayButtonSizeTests`).
+/// Spelarraden, fast under titelbaren: bild (video) med bildstorlek, spela, tid, reglage, längd,
+/// uppspelningshastighet och Följ uppspelning. Reglaget är det enda som växer och krymper; allt annat
+/// har sin egen bredd, så att ett smalare fönster tar plats från reglaget och inte klipper texterna (se `PlayButtonSizeTests`).
 struct PlayerBar: View {
     let player: PlayerController
     let duration: Double
@@ -12,6 +12,10 @@ struct PlayerBar: View {
     @Binding var miniSizeRaw: String
     /// Rubriken på videofönstret (filens namn).
     var title = "Video"
+
+    /// Sparad hastighet, gemensam för alla filer (Nicklas 2026-11-07). Ändras även från menyn
+    /// Uppspelning; `DetailLifecycle` för över den till spelaren.
+    @AppStorage(SettingsKey.playbackSpeed) private var playbackSpeed = PlaybackSpeed.normal
 
     /// Reglaget blir aldrig smalare än så här, även i ett smalt fönster.
     static let sliderMinWidth: CGFloat = 80
@@ -22,6 +26,8 @@ struct PlayerBar: View {
         ViewThatFits(in: .horizontal) {
             row(followTitle: "Följ uppspelning")
             row(followTitle: "Följ")
+            // Smalast (video i ca 600 pt): tätare avstånd och hastighetsknappen utan pil.
+            row(followTitle: "Följ", spacing: 8, compactSpeed: true)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 10)
@@ -30,8 +36,8 @@ struct PlayerBar: View {
         .overlay(alignment: .bottom) { Rectangle().fill(Color.line).frame(height: 1) }
     }
 
-    private func row(followTitle: String) -> some View {
-        HStack(spacing: 14) {
+    private func row(followTitle: String, spacing: CGFloat = 14, compactSpeed: Bool = false) -> some View {
+        HStack(spacing: spacing) {
             if isVideo { videoWithControls }
             playPauseAndTime
             positionSlider
@@ -39,6 +45,7 @@ struct PlayerBar: View {
                 .font(.app(.small, design: .monospaced))
                 .foregroundStyle(Color.textSecondary)
                 .fixedSize()
+            PlaybackSpeedButton(speed: $playbackSpeed, compact: compactSpeed)
             followToggle(followTitle)
         }
     }
