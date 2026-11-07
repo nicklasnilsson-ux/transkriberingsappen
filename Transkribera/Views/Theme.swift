@@ -62,12 +62,64 @@ enum AppTextSize: CGFloat, CaseIterable {
     case large = 16
 }
 
-extension Text {
-    /// Platshållartext i textfält. macOS ritar annars platshållaren i en ljusgrå som inte når 4,5:1
-    /// (Nicklas 2026-11-07). Alla TextField i appen tar sin platshållare härifrån
-    /// (kontrolleras av scripts/test_menu_contrast.py och PlaceholderContrastTests).
-    static func prompt(_ text: String) -> Text {
-        Text(text).foregroundStyle(Color.textSecondary)
+/// Platshållartext i textfält. macOS ritar platshållaren ljusgrå (2,6:1 i sökfältet, uppmätt i CI
+/// 2026-11-07) och struntar i färgen på `prompt: Text(…)`. Den här letar upp fältet med platshållaren
+/// i fönstret och ger den TextSecondary. Alla TextField i appen använder den
+/// (scripts/test_menu_contrast.py); `PlaceholderContrastTests` mäter den ritade kontrasten.
+struct ReadablePrompt: NSViewRepresentable {
+    let prompt: String
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView(frame: .zero)
+        view.setAccessibilityElement(false)
+        return view
+    }
+
+    func updateNSView(_ view: NSView, context: Context) {
+        let prompt = prompt
+        // Fältet finns i fönstret först efter layout; körs igen vid varje uppdatering.
+        DispatchQueue.main.async { [weak view] in
+            guard let root = view?.window?.contentView else { return }
+            Self.apply(prompt, in: root)
+        }
+    }
+
+    static func apply(_ prompt: String, in root: NSView) {
+        guard let color = NSColor(named: "TextSecondary") else { return }
+        var stack = [root]
+        while let view = stack.popLast() {
+            stack.append(contentsOf: view.subviews)
+            if let field = view as? NSTextField {
+                guard field.isEditable,
+                      field.placeholderString == prompt || field.placeholderAttributedString?.string == prompt,
+                      !hasColor(field.placeholderAttributedString, color)
+                else { continue }
+                let style = NSMutableParagraphStyle()
+                style.alignment = field.alignment
+                var attributes: [NSAttributedString.Key: Any] = [.foregroundColor: color, .paragraphStyle: style]
+                if let font = field.font { attributes[.font] = font }
+                field.placeholderAttributedString = NSAttributedString(string: prompt, attributes: attributes)
+            } else if let text = view as? NSTextView, text.isEditable,
+                      text.responds(to: NSSelectorFromString("setPlaceholderAttributedString:")),
+                      let current = text.value(forKey: "placeholderAttributedString") as? NSAttributedString,
+                      current.string == prompt, !hasColor(current, color) {
+                var attributes: [NSAttributedString.Key: Any] = [.foregroundColor: color]
+                if let font = text.font { attributes[.font] = font }
+                text.setValue(NSAttributedString(string: prompt, attributes: attributes), forKey: "placeholderAttributedString")
+            }
+        }
+    }
+
+    private static func hasColor(_ text: NSAttributedString?, _ color: NSColor) -> Bool {
+        guard let text, text.length > 0 else { return false }
+        return text.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? NSColor == color
+    }
+}
+
+extension View {
+    /// Ger textfältets platshållare (samma text som `prompt:`) läsbar färg, se `ReadablePrompt`.
+    func readablePrompt(_ prompt: String) -> some View {
+        background(ReadablePrompt(prompt: prompt).frame(width: 0, height: 0).accessibilityHidden(true))
     }
 }
 

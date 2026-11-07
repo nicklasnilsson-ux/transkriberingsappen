@@ -83,27 +83,30 @@ class MenuContrastTests(unittest.TestCase):
 
 
     def test_text_fields_have_readable_placeholders(self):
-        """macOS ritar platshållare ljusgrått. Varje TextField tar sin platshållare från
-        `.prompt(…)` (TextSecondary). Undantag: fälten i systemets .alert, som macOS ritar själv."""
+        """macOS ritar platshållare ljusgrått (2,6:1) och struntar i färgen på `prompt: Text(…)`.
+        Varje TextField har `prompt: Text("X")` och direkt efter `.readablePrompt("X")` med samma text.
+        Undantag: namnfälten i systemets .alert, som macOS ritar själv."""
         alert_fields = {("TranscriptDetailView.swift", 'TextField("Namn", text: $newSpeakerName)'),
                         ("TranscriptDetailView.swift", 'TextField("Namn", text: $newSpeakerDraft)')}
         found, seen = [], 0
         for path in swift_files():
-            for line in path.read_text(encoding="utf-8").splitlines():
+            lines = path.read_text(encoding="utf-8").splitlines()
+            for i, line in enumerate(lines):
                 if not re.search(r'\bTextField\(\s*"', line):
                     continue
                 seen += 1
                 code = line.strip()
                 if (path.name, code) in alert_fields:
                     continue
-                if "prompt: .prompt(" not in code:
+                prompt = re.search(r'prompt: Text\("([^"]+)"\)', code)
+                after = "\n".join(lines[i + 1:i + 8])
+                if not prompt or f'.readablePrompt("{prompt.group(1)}")' not in after:
                     found.append(f"{path.name}: {code[:80]}")
         self.assertGreaterEqual(seen, 8, "Kontrollen hittar inte textfälten")
-        self.assertEqual(found, [], "Platshållaren blir ljusgrå; ange prompt: .prompt(\"…\")")
+        self.assertEqual(found, [], 'Platshållaren blir ljusgrå; ange prompt: Text("X") och .readablePrompt("X")')
         theme = (APP / "Views/Theme.swift").read_text(encoding="utf-8")
-        self.assertIn("static func prompt(_ text: String) -> Text", theme)
-        self.assertIn("Text(text).foregroundStyle(Color.textSecondary)", theme)
-
+        self.assertIn("struct ReadablePrompt: NSViewRepresentable", theme)
+        self.assertIn('NSColor(named: "TextSecondary")', theme)
 
 if __name__ == "__main__":
     unittest.main()

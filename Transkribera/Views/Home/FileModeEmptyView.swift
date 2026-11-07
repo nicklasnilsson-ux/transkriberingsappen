@@ -44,7 +44,8 @@ struct NextTranscriptionSettingsForm: View {
             if identifySpeakers {
                 SpeakerCountPicker(selection: $speakers)
             }
-            TextField("Ordlista", text: $vocabulary, prompt: .prompt("Namn och fackord, t.ex. TG, Fortnox"))
+            TextField("Ordlista", text: $vocabulary, prompt: Text("Namn och fackord, t.ex. TG, Fortnox"))
+                .readablePrompt("Namn och fackord, t.ex. TG, Fortnox")
                 .help("Ord som förekommer i inspelningen, med komma emellan. Hjälper modellen att stava dem rätt.")
             Divider()
             SettingsLink { Text("Fler inställningar…") }

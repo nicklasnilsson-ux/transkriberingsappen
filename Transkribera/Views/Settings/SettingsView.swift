@@ -72,7 +72,8 @@ private struct TranscriptionSettingsView: View {
             }
 
             Section {
-                TextField("Ordlista", text: $vocabulary, prompt: .prompt("TG, TB, bruttovinst, Fortnox"), axis: .vertical)
+                TextField("Ordlista", text: $vocabulary, prompt: Text("TG, TB, bruttovinst, Fortnox"), axis: .vertical)
+                    .readablePrompt("TG, TB, bruttovinst, Fortnox")
                     .lineLimit(2...4)
             } header: {
                 Text("Ordlista")
@@ -172,9 +173,11 @@ private struct PrivacySettingsView: View {
             .disabled(!anonymize)
 
             Section {
-                TextField("Dölj alltid", text: $alwaysHide, prompt: .prompt("Rasmus, Joj"), axis: .vertical)
+                TextField("Dölj alltid", text: $alwaysHide, prompt: Text("Rasmus, Joj"), axis: .vertical)
+                    .readablePrompt("Rasmus, Joj")
                     .lineLimit(1...3)
-                TextField("Dölj aldrig", text: $neverHide, prompt: .prompt("Euro, Rabatt, Visma"), axis: .vertical)
+                TextField("Dölj aldrig", text: $neverHide, prompt: Text("Euro, Rabatt, Visma"), axis: .vertical)
+                    .readablePrompt("Euro, Rabatt, Visma")
                     .lineLimit(1...3)
             } header: {
                 Text("Egna undantag")
