@@ -1,9 +1,9 @@
 import SwiftUI
 import TranskriberaCore
 
-/// Spelarraden, fast under titelbaren: bild (video) med bildstorlek, spela, tid, reglage, längd och
-/// Följ uppspelning. Reglaget är det enda som växer och krymper; allt annat har sin egen bredd, så att
-/// ett smalare fönster tar plats från reglaget och inte klipper texterna (se `PlayButtonSizeTests`).
+/// Spelarraden, fast under titelbaren: bild (video) med bildstorlek, spela, tid, reglage, längd,
+/// uppspelningshastighet och Följ uppspelning. Reglaget är det enda som växer och krymper; allt annat
+/// har sin egen bredd, så att ett smalare fönster tar plats från reglaget och inte klipper texterna (se `PlayButtonSizeTests`).
 struct PlayerBar: View {
     let player: PlayerController
     let duration: Double
@@ -12,6 +12,10 @@ struct PlayerBar: View {
     @Binding var miniSizeRaw: String
     /// Rubriken på videofönstret (filens namn).
     var title = "Video"
+
+    /// Sparad hastighet, gemensam för alla filer (Nicklas 2026-11-07). Ändras även från menyn
+    /// Uppspelning; `DetailLifecycle` för över den till spelaren.
+    @AppStorage(SettingsKey.playbackSpeed) private var playbackSpeed = PlaybackSpeed.normal
 
     /// Reglaget blir aldrig smalare än så här, även i ett smalt fönster.
     static let sliderMinWidth: CGFloat = 80
@@ -39,6 +43,7 @@ struct PlayerBar: View {
                 .font(.app(.small, design: .monospaced))
                 .foregroundStyle(Color.textSecondary)
                 .fixedSize()
+            PlaybackSpeedButton(speed: $playbackSpeed)
             followToggle(followTitle)
         }
     }

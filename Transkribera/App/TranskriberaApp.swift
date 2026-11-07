@@ -13,6 +13,9 @@ struct TranskriberaApp: App {
     @StateObject private var updater = AppUpdater()
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @AppStorage(SettingsKey.readingTextSize) private var readingSize = ReadingTextSize.standard
+    @AppStorage(SettingsKey.playbackSpeed) private var playbackSpeed = PlaybackSpeed.normal
+    /// Spelaren i detaljvyn som är i fokus, om någon (se `PlayerBar`).
+    @FocusedValue(\.player) private var focusedPlayer
 
     init() {
         SpeakerCountSetting.migrate()
@@ -70,6 +73,30 @@ struct TranskriberaApp: App {
                     .disabled(ReadingTextSize.clamped(readingSize) == ReadingTextSize.steps.first)
                 Button("Normal storlek") { readingSize = ReadingTextSize.standard }
                     .keyboardShortcut("0")
+            }
+            // Uppspelning (Nicklas 2026-11-07). ⌥⌘ så att genvägarna inte krockar med skrivandet
+            // när man rättar text. Kontrolleras av scripts/test_playback_menu.py.
+            CommandMenu("Uppspelning") {
+                Button("Spela/Pausa") { focusedPlayer?.togglePlayPause() }
+                    .keyboardShortcut("p", modifiers: [.command, .option])
+                    .disabled(focusedPlayer == nil)
+                Divider()
+                Button("Snabbare") { playbackSpeed = PlaybackSpeed.faster(than: playbackSpeed) }
+                    .keyboardShortcut(.rightArrow, modifiers: [.command, .option])
+                    .disabled(PlaybackSpeed.clamped(playbackSpeed) == PlaybackSpeed.steps.last)
+                Button("Långsammare") { playbackSpeed = PlaybackSpeed.slower(than: playbackSpeed) }
+                    .keyboardShortcut(.leftArrow, modifiers: [.command, .option])
+                    .disabled(PlaybackSpeed.clamped(playbackSpeed) == PlaybackSpeed.steps.first)
+                Button("Normal hastighet") { playbackSpeed = PlaybackSpeed.normal }
+                    .keyboardShortcut("0", modifiers: [.command, .option])
+                Divider()
+                Picker("Hastighet", selection: Binding(
+                    get: { PlaybackSpeed.clamped(playbackSpeed) },
+                    set: { playbackSpeed = $0 }
+                )) {
+                    ForEach(PlaybackSpeed.steps, id: \.self) { Text(PlaybackSpeed.menuLabel($0)).tag($0) }
+                }
+                .pickerStyle(.inline)
             }
         }
 

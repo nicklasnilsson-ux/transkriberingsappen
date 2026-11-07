@@ -34,6 +34,8 @@ enum SettingsKey {
     /// Fråga innan Transkribera igen (på som standard). Gäller bara när det finns plats för
     /// fler versioner; när den äldsta raderas frågar appen alltid (se `RetranscribeDialog`).
     static let askBeforeRetranscribe = "askBeforeRetranscribe"
+    /// Uppspelningshastighet, ett av `PlaybackSpeed.steps` (1 = normal). Gäller alla filer.
+    static let playbackSpeed = "playbackSpeed"
 }
 
 enum SpeakerCountSetting {
