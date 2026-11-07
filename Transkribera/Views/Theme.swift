@@ -62,6 +62,15 @@ enum AppTextSize: CGFloat, CaseIterable {
     case large = 16
 }
 
+extension Text {
+    /// Platshållartext i textfält. macOS ritar annars platshållaren i en ljusgrå som inte når 4,5:1
+    /// (Nicklas 2026-11-07). Alla TextField i appen tar sin platshållare härifrån
+    /// (kontrolleras av scripts/test_menu_contrast.py och PlaceholderContrastTests).
+    static func prompt(_ text: String) -> Text {
+        Text(text).foregroundStyle(Color.textSecondary)
+    }
+}
+
 extension Font {
     /// En av appens tre textstorlekar.
     static func app(_ size: AppTextSize, weight: Font.Weight = .regular, design: Font.Design = .default) -> Font {

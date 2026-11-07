@@ -209,7 +209,7 @@ struct SidebarView: View {
                 .font(.app(.regular, weight: .semibold))
             HStack(spacing: 6) {
                 Image(icon: .search).foregroundStyle(Color.textSecondary)
-                TextField("Sök på titel", text: $filter)
+                TextField("Sök på titel", text: $filter, prompt: .prompt("Sök på titel"))
                     .textFieldStyle(.plain)
                 if !filter.isEmpty {
                     Button { filter = "" } label: { Image(icon: .cancel) }
