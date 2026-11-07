@@ -1,13 +1,29 @@
-"""Kontroll mot att långa transkriberingar fryser vid scrollning (v0.9.7: "wheel of death", appen
-"svarar inte" på 101 % CPU). Orsak: transkriptionsvyns body läste uppspelningstiden, som tickar 10
-gånger i sekunden, och räknade då om hela texten (sortering, anonymiseringsjämförelse, styckeindelning)
-och ritade om alla synliga stycken. Kontrollerar källkoden, eftersom prestanda inte kan mätas i CI.
+"""Kontroll mot att långa transkriberingar fryser eller hackar vid scrollning.
+
+v0.9.7: "wheel of death" (101 % CPU). Transkriptionsvyns body läste uppspelningstiden, som tickar 10
+gånger i sekunden, och räknade då om hela texten och ritade om alla synliga stycken.
+v0.9.25: segt och hoppigt att skrolla under uppspelning, med och utan "Följ uppspelning". Listan
+(LazyVStack med alla stycken) låg fortfarande i tidsclosuren och byggdes om vid varje tick, det
+spelade stycket ritades om helt vid varje tick, och "Följ uppspelning" drog tillbaka texten medan
+man skrollade. Kontrollerar källkoden, eftersom prestanda inte kan mätas i CI.
 Kör: python3 -m unittest discover -s scripts"""
 import re
 import unittest
 from pathlib import Path
 
 DETAIL = Path(__file__).resolve().parent.parent / "Transkribera" / "Views" / "Detail"
+
+
+def reader_closures(source):
+    """Innehållet i varje `PlaybackTimeReader(...) { ... }`-closure i källkoden."""
+    result = []
+    for match in re.finditer(r"PlaybackTimeReader\(player: [^)]*\) \{", source):
+        depth, i = 1, match.end()
+        while depth:
+            depth += {"{": 1, "}": -1}.get(source[i], 0)
+            i += 1
+        result.append(source[match.end():i - 1])
+    return result
 
 
 class ScrollPerformanceTests(unittest.TestCase):
@@ -34,15 +50,46 @@ class ScrollPerformanceTests(unittest.TestCase):
             self.assertIn(f"extension {row}: Equatable", source)
             call = self.text[self.text.index(f"{row}("):]
             self.assertIn(".equatable()", call[:call.index(".id(")], f"{row} ska ha .equatable()")
-        self.assertIn("currentTime: isActiveParagraph ? currentTime : nil", self.text)
-        self.assertIn("currentTime: segment.persistentModelID == activeID ? currentTime : nil", self.text)
+        # Bara det spelade stycket får spelaren (och läser då själv tiden i texten).
+        self.assertIn("clock: isActiveParagraph ? player : nil", self.text)
+        self.assertIn("clock: segment.persistentModelID == activeID ? player : nil", self.text)
+        for row, source in (("ParagraphRow", self.paragraph), ("SegmentRow", self.segment)):
+            self.assertIn("l.clock === r.clock", source, f"{row} ska jämföra spelaren")
+            self.assertNotIn("let currentTime", source, f"{row} ska inte få tiden: då ritas hela stycket om vid varje tick")
 
-    def test_text_rows_do_not_rebuild_paragraphs_per_tick(self):
-        # Styckeindelningen görs utanför PlaybackTimeReader, inte i tidsclosuren.
-        reader_call = self.text[self.text.index("PlaybackTimeReader(player: player) { currentTime in"):]
-        reader_call = reader_call[:re.search(r"\} else (if |\{)", reader_call).start()]
-        self.assertNotIn("Self.paragraphs(", reader_call)
-        self.assertNotIn("sortedSegments", reader_call)
+    def test_list_is_not_rebuilt_per_tick(self):
+        # Ingen tidsclosure i transkriptionsvyn får bygga listan; den byggs i PlaybackFocusReader,
+        # som bara ändras när nästa segment börjar.
+        for closure in reader_closures(self.text):
+            for forbidden in ("paragraphRows(", "segmentRows(", "ForEach", "LazyVStack", "Self.paragraphs(", "sortedSegments"):
+                self.assertNotIn(forbidden, closure, f"Listan byggs om vid varje tick ({forbidden} i PlaybackTimeReader)")
+        self.assertIn("PlaybackFocusReader(focus: playbackFocus) { activeID in", self.text)
+        self.assertIn("PlaybackFocusTracker(player: player", self.text)
+        # PlaybackFocus skriver bara när segmentet byts (annars ritas listan om ändå).
+        focus = self.text[self.text.index("final class PlaybackFocus"):]
+        self.assertIn("if id != activeID { activeID = id }", focus[:focus.index("\n}\n")])
+
+    def test_only_the_text_reads_time_inside_rows(self):
+        # I raderna läser bara texten tiden, och den jämförs (equatable) så att den ritas om först
+        # när nästa ord markeras.
+        for row, source in (("ParagraphRow", self.paragraph), ("SegmentRow", self.segment)):
+            closures = reader_closures(source)
+            self.assertEqual(len(closures), 1, f"{row} ska läsa tiden på ett ställe")
+            closure = closures[0]
+            self.assertIn("ReadingText(", closure)
+            self.assertIn(".equatable()", closure)
+            for forbidden in ("Header", "headerLine", "RowEditActions", "SpeakerLabel", "TimecodeButton"):
+                self.assertNotIn(forbidden, closure, f"{row}: {forbidden} ritas om vid varje tick")
+        self.assertIn("struct ReadingText: View, Equatable", self.paragraph)
+
+    def test_follow_waits_while_user_scrolls(self):
+        follow = self.text[self.text.index("private func follow("):]
+        follow = follow[:follow.index("\n    }\n")]
+        self.assertIn("scrollAnchor.userScrolledRecently()", follow, "Följ uppspelning drar tillbaka texten medan man skrollar")
+        observer = (DETAIL / "ScrollOffsetObserver.swift").read_text(encoding="utf-8")
+        self.assertIn("addLocalMonitorForEvents(matching: .scrollWheel)", observer)
+        self.assertIn("willStartLiveScrollNotification", observer)
+        self.assertIn("NSEvent.removeMonitor", observer)
 
     def test_body_does_not_build_all_rows_without_lazy_stack(self):
         self.assertGreaterEqual(self.text.count("LazyVStack"), 2)

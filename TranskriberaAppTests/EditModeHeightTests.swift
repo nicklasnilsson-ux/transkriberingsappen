@@ -69,7 +69,7 @@ final class EditModeHeightTests: XCTestCase {
         for size in ReadingTextSize.steps {
             UserDefaults.standard.set(size, forKey: SettingsKey.readingTextSize)
             func row(_ editing: Bool) -> some View {
-                ParagraphRow(rows: rows, query: "", activeID: nil, currentTime: nil, isEditing: editing, onSeek: { _ in })
+                ParagraphRow(rows: rows, query: "", activeID: nil, isEditing: editing, onSeek: { _ in })
             }
             let viewing = height(of: row(false))
             let editing = height(of: row(true))
@@ -87,7 +87,7 @@ final class EditModeHeightTests: XCTestCase {
                 func row(_ editing: Bool) -> some View {
                     SegmentRow(
                         segment: segment, displayText: segment.text, displaySpeaker: "Anna", query: "",
-                        isActive: false, currentTime: nil, isEditing: editing, onSeek: {}
+                        isActive: false, isEditing: editing, onSeek: {}
                     )
                 }
                 // Smal bredd, så att raderna bryts.
