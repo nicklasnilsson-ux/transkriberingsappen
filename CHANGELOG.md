@@ -6,6 +6,14 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.9.26] – 2026-11-07
+
+### Nytt
+- Modellväljaren visar nu ungefär hur lång tid varje modell tar för en timmes ljud: Pianissimo ca 40 sekunder, Large v3 Turbo ca 3 minuter och KB Large ordagrann ca 12 minuter. Tiden gäller hela processen, med talarigenkänning. Den är uppmätt på en Mac med M4-chip, så äldre datorer är långsammare, och första gången tar det längre.
+
+### Ändrat
+- Fart-prickarna i modellväljaren är borta, eftersom tiden säger samma sak tydligare.
+
 ## [0.9.25] – 2026-11-07
 
 ### Ändrat

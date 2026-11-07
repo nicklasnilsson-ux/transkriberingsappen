@@ -129,6 +129,20 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+    /// Ungefärlig tid för hela processen (transkribering och talarigenkänning) per timme ljud,
+    /// uppmätt med Testlabbets Tidsmätning på en Mac med M4-chip (18 minuters inspelning,
+    /// 3 talare, 2026-11-07). Talarigenkänningen tog bara cirka 2 sekunder per 18 minuter,
+    /// så en och flera talare ger samma text. `nil` = inte uppmätt.
+    /// Ändra siffrorna bara efter en ny mätning (se docs/KONTROLLER.md).
+    var processingTimeText: String? {
+        switch self {
+        case .pianissimo: return "Ca 40 sekunder för en timmes ljud"
+        case .largeV3Turbo: return "Ca 3 minuter för en timmes ljud"
+        case .kbLargeStrict: return "Ca 12 minuter för en timmes ljud"
+        default: return nil
+        }
+    }
+
     /// Noggrannhet på svenska, 1–5. Bygger på KBLab:s mätningar av ordfelfrekvens
     /// (FLEURS, Common Voice, NST): https://kb-labb.github.io/posts/2025-03-07-welcome-KB-Whisper/
     var swedishAccuracy: Int {
