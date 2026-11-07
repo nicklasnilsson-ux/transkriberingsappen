@@ -9,6 +9,10 @@ import Observation
 /// så att samma video inte syns på två ställen. Videon läggs tillbaka i spelarraden när fönstret stängs
 /// (stängknappen eller ⌘W), med Tillbaka hit eller med Tillbaka till spelarraden i bildstorleksmenyn.
 /// Fönstrets storlek och plats sparas mellan gångerna. Helskärm finns kvar via fönstrets gröna knapp.
+///
+/// Fönstret ligger kvar ovanpå huvudfönstret när man klickar där (Nicklas 2026-11-07: det lade sig
+/// bakom). Det flyter bara medan appen är aktiv; byter man till en annan app blir det ett vanligt fönster
+/// igen, så att det inte ligger över andra program. I helskärm är det också ett vanligt fönster.
 @MainActor
 @Observable
 final class VideoWindow {
@@ -18,7 +22,7 @@ final class VideoWindow {
     private(set) var player: AVPlayer?
 
     @ObservationIgnored private var window: NSWindow?
-    @ObservationIgnored private var closeObserver: NSObjectProtocol?
+    @ObservationIgnored private var observers: [NSObjectProtocol] = []
 
     /// Sant när just den här spelarens video visas i fönstret (och därför inte i spelarraden).
     func isShowing(_ player: AVPlayer) -> Bool {
@@ -57,16 +61,30 @@ final class VideoWindow {
         // Storlek och plats från förra gången, om det finns.
         window.setFrameAutosaveName("Videofönster")
 
-        closeObserver = NotificationCenter.default.addObserver(
-            forName: NSWindow.willCloseNotification, object: window, queue: .main
-        ) { [weak self, weak window] _ in
-            // Stängknappen eller ⌘W. Bara det fönster som visas nu städas undan.
-            MainActor.assumeIsolated {
-                guard let self, let window, self.window === window else { return }
-                self.tearDown()
-            }
-        }
+        let center = NotificationCenter.default
+        observers = [
+            center.addObserver(forName: NSWindow.willCloseNotification, object: window, queue: .main) { [weak self, weak window] _ in
+                // Stängknappen eller ⌘W. Bara det fönster som visas nu städas undan.
+                MainActor.assumeIsolated {
+                    guard let self, let window, self.window === window else { return }
+                    self.tearDown()
+                }
+            },
+            center.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.updateLevel() }
+            },
+            center.addObserver(forName: NSApplication.didResignActiveNotification, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.updateLevel() }
+            },
+            center.addObserver(forName: NSWindow.willEnterFullScreenNotification, object: window, queue: .main) { [weak window] _ in
+                MainActor.assumeIsolated { window?.level = .normal }
+            },
+            center.addObserver(forName: NSWindow.didExitFullScreenNotification, object: window, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.updateLevel() }
+            },
+        ]
         self.window = window
+        updateLevel()
         self.player = player
         window.makeKeyAndOrderFront(nil)
     }
@@ -85,12 +103,22 @@ final class VideoWindow {
 
     /// Släpper fönstret och spelaren. Spelarraden visar då videon igen.
     private func tearDown() {
-        if let closeObserver { NotificationCenter.default.removeObserver(closeObserver) }
-        closeObserver = nil
+        for observer in observers { NotificationCenter.default.removeObserver(observer) }
+        observers = []
         (window?.contentView as? AVPlayerView)?.player = nil
         window?.contentView = nil
         window = nil
         player = nil
+    }
+
+    /// Flytande ovanpå huvudfönstret medan appen är aktiv, annars ett vanligt fönster.
+    private func updateLevel() {
+        guard let window, !window.styleMask.contains(.fullScreen) else { return }
+        window.level = Self.level(appIsActive: NSApp.isActive)
+    }
+
+    static func level(appIsActive: Bool) -> NSWindow.Level {
+        appIsActive ? .floating : .normal
     }
 
     private static func aspectRatio(of player: AVPlayer) -> NSSize {

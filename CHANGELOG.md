@@ -6,6 +6,11 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.9.17] – 2026-11-07
+
+### Rättat
+- Videofönstret ligger nu kvar ovanpå huvudfönstret när du klickar i huvudfönstret. Tidigare lade det sig bakom. Byter du till en annan app beter sig videofönstret som ett vanligt fönster och lägger sig inte över den appen.
+
 ## [0.9.16] – 2026-11-07
 
 ### Ändrat

@@ -269,6 +269,14 @@ class EditModeTests(unittest.TestCase):
         self.assertIn("setFrameAutosaveName", win, "Storlek och plats sparas")
         self.assertIn("willCloseNotification", win, "Stängt fönster lägger tillbaka videon")
         self.assertNotIn("toggleFullScreen", win, "Fönstret öppnas som vanligt fönster, inte i helskärm")
+        # Fönstret lade sig bakom huvudfönstret vid klick där (Nicklas 2026-11-07): flytande medan appen är aktiv,
+        # vanligt när en annan app är aktiv eller i helskärm. Nivån sätts när fönstret öppnas och när appen byter läge.
+        self.assertIn("appIsActive ? .floating : .normal", win)
+        self.assertIn("didBecomeActiveNotification", win)
+        self.assertIn("didResignActiveNotification", win)
+        self.assertIn("willEnterFullScreenNotification", win)
+        opened = win[win.index("func open("):win.index("func close()")]
+        self.assertIn("updateLevel()", opened, "Nivån sätts direkt när fönstret öppnas")
         # Fönstret hör till filen: det stängs när filen byts eller vyn försvinner.
         detail = (self.DETAIL / "TranscriptDetailView.swift").read_text(encoding="utf-8")
         gone = detail[detail.index(".onDisappear {", detail.index("private struct DetailLifecycle")):][:300]
