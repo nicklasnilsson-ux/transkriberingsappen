@@ -40,14 +40,33 @@ public struct TestLabReport: Codable, Sendable {
     }
 
     public struct Seconds: Codable, Equatable, Sendable {
+        /// Taligenkänning, luckkontroll, ordlista och (i körningar med egna talare) talare.
         public var total: Double
         public var transcription: Double
         public var gapCheck: Double
+        /// Nedladdning och inläsning av modellen. 0 när modellen redan var inläst.
+        public var modelLoad: Double?
+        /// Inläsning av ljudet ur filen. Görs en gång per labbkörning, så alla körningar får samma värde.
+        public var audio: Double?
+        /// Talaridentifiering inne i körningen (bara körningar med egna talare).
+        public var speakers: Double?
+        public var anonymization: Double?
 
-        public init(total: Double, transcription: Double, gapCheck: Double) {
+        public init(total: Double, transcription: Double, gapCheck: Double,
+                    modelLoad: Double? = nil, audio: Double? = nil,
+                    speakers: Double? = nil, anonymization: Double? = nil) {
             self.total = total
             self.transcription = transcription
             self.gapCheck = gapCheck
+            self.modelLoad = modelLoad
+            self.audio = audio
+            self.speakers = speakers
+            self.anonymization = anonymization
+        }
+
+        /// Det man väntar på när modellen redan är inläst: ljudet, körningen och anonymiseringen.
+        public var wholeProcess: Double {
+            total + (audio ?? 0) + (anonymization ?? 0)
         }
     }
 
@@ -62,6 +81,11 @@ public struct TestLabReport: Codable, Sendable {
     public var whisperSegments: [WhisperSegment]?
     /// Pianissimos egen säkerhet för hela texten (0–1).
     public var pianissimoConfidence: Double?
+    /// Inspelningens längd i minuter, för att räkna tid per timme ljud.
+    public var audioMinutes: Double?
+    /// Vilken talarmodell som användes och hur många talare den hittade (körningar med egna talare).
+    public var diarizer: String?
+    public var speakerCount: Int?
     public var error: String?
 
     public init(run: TestLabRun, appVersion: String, startedAt: Date) {
@@ -72,6 +96,12 @@ public struct TestLabReport: Codable, Sendable {
     }
 
     /// Antal Whisper-stycken som underkändes minst en gång och skrevs om med mer slump.
+    /// Hela kedjan omräknad till sekunder per timme ljud.
+    public var wholeProcessPerHour: Double? {
+        guard let seconds, let audioMinutes, audioMinutes > 0 else { return nil }
+        return seconds.wholeProcess * 60 / audioMinutes
+    }
+
     public var rewrittenSegments: Int? {
         whisperSegments.map { $0.filter { $0.temperature > 0 }.count }
     }
@@ -85,7 +115,7 @@ public struct TestLabReport: Codable, Sendable {
 
     // MARK: - Sammanfattning
 
-    public static let summaryHeader = "körning;beskrivning;ändring;sekunder totalt;sekunder transkribering;sekunder luckkontroll;ord;stycken;omskrivna stycken;luckor;luckor sekunder;pianissimo säkerhet;fel"
+    public static let summaryHeader = "körning;beskrivning;ändring;sekunder totalt;sekunder transkribering;sekunder luckkontroll;sekunder talare;sekunder anonymisering;sekunder ljud;sekunder hela kedjan;sekunder per timme ljud;sekunder modell (inläsning);talare hittade;ord;stycken;omskrivna stycken;luckor;luckor sekunder;pianissimo säkerhet;fel"
 
     /// En rad i sammanfattningen (semikolon, så att Numbers och Excel på svenska öppnar den rätt).
     public var summaryLine: String {
@@ -103,6 +133,13 @@ public struct TestLabReport: Codable, Sendable {
             number(seconds?.total),
             number(seconds?.transcription),
             number(seconds?.gapCheck),
+            number(seconds?.speakers),
+            number(seconds?.anonymization, decimals: 2),
+            number(seconds?.audio),
+            number(seconds?.wholeProcess),
+            number(wholeProcessPerHour),
+            number(seconds?.modelLoad),
+            speakerCount.map(String.init) ?? "",
             words.map(String.init) ?? "",
             segments.map(String.init) ?? "",
             rewrittenSegments.map(String.init) ?? "",

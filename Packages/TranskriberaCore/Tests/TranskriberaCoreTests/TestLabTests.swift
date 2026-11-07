@@ -65,6 +65,38 @@ final class TestLabPlanTests: XCTestCase {
     }
 }
 
+final class TestLabTimingPlanTests: XCTestCase {
+    let plan = TestLabPlan.timing
+
+    func testRunsHaveUniqueNumberedIDsInOrder() {
+        XCTAssertEqual(Set(plan.map(\.id)).count, plan.count)
+        for (index, run) in plan.enumerated() {
+            XCTAssertTrue(run.id.hasPrefix(String(format: "%02d-", index + 1)), run.id)
+            XCTAssertNil(run.id.rangeOfCharacter(from: CharacterSet(charactersIn: "åäöÅÄÖ /:")), run.id)
+        }
+    }
+
+    /// Varje modell mäts en gång utan och en gång med talare, och inget annat ändras,
+    /// så att tiderna gäller en vanlig transkribering.
+    func testEveryModelWithAndWithoutSpeakers() {
+        for engine in TestLabRun.Engine.allCases {
+            let runs = plan.filter { $0.engine == engine }
+            XCTAssertEqual(Set(runs.map(\.speakers)), [.none, .own], engine.rawValue)
+        }
+        for run in plan {
+            XCTAssertEqual(run.tuning, .production, run.id)
+            XCTAssertEqual(run.differences.count, 1, "\(run.id): \(run.differences)")
+        }
+    }
+
+    /// Jämförelselistan använder talare som tagits fram en gång, som förut.
+    func testComparisonStillSharesSpeakers() {
+        XCTAssertTrue(TestLabPlan.standard.allSatisfy { $0.speakers == .shared })
+        XCTAssertEqual(TestLabPlan.Kind.comparison.runs, TestLabPlan.standard)
+        XCTAssertEqual(TestLabPlan.Kind.timing.runs, TestLabPlan.timing)
+    }
+}
+
 final class TestLabReportTests: XCTestCase {
     func testSummaryLineHasOneFieldPerColumn() {
         var report = TestLabReport(
@@ -83,7 +115,22 @@ final class TestLabReportTests: XCTestCase {
         XCTAssertEqual(fields.count, columns)
         XCTAssertEqual(fields[1], "KB, test")
         XCTAssertEqual(fields[3], "210,2")
-        XCTAssertEqual(fields[8], "1")
+        XCTAssertEqual(fields[15], "1")
+    }
+
+    /// Hela kedjan = ljudet + körningen (med talare) + anonymiseringen, utan inläsningen av
+    /// modellen, och räknas om till sekunder per timme ljud.
+    func testWholeProcessPerHour() {
+        var report = TestLabReport(run: TestLabPlan.timing[1], appVersion: "0.9.20", startedAt: Date())
+        report.seconds = .init(total: 20, transcription: 9, gapCheck: 0, modelLoad: 30, audio: 3, speakers: 11, anonymization: 1)
+        report.audioMinutes = 18
+        XCTAssertEqual(report.seconds?.wholeProcess, 24)
+        XCTAssertEqual(try XCTUnwrap(report.wholeProcessPerHour), 80, accuracy: 0.001)
+        let header = TestLabReport.summaryHeader.split(separator: ";", omittingEmptySubsequences: false)
+        let fields = report.summaryLine.split(separator: ";", omittingEmptySubsequences: false)
+        XCTAssertEqual(fields.count, header.count)
+        XCTAssertEqual(fields[header.firstIndex(of: "sekunder hela kedjan")!], "24,0")
+        XCTAssertEqual(fields[header.firstIndex(of: "sekunder per timme ljud")!], "80,0")
     }
 
     func testReportCarriesNoText() throws {
