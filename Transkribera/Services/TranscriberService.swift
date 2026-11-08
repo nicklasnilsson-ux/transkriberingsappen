@@ -1,3 +1,4 @@
+import CoreML
 import Foundation
 import Observation
 import SpeakerKit
@@ -23,6 +24,16 @@ struct TranscriptionDiagnostics {
     /// Talaridentifieringen inne i körningen (0 när talarna kom utifrån eller var av).
     var speakersSeconds: Double = 0
     var diarizer: String?
+}
+
+/// Ett fel med steget det hände i och en begriplig förklaring (se `FailureExplainer`).
+/// Texten sparas på transkriberingen, så den finns kvar och går att kopiera.
+struct TranscriptionFailure: LocalizedError {
+    let step: FailureStep
+    let technical: String
+    let message: String
+
+    var errorDescription: String? { message }
 }
 
 enum TranscriberError: LocalizedError {
@@ -67,6 +78,19 @@ final class TranscriberService {
     @ObservationIgnored private var speakerKit: SpeakerKit?
     @ObservationIgnored private let shortReplyDiarizer = ShortReplyDiarizer()
     @ObservationIgnored private let parakeet = ParakeetTranscriber()
+    /// Sätts när Core ML inte kunde köra en modell på Neural Engine (sett på MacBook Air M1,
+    /// 2026-11-08: "ANEProgramProcessRequestDirect() Failed with status=0xf" och sedan E5RT-fel).
+    /// Därefter körs alla modeller på processor och grafikkrets. Sparas per appversion, så att
+    /// en ny version provar Neural Engine igen.
+    @ObservationIgnored private var avoidsNeuralEngine = UserDefaults.standard.bool(forKey: TranscriberService.neuralEngineKey)
+
+    nonisolated private static var neuralEngineKey: String { "undvikNeuralEngine \(ErrorLog.appVersion)" }
+
+    /// Beräkningsenheterna utan Neural Engine.
+    nonisolated static let withoutNeuralEngine: MLComputeUnits = .cpuAndGPU
+
+    /// Datorer med lite minne (t.ex. 8 GB) kör en modell i taget och släpper den efteråt.
+    static var hasLowMemory: Bool { FailureExplainer.isLowMemory(ProcessInfo.processInfo.physicalMemory) }
 
     var isBusy: Bool {
         switch phase {
@@ -162,13 +186,20 @@ final class TranscriberService {
             let folder = try await downloadIfNeeded(model)
             phase = .loadingModel
             if model.usesParakeet {
-                try await parakeet.load(folder: folder)
+                try await parakeet.load(folder: folder, avoidsNeuralEngine: avoidsNeuralEngine)
             } else {
                 let config = WhisperKitConfig(
                     model: model.rawValue,
                     downloadBase: AppPaths.modelsDirectory,
                     modelFolder: folder.path,
                     tokenizerFolder: AppPaths.modelsDirectory,
+                    computeOptions: avoidsNeuralEngine
+                        ? ModelComputeOptions(
+                            melCompute: Self.withoutNeuralEngine,
+                            audioEncoderCompute: Self.withoutNeuralEngine,
+                            textDecoderCompute: Self.withoutNeuralEngine
+                        )
+                        : nil,
                     verbose: false,
                     logLevel: .error,
                     prewarm: true,
@@ -183,9 +214,38 @@ final class TranscriberService {
             loadedModel = model
             phase = .idle
         } catch {
-            phase = .failed(error.localizedDescription)
-            throw error
+            throw fail(error, model: model)
         }
+    }
+
+    /// Släpper taligenkänningsmodellen ur minnet. Den läses in igen nästa gång.
+    func releaseRecognitionModel() async {
+        if let kit = whisperKit { await kit.unloadModels() }
+        whisperKit = nil
+        await parakeet.unload()
+        loadedModel = nil
+    }
+
+    /// Släpper talarmodellerna ur minnet.
+    func releaseSpeakerModels() async {
+        speakerKit = nil
+        await shortReplyDiarizer.unload()
+    }
+
+    /// Ett Core ML-fel som ett nytt försök utan Neural Engine kan lösa.
+    private func canRetryWithoutNeuralEngine(_ error: Error) -> Bool {
+        !avoidsNeuralEngine && FailureExplainer.isModelComputeFailure(error.localizedDescription)
+    }
+
+    /// Slutar använda Neural Engine och släpper alla modeller, så att de läses in på nytt
+    /// på processor och grafikkrets.
+    private func stopUsingNeuralEngine(after error: Error, model: WhisperModel, step: FailureStep) async {
+        ErrorLog.append(model: model.displayName, step: step,
+                        technical: "Försöker igen utan Neural Engine: \(error.localizedDescription)")
+        avoidsNeuralEngine = true
+        UserDefaults.standard.set(true, forKey: Self.neuralEngineKey)
+        await releaseRecognitionModel()
+        await releaseSpeakerModels()
     }
 
     private func downloadIfNeeded(_ model: WhisperModel) async throws -> URL {
@@ -246,8 +306,7 @@ final class TranscriberService {
             liveText = ""
             return output
         } catch {
-            fail(error)
-            throw error
+            throw fail(error, model: options.model)
         }
     }
 
@@ -262,14 +321,44 @@ final class TranscriberService {
             liveText = ""
             return output
         } catch {
-            fail(error)
-            throw error
+            throw fail(error, model: options.model)
         }
     }
 
-    private func fail(_ error: Error) {
-        phase = error is CancellationError ? .idle : .failed(error.localizedDescription)
+    /// Gör felet begripligt (steg + förklaring), loggar det och visar det. Ett fel som
+    /// redan är förklarat skickas vidare som det är.
+    private func fail(_ error: Error, model: WhisperModel) -> Error {
         liveText = ""
+        if error is CancellationError {
+            phase = .idle
+            return error
+        }
+        if let failure = error as? TranscriptionFailure {
+            phase = .failed(failure.message)
+            return failure
+        }
+        let step = Self.failureStep(for: phase)
+        let technical = error.localizedDescription
+        let memory = ProcessInfo.processInfo.physicalMemory
+        let failure = TranscriptionFailure(
+            step: step,
+            technical: technical,
+            message: FailureExplainer.message(step: step, technical: technical, physicalMemory: memory)
+        )
+        ErrorLog.append(model: model.displayName, step: step, technical: technical)
+        phase = .failed(failure.message)
+        return failure
+    }
+
+    static func failureStep(for phase: Phase) -> FailureStep {
+        switch phase {
+        case .downloadingModel: return .downloadModel
+        case .loadingModel: return .loadModel
+        case .preparingAudio: return .prepareAudio
+        case .transcribing, .recheckingGaps: return .recognize
+        case .identifyingSpeakers: return .identifySpeakers
+        case .idle, .failed: return .recognize
+        }
     }
 
     /// Taligenkänning, ordlista och talare på inläst ljud. Modellen ska redan vara inläst.
@@ -289,25 +378,32 @@ final class TranscriberService {
         var segments: [SegmentData]
         let language: String?
         if options.model.usesParakeet {
-            let output = try await parakeet.transcribe(
-                samples: input,
-                carefulSeams: options.carefulSeams,
-                tuning: options.tuning
-            ) { [weak self] fraction, text in
-                let text = TextCleaning.clean(text)
-                Task { @MainActor in
-                    guard let self else { return }
-                    self.advanceTranscribing(to: fraction)
-                    if !text.isEmpty { self.liveText = text }
-                }
+            let output: ParakeetTranscriber.Output
+            do {
+                output = try await runParakeet(input, options: options)
+            } catch let error where canRetryWithoutNeuralEngine(error) {
+                await stopUsingNeuralEngine(after: error, model: options.model, step: .recognize)
+                try await prepare(model: options.model)
+                phase = .transcribing(fraction: nil)
+                output = try await runParakeet(input, options: options)
             }
             segments = output.segments
             diagnostics.pianissimoConfidence = output.confidence
             diagnostics.transcriptionSeconds = Self.seconds(clock.now - transcriptionStart)
             language = "sv"
         } else {
-            guard let kit = whisperKit else { throw TranscriberError.modelNotLoaded }
-            let results = try await whisperTranscribe(kit: kit, samples: input, options: options)
+            guard var kit = whisperKit else { throw TranscriberError.modelNotLoaded }
+            let results: [TranscriptionResult]
+            do {
+                results = try await whisperTranscribe(kit: kit, samples: input, options: options)
+            } catch let error where canRetryWithoutNeuralEngine(error) {
+                await stopUsingNeuralEngine(after: error, model: options.model, step: .recognize)
+                try await prepare(model: options.model)
+                guard let reloaded = whisperKit else { throw TranscriberError.modelNotLoaded }
+                kit = reloaded
+                phase = .transcribing(fraction: nil)
+                results = try await whisperTranscribe(kit: kit, samples: input, options: options)
+            }
             segments = Self.segments(from: results)
             diagnostics.whisperSegments = Self.segmentStatistics(results)
             diagnostics.transcriptionSeconds = Self.seconds(clock.now - transcriptionStart)
@@ -328,15 +424,39 @@ final class TranscriberService {
             let assigned = SpeakerAssignment.assign(segments, turns: speakerTurns)
             if assigned.contains(where: { $0.speaker != nil }) { segments = assigned }
         } else if options.identifySpeakers {
+            // Med lite minne körs en modell i taget: taligenkänningen släpps innan talarna.
+            if Self.hasLowMemory { await releaseRecognitionModel() }
             phase = .identifyingSpeakers
             let speakersStart = clock.now
-            let diarized = try await diarizedSegments(samples: samples, segments: segments, options: options)
+            let diarized: (segments: [SegmentData], diarizer: String)
+            do {
+                diarized = try await diarizedSegments(samples: samples, segments: segments, options: options)
+            } catch let error where canRetryWithoutNeuralEngine(error) {
+                await stopUsingNeuralEngine(after: error, model: options.model, step: .identifySpeakers)
+                diarized = try await diarizedSegments(samples: samples, segments: segments, options: options)
+            }
+            if Self.hasLowMemory { await releaseSpeakerModels() }
             segments = diarized.segments
             diagnostics.diarizer = diarized.diarizer
             diagnostics.speakersSeconds = Self.seconds(clock.now - speakersStart)
         }
         segments = segments.filter { !TextCleaning.isNonSpeechMarker($0.text) }
         return TranscriptionOutput(segments: segments, language: language, diagnostics: diagnostics)
+    }
+
+    private func runParakeet(_ input: [Float], options: TranscriptionOptions) async throws -> ParakeetTranscriber.Output {
+        try await parakeet.transcribe(
+            samples: input,
+            carefulSeams: options.carefulSeams,
+            tuning: options.tuning
+        ) { [weak self] fraction, text in
+            let text = TextCleaning.clean(text)
+            Task { @MainActor in
+                guard let self else { return }
+                self.advanceTranscribing(to: fraction)
+                if !text.isEmpty { self.liveText = text }
+            }
+        }
     }
 
     private static func seconds(_ duration: Duration) -> Double {
@@ -538,9 +658,19 @@ final class TranscriberService {
     func speakerTurns(samples: [Float], options: TranscriptionOptions) async throws -> (turns: [SpeakerTurn], diarizer: String) {
         // Nemotron tar inget antal talare, så ett fast antal går till de andra. Går
         // modellen inte att ladda ner eller ger den inga turer används den vanliga vägen.
-        let nemotronTurns: [SpeakerTurn]? = options.sortformerDiarization && options.speakerCount.exact == nil
-            ? try? await shortReplyDiarizer.turns(samples: samples)
-            : nil
+        var nemotronTurns: [SpeakerTurn]?
+        if options.sortformerDiarization && options.speakerCount.exact == nil {
+            do {
+                nemotronTurns = try await shortReplyDiarizer.turns(
+                    samples: samples,
+                    computeUnits: avoidsNeuralEngine ? Self.withoutNeuralEngine : .all
+                )
+            } catch {
+                // Felet stoppar inte körningen, men det ska synas i loggen (det försvann förut).
+                ErrorLog.append(model: "Nemotron 3", step: .identifySpeakers,
+                                technical: "Byter till SpeakerKit: \(error.localizedDescription)")
+            }
+        }
         if let nemotronTurns, !nemotronTurns.isEmpty {
             return (nemotronTurns, "Nemotron 3")
         }
@@ -572,6 +702,13 @@ final class TranscriberService {
                 verbose: false,
                 logLevel: .error
             )
+            if avoidsNeuralEngine {
+                // Segmenteraren kör redan på processorn; bara embeddern använder Neural Engine.
+                config.diarizer = SpeakerKitDiarizer.pyannote(
+                    config: config,
+                    embedderModelInfo: .embedder(computeUnits: Self.withoutNeuralEngine)
+                )
+            }
             kit = try await SpeakerKit(config)
             speakerKit = kit
         }

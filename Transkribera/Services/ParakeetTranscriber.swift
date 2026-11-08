@@ -1,3 +1,4 @@
+import CoreML
 import FluidAudio
 import Foundation
 import TranskriberaCore
@@ -37,12 +38,22 @@ actor ParakeetTranscriber {
     private var manager: AsrManager?
     private var setup: Setup?
     private var loadedFolder: URL?
+    private var loadedWithoutNeuralEngine = false
 
-    func load(folder: URL) async throws {
-        if models != nil, loadedFolder == folder { return }
+    /// `avoidsNeuralEngine` kör modellen på processor och grafikkrets: en reserv när Core ML
+    /// inte kan köra den på Neural Engine (sett på MacBook Air M1).
+    func load(folder: URL, avoidsNeuralEngine: Bool = false) async throws {
+        if models != nil, loadedFolder == folder, loadedWithoutNeuralEngine == avoidsNeuralEngine { return }
         unload()
-        models = try AsrModels.loadLocal(from: folder, version: .v3)
+        if avoidsNeuralEngine {
+            let configuration = MLModelConfiguration()
+            configuration.computeUnits = .cpuAndGPU
+            models = try AsrModels.loadLocal(from: folder, version: .v3, configuration: configuration)
+        } else {
+            models = try AsrModels.loadLocal(from: folder, version: .v3)
+        }
         loadedFolder = folder
+        loadedWithoutNeuralEngine = avoidsNeuralEngine
     }
 
     func unload() {
@@ -50,6 +61,7 @@ actor ParakeetTranscriber {
         manager = nil
         setup = nil
         loadedFolder = nil
+        loadedWithoutNeuralEngine = false
     }
 
     /// Långa inspelningar delas i fönster på 15 sekunder. Med `carefulSeams` provar

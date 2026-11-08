@@ -6,6 +6,17 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.9.28] – 2026-11-08
+
+### Rättat
+- På vissa Mac (sett på en MacBook Air med M1) kunde Pianissimo stoppa med ett tekniskt Core ML-fel ("Unable to compute the asynchronous prediction…"), eftersom Neural Engine inte kunde köra modellen. Nu försöker appen en gång till på processor och grafikkrets i stället, och fortsätter så på den datorn. Det gäller alla modeller: Pianissimo, Whisper-modellerna och talarigenkänningen. Ett nytt försök kan ta längre tid.
+- På Mac med lite minne (t.ex. 8 GB) körs en modell i taget: taligenkänningen släpps ur minnet innan talarna identifieras och tvärtom.
+- Om Nemotron 3 inte kunde identifiera talarna byttes den tyst till SpeakerKit. Nu hamnar felet i felloggen.
+
+### Ändrat
+- När en transkribering misslyckas står det vilket steg det gick fel i, en trolig förklaring och den tekniska texten. Texten går att markera, och knappen "Kopiera felinformation" kopierar felet, appversionen och minnet. Vid Core ML-fel finns också "Ladda ned modellen igen".
+- Felen sparas i en fellogg (Fellogg.txt i appens mapp), så att även ett fel som bara syntes en kort stund finns kvar. Loggen innehåller aldrig någon text ur inspelningarna.
+
 ## [0.9.27] – 2026-11-07
 
 ### Rättat

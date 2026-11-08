@@ -1,3 +1,4 @@
+import CoreML
 import FluidAudio
 import Foundation
 import TranskriberaCore
@@ -18,12 +19,20 @@ public actor ShortReplyDiarizer {
     public static var isSupported: Bool { CommunityDiarizer.isSupported }
 
     private var diarizer: Nemotron3Diarizer?
+    private var loadedComputeUnits: MLComputeUnits?
 
     public init() {}
 
+    /// Släpper modellen ur minnet. Den läses in igen nästa gång (från disk).
+    public func unload() {
+        diarizer = nil
+        loadedComputeUnits = nil
+    }
+
     /// Talarturer för ljud i 16 kHz mono. Modellen (några hundra MB) laddas ner första gången.
-    public func turns(samples: [Float]) async throws -> [SpeakerTurn] {
-        let diarizer = try await loadedDiarizer()
+    /// `computeUnits` är `.all` utom när Neural Engine inte fungerar (se TranscriberService).
+    public func turns(samples: [Float], computeUnits: MLComputeUnits = .all) async throws -> [SpeakerTurn] {
+        let diarizer = try await loadedDiarizer(computeUnits: computeUnits)
         let (probabilities, frameCount) = try diarizer.processComplete(samples)
         let segments = Nemotron3Diarizer.segments(
             probabilities: probabilities,
@@ -43,13 +52,14 @@ public actor ShortReplyDiarizer {
             .map { SpeakerTurn(start: $0.start, end: $0.end, speaker: $0.speaker) }
     }
 
-    private func loadedDiarizer() async throws -> Nemotron3Diarizer {
-        if let diarizer { return diarizer }
+    private func loadedDiarizer(computeUnits: MLComputeUnits) async throws -> Nemotron3Diarizer {
+        if let diarizer, loadedComputeUnits == computeUnits { return diarizer }
         // "offline": 30 sekunders buffert, bäst kvalitet för färdiga inspelningar.
         let config = Nemotron3Config.offline
-        let models = try await Nemotron3Models.loadFromHuggingFace(config: config)
+        let models = try await Nemotron3Models.loadFromHuggingFace(config: config, computeUnits: computeUnits)
         let created = Nemotron3Diarizer(config: config, models: models)
         diarizer = created
+        loadedComputeUnits = computeUnits
         return created
     }
 }
