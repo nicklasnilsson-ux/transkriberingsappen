@@ -37,6 +37,7 @@ struct TranscriptDetailView: View {
     @State private var speakerToRename: String?
     @State private var newSpeakerName = ""
     @State private var copied = false
+    @State private var copiedFailure = false
     /// "Inte nu" på frågan om vem som är intervjuaren, för den här visningen.
     @State private var rolesDismissed = false
     /// Det senaste rollvalet, så att det går att ångra tills man gör något annat.
@@ -846,15 +847,53 @@ struct TranscriptDetailView: View {
                 ContentUnavailableView {
                     Label("Transkriberingen misslyckades", icon: .warning)
                 } description: {
+                    // Markerbar, så att felet går att kopiera även utan knappen.
                     Text(transcript.errorMessage ?? "Okänt fel.")
+                        .textSelection(.enabled)
                 } actions: {
-                    Button("Försök igen") { retranscribe(confirmed: false) }
-                        .help("Transkribera filen igen med nuvarande inställningar")
-                        .buttonStyle(.borderedProminent)
+                    HStack {
+                        Button("Försök igen") { retranscribe(confirmed: false) }
+                            .help("Transkribera filen igen med nuvarande inställningar")
+                            .buttonStyle(.borderedProminent)
+                        if let model = failedModelToRedownload {
+                            Button("Ladda ned modellen igen") {
+                                queue.transcriber.deleteDownloadedModel(model)
+                                retranscribe(confirmed: false)
+                            }
+                            .help("Raderar \(model.displayName) från datorn, laddar ned den på nytt och försöker igen")
+                            .disabled(queue.transcriber.isBusy)
+                        }
+                        Button(copiedFailure ? "Kopierat" : "Kopiera felinformation") { copyFailure() }
+                            .help("Kopierar felet, appversionen och de senaste raderna i felloggen")
+                    }
                 }
             }
         default:
             textRows(proxy: proxy)
+        }
+    }
+
+    /// Modellen som körningen använde, om felet kan bero på modellen (Core ML-fel).
+    private var failedModelToRedownload: WhisperModel? {
+        guard let message = transcript.errorMessage, FailureExplainer.isModelComputeFailure(message) else { return nil }
+        let name = RerunChange.baseModelName(transcript.modelName)
+        return WhisperModel.allCases.first { $0.displayName == name }
+    }
+
+    private func copyFailure() {
+        let text = [
+            "Transkribera \(ErrorLog.appVersion), \(FailureExplainer.gigabytes(ProcessInfo.processInfo.physicalMemory)) GB minne, macOS \(ProcessInfo.processInfo.operatingSystemVersionString)",
+            "Modell: \(transcript.modelName)",
+            transcript.errorMessage ?? "Okänt fel.",
+            "Senaste raderna i felloggen:",
+            ErrorLog.recentEntries()
+        ].joined(separator: "\n\n")
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+        copiedFailure = true
+        Task {
+            try? await Task.sleep(for: .seconds(2))
+            copiedFailure = false
         }
     }
 

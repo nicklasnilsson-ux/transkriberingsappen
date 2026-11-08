@@ -25,6 +25,16 @@ struct TranscriptionDiagnostics {
     var diarizer: String?
 }
 
+/// Ett fel med steget det hände i och en begriplig förklaring (se `FailureExplainer`).
+/// Texten sparas på transkriberingen, så den finns kvar och går att kopiera.
+struct TranscriptionFailure: LocalizedError {
+    let step: FailureStep
+    let technical: String
+    let message: String
+
+    var errorDescription: String? { message }
+}
+
 enum TranscriberError: LocalizedError {
     case emptyAudio
     case modelNotLoaded
@@ -67,6 +77,12 @@ final class TranscriberService {
     @ObservationIgnored private var speakerKit: SpeakerKit?
     @ObservationIgnored private let shortReplyDiarizer = ShortReplyDiarizer()
     @ObservationIgnored private let parakeet = ParakeetTranscriber()
+    /// Sätts när Core ML inte kunde köra Pianissimo på Neural Engine: resten av körningen
+    /// (tills appen startas om) går på processorn.
+    @ObservationIgnored private var parakeetCPUOnly = false
+
+    /// Datorer med lite minne (t.ex. 8 GB) kör en modell i taget och släpper den efteråt.
+    static var hasLowMemory: Bool { FailureExplainer.isLowMemory(ProcessInfo.processInfo.physicalMemory) }
 
     var isBusy: Bool {
         switch phase {
@@ -162,7 +178,7 @@ final class TranscriberService {
             let folder = try await downloadIfNeeded(model)
             phase = .loadingModel
             if model.usesParakeet {
-                try await parakeet.load(folder: folder)
+                try await parakeet.load(folder: folder, cpuOnly: parakeetCPUOnly)
             } else {
                 let config = WhisperKitConfig(
                     model: model.rawValue,
@@ -183,9 +199,22 @@ final class TranscriberService {
             loadedModel = model
             phase = .idle
         } catch {
-            phase = .failed(error.localizedDescription)
-            throw error
+            throw fail(error, model: model)
         }
+    }
+
+    /// Släpper taligenkänningsmodellen ur minnet. Den läses in igen nästa gång.
+    func releaseRecognitionModel() async {
+        if let kit = whisperKit { await kit.unloadModels() }
+        whisperKit = nil
+        await parakeet.unload()
+        loadedModel = nil
+    }
+
+    /// Släpper talarmodellerna ur minnet.
+    func releaseSpeakerModels() async {
+        speakerKit = nil
+        await shortReplyDiarizer.unload()
     }
 
     private func downloadIfNeeded(_ model: WhisperModel) async throws -> URL {
@@ -246,8 +275,7 @@ final class TranscriberService {
             liveText = ""
             return output
         } catch {
-            fail(error)
-            throw error
+            throw fail(error, model: options.model)
         }
     }
 
@@ -262,14 +290,44 @@ final class TranscriberService {
             liveText = ""
             return output
         } catch {
-            fail(error)
-            throw error
+            throw fail(error, model: options.model)
         }
     }
 
-    private func fail(_ error: Error) {
-        phase = error is CancellationError ? .idle : .failed(error.localizedDescription)
+    /// Gör felet begripligt (steg + förklaring), loggar det och visar det. Ett fel som
+    /// redan är förklarat skickas vidare som det är.
+    private func fail(_ error: Error, model: WhisperModel) -> Error {
         liveText = ""
+        if error is CancellationError {
+            phase = .idle
+            return error
+        }
+        if let failure = error as? TranscriptionFailure {
+            phase = .failed(failure.message)
+            return failure
+        }
+        let step = Self.failureStep(for: phase)
+        let technical = error.localizedDescription
+        let memory = ProcessInfo.processInfo.physicalMemory
+        let failure = TranscriptionFailure(
+            step: step,
+            technical: technical,
+            message: FailureExplainer.message(step: step, technical: technical, physicalMemory: memory)
+        )
+        ErrorLog.append(model: model.displayName, step: step, technical: technical)
+        phase = .failed(failure.message)
+        return failure
+    }
+
+    static func failureStep(for phase: Phase) -> FailureStep {
+        switch phase {
+        case .downloadingModel: return .downloadModel
+        case .loadingModel: return .loadModel
+        case .preparingAudio: return .prepareAudio
+        case .transcribing, .recheckingGaps: return .recognize
+        case .identifyingSpeakers: return .identifySpeakers
+        case .idle, .failed: return .recognize
+        }
     }
 
     /// Taligenkänning, ordlista och talare på inläst ljud. Modellen ska redan vara inläst.
@@ -289,17 +347,20 @@ final class TranscriberService {
         var segments: [SegmentData]
         let language: String?
         if options.model.usesParakeet {
-            let output = try await parakeet.transcribe(
-                samples: input,
-                carefulSeams: options.carefulSeams,
-                tuning: options.tuning
-            ) { [weak self] fraction, text in
-                let text = TextCleaning.clean(text)
-                Task { @MainActor in
-                    guard let self else { return }
-                    self.advanceTranscribing(to: fraction)
-                    if !text.isEmpty { self.liveText = text }
-                }
+            let output: ParakeetTranscriber.Output
+            do {
+                output = try await runParakeet(input, options: options)
+            } catch let error where !parakeetCPUOnly && FailureExplainer.isModelComputeFailure(error.localizedDescription) {
+                // Core ML kunde inte köra modellen (sett på en MacBook Air M1 med 8 GB). Släpp
+                // allt annat, läs in modellen igen på bara processorn och försök en gång till.
+                ErrorLog.append(model: options.model.displayName, step: .recognize,
+                                technical: "Försöker igen på processorn: \(error.localizedDescription)")
+                parakeetCPUOnly = true
+                await releaseSpeakerModels()
+                await parakeet.unload()
+                try await parakeet.load(folder: Self.localFolder(for: options.model), cpuOnly: true)
+                phase = .transcribing(fraction: nil)
+                output = try await runParakeet(input, options: options)
             }
             segments = output.segments
             diagnostics.pianissimoConfidence = output.confidence
@@ -328,15 +389,43 @@ final class TranscriberService {
             let assigned = SpeakerAssignment.assign(segments, turns: speakerTurns)
             if assigned.contains(where: { $0.speaker != nil }) { segments = assigned }
         } else if options.identifySpeakers {
+            // Med lite minne körs en modell i taget: taligenkänningen släpps innan talarna.
+            if Self.hasLowMemory { await releaseRecognitionModel() }
             phase = .identifyingSpeakers
             let speakersStart = clock.now
-            let diarized = try await diarizedSegments(samples: samples, segments: segments, options: options)
+            let diarized: (segments: [SegmentData], diarizer: String)
+            do {
+                diarized = try await diarizedSegments(samples: samples, segments: segments, options: options)
+            } catch let error where FailureExplainer.isModelComputeFailure(error.localizedDescription) {
+                // Samma Core ML-fel: frigör allt minne och försök en gång till.
+                ErrorLog.append(model: options.model.displayName, step: .identifySpeakers,
+                                technical: "Försöker igen efter att modellerna släppts: \(error.localizedDescription)")
+                await releaseRecognitionModel()
+                await releaseSpeakerModels()
+                diarized = try await diarizedSegments(samples: samples, segments: segments, options: options)
+            }
+            if Self.hasLowMemory { await releaseSpeakerModels() }
             segments = diarized.segments
             diagnostics.diarizer = diarized.diarizer
             diagnostics.speakersSeconds = Self.seconds(clock.now - speakersStart)
         }
         segments = segments.filter { !TextCleaning.isNonSpeechMarker($0.text) }
         return TranscriptionOutput(segments: segments, language: language, diagnostics: diagnostics)
+    }
+
+    private func runParakeet(_ input: [Float], options: TranscriptionOptions) async throws -> ParakeetTranscriber.Output {
+        try await parakeet.transcribe(
+            samples: input,
+            carefulSeams: options.carefulSeams,
+            tuning: options.tuning
+        ) { [weak self] fraction, text in
+            let text = TextCleaning.clean(text)
+            Task { @MainActor in
+                guard let self else { return }
+                self.advanceTranscribing(to: fraction)
+                if !text.isEmpty { self.liveText = text }
+            }
+        }
     }
 
     private static func seconds(_ duration: Duration) -> Double {

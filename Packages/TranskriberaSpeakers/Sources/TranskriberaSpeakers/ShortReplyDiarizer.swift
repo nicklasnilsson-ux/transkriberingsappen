@@ -21,6 +21,11 @@ public actor ShortReplyDiarizer {
 
     public init() {}
 
+    /// Släpper modellen ur minnet. Den läses in igen nästa gång (från disk).
+    public func unload() {
+        diarizer = nil
+    }
+
     /// Talarturer för ljud i 16 kHz mono. Modellen (några hundra MB) laddas ner första gången.
     public func turns(samples: [Float]) async throws -> [SpeakerTurn] {
         let diarizer = try await loadedDiarizer()
