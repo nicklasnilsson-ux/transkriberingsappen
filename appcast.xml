@@ -6,6 +6,20 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.9.33</title>
+      <pubDate>Sun, 08 Nov 2026 20:23:04 GMT</pubDate>
+      <sparkle:version>70</sparkle:version>
+      <sparkle:shortVersionString>0.9.33</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.33</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Rättat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Skrollningen i en lång transkribering kändes seg på MacBook Air M1. Varje synligt stycke räknade om sin plats vid varje skrollsteg; nu görs det bara när det behövs (när du slår på eller av redigering). Orsaken är härledd, inte mätt på Mac.&lt;/li&gt;
+&lt;li&gt;Appen kändes seg på MacBook Air M1 (till exempel 2–3 sekunder när du slår på Anonymisera). Ett stickprov från Airen visade att vyn vid varje omritning sorterade alla segment en gång per stycke, och att varje jämförelse i sorteringen gick via databasen. Nu sorteras en gång och index läses en gång per segment, och talarna läses en gång per lista.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.33/Transkribera-v0.9.33.zip" length="14682445" type="application/octet-stream" sparkle:edSignature="qMqHVX3VFSXxZ0QYePICbFljGMaCBIEI/QvLe2zKXDz99WE2p6a3VFs2WXZCGb5aW8b/hkC12tp5V71iIY92Cw==" />
+    </item>
+    <item>
       <title>Version 0.9.32</title>
       <pubDate>Sun, 08 Nov 2026 18:55:10 GMT</pubDate>
       <sparkle:version>69</sparkle:version>
@@ -416,26 +430,6 @@
 &lt;li&gt;Vänsterpanelen läggs ut uppifrån och ned och börjar alltid i överkanten. Den centreras inte längre och hoppar inte när du byter läge eller ändrar inställningar.&lt;/li&gt;
 &lt;/ul&gt;</description>
       <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.4/Transkribera-v0.9.4.zip" length="14499620" type="application/octet-stream" sparkle:edSignature="6K3Y50HJULNVB62dEHv/uLP6Tgje1Eih7YPVB/7Kwp0LmrBPNqhpN9IwOHLzLfVfuO/ufM3RqaWCEW7aII0NAg==" />
-    </item>
-    <item>
-      <title>Version 0.9.3</title>
-      <pubDate>Wed, 04 Nov 2026 14:19:12 GMT</pubDate>
-      <sparkle:version>40</sparkle:version>
-      <sparkle:shortVersionString>0.9.3</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.3</sparkle:fullReleaseNotesLink>
-      <description>&lt;h3&gt;Ändrat&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Knappen Redigera vid ett stycke är en vanlig knapp med kant, som Avbryt och Spara.&lt;/li&gt;
-&lt;li&gt;Mötesinspelning: reglagen ligger längst till höger över hela bredden, antal talare har en egen rad med en väljare över hela bredden, och raderna har mer luft emellan.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h3&gt;Rättat&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Texten är lika bred i radvisningen som i styckevisningen, även när du redigerar.&lt;/li&gt;
-&lt;li&gt;Helskärmen: knappen Tillbaka till appen lämnar helskärmen och stänger videofönstret, så att du är tillbaka i appens läge.&lt;/li&gt;
-&lt;li&gt;Vänsterpanelen ligger fast i toppen. Är fönstret för lågt för Mötesinspelning scrollar rutan i stället för att tryckas ut ovanför fönstret.&lt;/li&gt;
-&lt;/ul&gt;</description>
-      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.3/Transkribera-v0.9.3.zip" length="14504422" type="application/octet-stream" sparkle:edSignature="ziW/xblhdMHcir403eZigYgeeQhv4A0PovYTihUIaEQU5vHDnQLYMJSAAmOpFYfN02HxkGf+RNiSWT2PY8woCg==" />
     </item>
   </channel>
 </rss>
