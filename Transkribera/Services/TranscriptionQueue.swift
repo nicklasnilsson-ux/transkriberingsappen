@@ -20,6 +20,9 @@ final class TranscriptionQueue {
     @ObservationIgnored private var overridesByID: [UUID: TranscriptionOverrides] = [:]
     @ObservationIgnored private var worker: Task<Void, Never>?
     @ObservationIgnored private var currentJob: Task<TranscriptionOutput, Error>?
+    @ObservationIgnored private var currentWait: AbandonableWait<TranscriptionOutput>?
+    /// Så länge ett jobb som inte svarar på avbrott får vara kvar innan kön släpper det.
+    static let cancelGraceSeconds = 2.0
 
     init(transcriber: TranscriberService, context: ModelContext) {
         self.transcriber = transcriber
@@ -168,6 +171,14 @@ final class TranscriptionQueue {
     func cancel(_ transcript: Transcript) {
         if currentTranscriptID == transcript.id {
             currentJob?.cancel()
+            // Ett Core ML-anrop som hänger sig svarar aldrig på avbrott. Efter en kort frist
+            // släpper kön jobbet, så att Avbryt alltid fungerar.
+            if let wait = currentWait {
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(Self.cancelGraceSeconds))
+                    wait.abandon()
+                }
+            }
         } else if let index = pending.firstIndex(where: { $0.id == transcript.id }) {
             pending.remove(at: index)
             transcript.status = transcript.segments.isEmpty ? .failed : .completed
@@ -213,9 +224,11 @@ final class TranscriptionQueue {
             try await transcriber.transcribe(fileURL: url, duration: duration, options: options)
         }
         currentJob = job
+        let wait = AbandonableWait<TranscriptionOutput>()
+        currentWait = wait
 
         do {
-            let output = try await job.value
+            let output = try await wait.wait(for: job)
             // Den förra versionen sparas, och de äldsta som inte får plats raderas först nu,
             // när den nya finns (se `Transcript.addNewVersion`).
             transcript.addNewVersion(output, previousModelName: previousModelName, in: context)
@@ -232,6 +245,7 @@ final class TranscriptionQueue {
         }
 
         currentJob = nil
+        currentWait = nil
         currentTranscriptID = nil
         save()
     }
