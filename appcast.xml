@@ -6,6 +6,19 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.9.30</title>
+      <pubDate>Sun, 08 Nov 2026 15:44:28 GMT</pubDate>
+      <sparkle:version>67</sparkle:version>
+      <sparkle:shortVersionString>0.9.30</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.30</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Rättat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&amp;quot;Avbryt transkriberingen&amp;quot; gjorde ingenting när ett steg hängde sig (sett i &amp;quot;Identifierar talare&amp;quot; på en MacBook Air M1). Nu släpper appen det hängda steget två sekunder efter att du tryckt Avbryt, så att du kan gå vidare. Själva hängningen är inte rättad; steget kan ligga kvar i bakgrunden tills appen startas om.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.30/Transkribera-v0.9.30.zip" length="14668991" type="application/octet-stream" sparkle:edSignature="+hZxBuCCiGVU1ZUny0oxoCkt97FN5XVuv1yK1Zlvh6KrogOP8/LuyENiTJNm/Yl7I/dFz/Ecs2eB7F6GpuR6Bw==" />
+    </item>
+    <item>
       <title>Version 0.9.29</title>
       <pubDate>Sun, 08 Nov 2026 12:31:37 GMT</pubDate>
       <sparkle:version>66</sparkle:version>
@@ -433,24 +446,6 @@
 &lt;li&gt;Redigering per stycke gick inte att öppna med ett klick i texten. Håll nu musen över ett stycke eller en rad och välj Redigera. Texten går att markera och kopiera som vanligt. Redigera i titelbaren och högerklicksmenyn fungerar som förut.&lt;/li&gt;
 &lt;/ul&gt;</description>
       <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.1/Transkribera-v0.9.1.zip" length="14484576" type="application/octet-stream" sparkle:edSignature="V4Q2ubJfiZxQ8eE15XZ/Z5t5ChqihwGJuf+03gFxs8vgJcibhA8Wnh/uhkyLMtsxYxbF15yvnPPMfvz3w92sAw==" />
-    </item>
-    <item>
-      <title>Version 0.9.0</title>
-      <pubDate>Tue, 03 Nov 2026 23:14:43 GMT</pubDate>
-      <sparkle:version>37</sparkle:version>
-      <sparkle:shortVersionString>0.9.0</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.0</sparkle:fullReleaseNotesLink>
-      <description>&lt;h3&gt;Ändrat&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Redigering per stycke: klicka i texten för att rätta just det stycket. Spara och Avbryt (Esc förkastar) ligger i titelbaren, och Redigera öppnar stycket överst i bild. Ett klick utanför, Retur eller ⌘Retur sparar. Efter sparning visas &amp;quot;Sparat · Ångra&amp;quot; tills du öppnar ett nytt stycke, och Ångra ger tillbaka både texten och ordtiderna. Ett osparat stycke sparas automatiskt vid byte av version, kopiering, export och Transkribera igen.&lt;/li&gt;
-&lt;li&gt;Mötesinspelning: inställningarna (mikrofon, skilj på talare, antal talare) och knapparna Starta och Stoppa inspelning ligger i sidopanelen i stället för släppytan. Under inspelning är inställningarna låsta, och huvudytan visar bara tid och status. Högerpanelen är borttagen.&lt;/li&gt;
-&lt;li&gt;Frågan &amp;quot;Vem av talarna är du?&amp;quot; ligger i en tonad ruta. När du har valt visas &amp;quot;Klart. Talare 1 är intervjuare.&amp;quot; med Ångra, som återställer talarna exakt som de var.&lt;/li&gt;
-&lt;li&gt;Transkribera igen ligger nu inne i rutan med modell, språk och talare, tillsammans med Återställ. Ändrade val kastas om man stänger rutan utan att transkribera igen. Klar visas med en grön bock, och en äldre version märks även i titelbaren.&lt;/li&gt;
-&lt;li&gt;Ny uppställning av fönstret: Fil/Mötesinspelning ligger överst i sidopanelen. Titelbaren har alltid Sök i texten (⌘F), Redigera och en ⋯-meny med verktygen. Spelaren ligger fast under titelbaren, och version, modell, verktygsrad och text skrollar tillsammans. Titelkortet fälls inte längre ihop. Exportera är en svart knapp. Namnet på transkriberingen byts i titelbaren.&lt;/li&gt;
-&lt;li&gt;Ny, vitare och stramare färgpalett i hela appen (ljust, mörkt och Öka kontrast), i stället för systemets bakgrunder. Accentfärgen är densamma. Stoppa inspelning är nu en neutral svart knapp, Starta inspelning behåller accentfärgen.&lt;/li&gt;
-&lt;/ul&gt;</description>
-      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.0/Transkribera-v0.9.0.zip" length="14445265" type="application/octet-stream" sparkle:edSignature="L+nrGdld04HCWjKkW9ZicJyXd7sDMdM7yBqHbIq7z+aGzdHS9SFAMBadP2UGmIDi2O29y416EhUKy66ZN1G/DQ==" />
     </item>
   </channel>
 </rss>
