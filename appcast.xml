@@ -6,6 +6,20 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.9.31</title>
+      <pubDate>Sun, 08 Nov 2026 16:02:29 GMT</pubDate>
+      <sparkle:version>68</sparkle:version>
+      <sparkle:shortVersionString>0.9.31</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.31</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Rättat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Steget &amp;quot;Identifierar talare&amp;quot; kunde hänga sig utan att något hände (sett på en MacBook Air M1 med 8 GB). Nu har varje talarmodell en tidsgräns: 3 minuter plus en fjärdedel av ljudets längd. Hinner Nemotron 3 inte klart provas SpeakerKit, och hinner inte heller den blir texten klar utan talare, med en förklaring överst i texten.&lt;/li&gt;
+&lt;li&gt;Felloggen visar nu när talarstegets modeller startar och blir klara, så att det syns var en hängning stannade.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.31/Transkribera-v0.9.31.zip" length="14681202" type="application/octet-stream" sparkle:edSignature="Uxx213nSjGZWvMu7XLvIMLkySnAXGOvEouAI1Pty8fJn2Aa3vgRl/IzrozhwAr3nrTuS/LZbG/w2i0E3bGdUAw==" />
+    </item>
+    <item>
       <title>Version 0.9.30</title>
       <pubDate>Sun, 08 Nov 2026 15:44:28 GMT</pubDate>
       <sparkle:version>67</sparkle:version>
@@ -427,25 +441,6 @@
 &lt;li&gt;Vänsterpanelen hamnade delvis utanför fönstrets överkant när du valde Mötesinspelning. Rutan med inställningarna scrollar nu om den inte får plats.&lt;/li&gt;
 &lt;/ul&gt;</description>
       <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.2/Transkribera-v0.9.2.zip" length="14501174" type="application/octet-stream" sparkle:edSignature="WpdGkcOWSMmSZqS5sL1Kc3qY1mUTZoc+okNF1N+tyYLNC4iSCtwUT09uYcYjtVMAu28iJCnhTr8IVfFkPZJ7Bw==" />
-    </item>
-    <item>
-      <title>Version 0.9.1</title>
-      <pubDate>Wed, 04 Nov 2026 09:06:20 GMT</pubDate>
-      <sparkle:version>38</sparkle:version>
-      <sparkle:shortVersionString>0.9.1</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.1</sparkle:fullReleaseNotesLink>
-      <description>&lt;h3&gt;Ändrat&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Alla ikoner är nya (Material Design Icons, stilen Rounded). Appikonen är oförändrad.&lt;/li&gt;
-&lt;li&gt;Knapparna i titelbaren har text: Redigera, Sparat och märket för äldre version visar nu både ikon och text. Play/Pause är dubbelt så stor.&lt;/li&gt;
-&lt;li&gt;Bildstorlek för videon ligger nu närmast bilden, och bredvid den finns en ny knapp för helskärm. Esc lämnar helskärmen.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h3&gt;Rättat&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Redigering per stycke gick inte att öppna med ett klick i texten. Håll nu musen över ett stycke eller en rad och välj Redigera. Texten går att markera och kopiera som vanligt. Redigera i titelbaren och högerklicksmenyn fungerar som förut.&lt;/li&gt;
-&lt;/ul&gt;</description>
-      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.1/Transkribera-v0.9.1.zip" length="14484576" type="application/octet-stream" sparkle:edSignature="V4Q2ubJfiZxQ8eE15XZ/Z5t5ChqihwGJuf+03gFxs8vgJcibhA8Wnh/uhkyLMtsxYxbF15yvnPPMfvz3w92sAw==" />
     </item>
   </channel>
 </rss>
