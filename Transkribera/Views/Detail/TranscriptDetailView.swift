@@ -801,11 +801,29 @@ struct TranscriptDetailView: View {
 
     private var showsAnonymizationBanner: Bool { anonymizationOptions != nil && hasText }
 
+    /// Något gick inte som tänkt men texten blev klar, t.ex. att talarna inte kunde identifieras.
+    private var completionNotice: String? {
+        transcript.status == .completed && hasText ? transcript.errorMessage : nil
+    }
+
+    @ViewBuilder
+    private var completionNoticeRow: some View {
+        if let message = completionNotice {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Image(icon: .warning).foregroundStyle(Color.warning).accessibilityHidden(true)
+                Text(message)
+                Spacer(minLength: 8)
+            }
+            .font(.app(.regular))
+        }
+    }
+
     /// 5. Notiser samlade i en tonad ruta.
     @ViewBuilder
     private var noticeCard: some View {
-        if showsRolesBanner || showsAnonymizationBanner || roleChoice != nil {
+        if showsRolesBanner || showsAnonymizationBanner || roleChoice != nil || completionNotice != nil {
             VStack(alignment: .leading, spacing: 8) {
+                completionNoticeRow
                 rolesBanner
                 roleChoiceRow
                 anonymizationBanner

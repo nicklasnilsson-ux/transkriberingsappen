@@ -56,3 +56,24 @@ class ModelFailureTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SpeakerStepDeadlineTests(unittest.TestCase):
+    """Talarsteget hängde sig tyst på MacBook Air M1 (2026-11-08): ingen rad i Felloggen, och vyn stod still."""
+
+    def test_both_speaker_models_have_a_deadline_and_log_their_steps(self):
+        fn = SERVICE[SERVICE.index("func speakerTurns("):SERVICE.index("private func saveSpeakerTurns")]
+        self.assertEqual(fn.count("Deadline.run(seconds: limit)"), 2, "Nemotron och SpeakerKit ska ha var sin tidsgräns")
+        for text in ("Info: Nemotron 3 startar", "Info: SpeakerKit startar", "Tidsgräns: Nemotron 3", "Tidsgräns: SpeakerKit"):
+            self.assertIn(text, fn)
+        self.assertIn("throw SpeakerStepTimedOut", fn)
+        self.assertIn("nemotronStalled = true", fn)
+        self.assertIn("catch is CancellationError", fn, "Avbryt får inte bli ett byte till SpeakerKit")
+
+    def test_a_timed_out_speaker_step_still_gives_the_text_with_a_visible_notice(self):
+        self.assertIn("catch let timeout as SpeakerStepTimedOut", SERVICE)
+        self.assertIn("notice: notice", SERVICE)
+        queue = (ROOT / "Transkribera" / "Services" / "TranscriptionQueue.swift").read_text(encoding="utf-8")
+        self.assertIn(": output.notice", queue)
+        detail = (ROOT / "Transkribera" / "Views" / "Detail" / "TranscriptDetailView.swift").read_text(encoding="utf-8")
+        self.assertIn("completionNoticeRow", detail)

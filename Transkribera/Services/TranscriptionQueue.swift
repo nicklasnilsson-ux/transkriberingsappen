@@ -233,7 +233,7 @@ final class TranscriptionQueue {
             // när den nya finns (se `Transcript.addNewVersion`).
             transcript.addNewVersion(output, previousModelName: previousModelName, in: context)
             transcript.status = .completed
-            transcript.errorMessage = output.segments.isEmpty ? "Inget tal hittades i filen." : nil
+            transcript.errorMessage = output.segments.isEmpty ? "Inget tal hittades i filen." : output.notice
         } catch is CancellationError {
             if !transcript.segments.isEmpty { transcript.modelName = previousModelName }
             transcript.status = transcript.segments.isEmpty ? .failed : .completed
