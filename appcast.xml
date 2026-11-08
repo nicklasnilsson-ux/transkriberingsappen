@@ -6,6 +6,26 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.9.28</title>
+      <pubDate>Sun, 08 Nov 2026 11:42:33 GMT</pubDate>
+      <sparkle:version>65</sparkle:version>
+      <sparkle:shortVersionString>0.9.28</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.28</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Rättat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;På vissa Mac (sett på en MacBook Air med M1) kunde Pianissimo stoppa med ett tekniskt Core ML-fel (&amp;quot;Unable to compute the asynchronous prediction…&amp;quot;), eftersom Neural Engine inte kunde köra modellen. Nu försöker appen en gång till på processor och grafikkrets i stället, och fortsätter så på den datorn. Det gäller alla modeller: Pianissimo, Whisper-modellerna och talarigenkänningen. Ett nytt försök kan ta längre tid.&lt;/li&gt;
+&lt;li&gt;På Mac med lite minne (t.ex. 8 GB) körs en modell i taget: taligenkänningen släpps ur minnet innan talarna identifieras och tvärtom.&lt;/li&gt;
+&lt;li&gt;Om Nemotron 3 inte kunde identifiera talarna byttes den tyst till SpeakerKit. Nu hamnar felet i felloggen.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Ändrat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;När en transkribering misslyckas står det vilket steg det gick fel i, en trolig förklaring och den tekniska texten. Texten går att markera, och knappen &amp;quot;Kopiera felinformation&amp;quot; kopierar felet, appversionen och minnet. Vid Core ML-fel finns också &amp;quot;Ladda ned modellen igen&amp;quot;.&lt;/li&gt;
+&lt;li&gt;Felen sparas i en fellogg (Fellogg.txt i appens mapp), så att även ett fel som bara syntes en kort stund finns kvar. Loggen innehåller aldrig någon text ur inspelningarna.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.28/Transkribera-v0.9.28.zip" length="14654231" type="application/octet-stream" sparkle:edSignature="53gUWT92c+uJmT629x+W4qAOi6WUNBh+ScvmQKEPAU6+u04VdtfSTObjFMFjDlPgb4pXsQkiOWRggxgb4SrACw==" />
+    </item>
+    <item>
       <title>Version 0.9.27</title>
       <pubDate>Sat, 07 Nov 2026 19:50:38 GMT</pubDate>
       <sparkle:version>64</sparkle:version>
@@ -435,33 +455,6 @@
 &lt;li&gt;Datum och tid på andra raden i titelkortet visade alltid när filen först transkriberades, även när en annan version var vald. Nu visar raden när den version du ser blev klar. Versionsmärket säger bara &amp;quot;Version 3 av 3&amp;quot;, eftersom klockslaget redan står i datumet.&lt;/li&gt;
 &lt;/ul&gt;</description>
       <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.8.1/Transkribera-v0.8.1.zip" length="14421204" type="application/octet-stream" sparkle:edSignature="5R0gA43vLoFXeNOFT/RXbPxJH07z+EF4V0JelAoeu+tsviTJRysWGGmYy/u7chlG4VHc+3q4kYUyYPbxldqABA==" />
-    </item>
-    <item>
-      <title>Version 0.8.0</title>
-      <pubDate>Mon, 02 Nov 2026 22:13:02 GMT</pubDate>
-      <sparkle:version>35</sparkle:version>
-      <sparkle:shortVersionString>0.8.0</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.8.0</sparkle:fullReleaseNotesLink>
-      <description>&lt;h3&gt;Nytt&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Tidigare versioner av texten. &amp;quot;Transkribera igen&amp;quot; skriver inte längre över texten: den förra versionen sparas, med dina rättningar och talarnamn. Appen behåller de 4 senaste versionerna per transkribering, och äldre raderas.&lt;/li&gt;
-&lt;li&gt;Versionsvalet ligger i titelkortet, till exempel &amp;quot;Version 2 av 4 · 14:32&amp;quot;, och syns först när det finns fler än en version. En äldre version går att läsa, rätta, söka i, kopiera och exportera som vanligt, och en remsa under titelkortet säger att du tittar på en äldre version. När titelkortet är hopfällt syns bara märket &amp;quot;Äldre version&amp;quot; när du står i en äldre.&lt;/li&gt;
-&lt;li&gt;Dialogen före &amp;quot;Transkribera igen&amp;quot; förklarar vad som händer: den här versionen sparas, du kan byta tillbaka med Version, och de 4 senaste behålls. Har du redan 4 versioner står det vilken som raderas (den äldsta, först när den nya är klar), och dialogen går då inte att stänga av. Annars finns &amp;quot;Visa inte den här rutan igen&amp;quot;, som du slår på igen under Inställningar › Transkribering.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h3&gt;Ändrat&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Ny appikon: en ljudvåg som blir textrader, på enfärgad indigo.&lt;/li&gt;
-&lt;li&gt;Appens indigo används nu genom hela appen (knappar, markeringar, aktiv text), i både ljust och mörkt läge. Tidigare visades systemets blå eftersom accentfärgen inte var kopplad. Märket för svenska modeller följer samma färg.&lt;/li&gt;
-&lt;li&gt;Testlabbet finns inte längre i Hjälp-menyn, eftersom det är ett verktyg för utveckling och inte för vanlig användning. Det öppnas fortfarande med genvägen ⌥⇧⌘T. Inget annat påverkas.&lt;/li&gt;
-&lt;li&gt;Databasen får en ny version (schema 2) med plats för de sparade versionerna. Befintliga transkriberingar påverkas inte; de får en version tills du transkriberar om dem. En säkerhetskopia av databasen tas som vanligt när den nya versionen startas första gången.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h3&gt;Rättat&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Avbryts eller misslyckas &amp;quot;Transkribera igen&amp;quot; längre fram står nu modellen som texten faktiskt gjordes med kvar (den byttes tidigare redan när körningen startade).&lt;/li&gt;
-&lt;li&gt;Filer du släpper eller öppnar medan en mötesinspelning pågår läggs i kön och transkriberas först när inspelningen är sparad, så att inspelningen inte störs. Vyn byter inte längre till filen, så knappen Stoppa och transkribera finns kvar. På inspelningssidan står hur många filer som väntar.&lt;/li&gt;
-&lt;/ul&gt;</description>
-      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.8.0/Transkribera-v0.8.0.zip" length="14421357" type="application/octet-stream" sparkle:edSignature="mJF6VVNTJk2xqMU3SeyKzgJhVjgcp/8vzWte+gypI7KM/sEHStrWaDDdIPmgNAg6mDphJQsO7Ilnr/PaxshEBQ==" />
     </item>
   </channel>
 </rss>
