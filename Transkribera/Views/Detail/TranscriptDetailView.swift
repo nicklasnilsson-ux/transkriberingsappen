@@ -1110,29 +1110,37 @@ struct TranscriptDetailView: View {
     private var rolesBanner: some View {
         let speakers = transcript.speakers
         if !rolesDismissed, !isEditing, SpeakerRoles.needsRoles(speakers) {
-            HStack(spacing: 8) {
-                Image(icon: .personQuestion)
-                Text("Vem är intervjuare?")
-                ForEach(speakers, id: \.self) { speaker in
-                    HStack(spacing: 2) {
-                        Circle().fill(SpeakerPalette.color(for: speaker)).frame(width: 8, height: 8)
-                            .accessibilityHidden(true)
-                        Button(speaker) { chooseInterviewer(speaker) }
-                            .help("\(speaker) blir Intervjuare och övriga Kund 1, Kund 2 … Det går att ändra under Talare i verktygsfältet.")
-                        Button {
-                            if let first = transcript.sortedSegments.first(where: { $0.speaker == speaker }) {
-                                player?.seek(to: first.start)
+            // Frågan och "Inte nu" på en rad; talarna under, i en flödeslayout som lägger chipen
+            // på nya rader när det är många talare. Frågetexten och namnen trycks aldrig ihop.
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    Image(icon: .personQuestion)
+                    Text("Vem är intervjuare?")
+                        .fixedSize()
+                    Spacer(minLength: 8)
+                    Button("Inte nu") { rolesDismissed = true }
+                        .buttonStyle(.link)
+                }
+                FlowLayout(spacing: 12, lineSpacing: 6) {
+                    ForEach(speakers, id: \.self) { speaker in
+                        HStack(spacing: 2) {
+                            Circle().fill(SpeakerPalette.color(for: speaker)).frame(width: 8, height: 8)
+                                .accessibilityHidden(true)
+                            Button(speaker) { chooseInterviewer(speaker) }
+                                .fixedSize()
+                                .help("\(speaker) blir Intervjuare och övriga Kund 1, Kund 2 … Det går att ändra under Talare i verktygsfältet.")
+                            Button {
+                                if let first = transcript.sortedSegments.first(where: { $0.speaker == speaker }) {
+                                    player?.seek(to: first.start)
+                                }
+                            } label: {
+                                Image(icon: .playCircle)
                             }
-                        } label: {
-                            Image(icon: .playCircle)
+                            .buttonStyle(.borderless)
+                            .help("Lyssna på \(speaker)")
                         }
-                        .buttonStyle(.borderless)
-                        .help("Lyssna på \(speaker)")
                     }
                 }
-                Spacer()
-                Button("Inte nu") { rolesDismissed = true }
-                    .buttonStyle(.link)
             }
             .font(.app(.regular))
         }

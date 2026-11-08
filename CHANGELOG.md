@@ -6,6 +6,11 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.9.29] – 2026-11-08
+
+### Rättat
+- Frågan "Vem är intervjuare?" tryckte ihop talarchipen när det var många talare (till exempel 12), så att namnen inte syntes och frågan bröts mitt i ordet. Nu ligger frågan på en egen rad och talarna lägger sig på nya rader under, med hela namnet synligt.
+
 ## [0.9.28] – 2026-11-08
 
 ### Rättat
