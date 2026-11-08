@@ -25,7 +25,7 @@ class ModelFailureTests(unittest.TestCase):
         self.assertIn("configuration.computeUnits = .cpuAndGPU", PARAKEET)
         self.assertIn("avoidsNeuralEngine: avoidsNeuralEngine", SERVICE)
         self.assertIn("computeOptions: avoidsNeuralEngine", SERVICE)
-        self.assertIn("embedderModelInfo: .embedder(computeUnits: Self.withoutNeuralEngine)", SERVICE)
+        self.assertIn("embedderModelInfo: .embedder(computeUnits: Self.speakerKitWithoutNeuralEngine)", SERVICE)
         self.assertIn("computeUnits: avoidsNeuralEngine ? Self.withoutNeuralEngine : .all", SERVICE)
         # Pianissimo, Whisper och talarsteget har var sitt nytt försök.
         self.assertEqual(len(re.findall(r"catch let error where canRetryWithoutNeuralEngine\(error\)", SERVICE)), 3)
@@ -77,3 +77,15 @@ class SpeakerStepDeadlineTests(unittest.TestCase):
         self.assertIn(": output.notice", queue)
         detail = (ROOT / "Transkribera" / "Views" / "Detail" / "TranscriptDetailView.swift").read_text(encoding="utf-8")
         self.assertIn("completionNoticeRow", detail)
+
+
+class SpeakerKitCpuOnlyTests(unittest.TestCase):
+    """SpeakerKit svarade aldrig på .cpuAndGPU på MacBook Air M1, macOS 14 (2026-11-08)."""
+
+    def test_speakerkit_runs_on_the_cpu_only_without_neural_engine(self):
+        self.assertIn("static let speakerKitWithoutNeuralEngine: MLComputeUnits = .cpuOnly", SERVICE)
+
+    def test_speakerkit_progress_is_logged(self):
+        fn = SERVICE[SERVICE.index("private func speakerKitTurns"):]
+        self.assertIn("progress.report(update.fractionCompleted)", fn)
+        self.assertIn("Info: SpeakerKit", SERVICE)
