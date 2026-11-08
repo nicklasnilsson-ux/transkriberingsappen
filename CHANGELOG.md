@@ -6,6 +6,12 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.9.31] – 2026-11-08
+
+### Rättat
+- Steget "Identifierar talare" kunde hänga sig utan att något hände (sett på en MacBook Air M1 med 8 GB). Nu har varje talarmodell en tidsgräns: 3 minuter plus en fjärdedel av ljudets längd. Hinner Nemotron 3 inte klart provas SpeakerKit, och hinner inte heller den blir texten klar utan talare, med en förklaring överst i texten.
+- Felloggen visar nu när talarstegets modeller startar och blir klara, så att det syns var en hängning stannade.
+
 ## [0.9.30] – 2026-11-08
 
 ### Rättat
