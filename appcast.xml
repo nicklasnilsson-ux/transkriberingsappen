@@ -6,6 +6,20 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.9.32</title>
+      <pubDate>Sun, 08 Nov 2026 18:55:10 GMT</pubDate>
+      <sparkle:version>69</sparkle:version>
+      <sparkle:shortVersionString>0.9.32</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.32</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Rättat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;På Mac där Neural Engine inte fungerar (sett på en MacBook Air M1 med macOS 14) fastnade talaridentifieringen med SpeakerKit när den kördes på grafikkretsen. Nu körs SpeakerKit helt på processorn i det läget. Det kan ta längre tid.&lt;/li&gt;
+&lt;li&gt;Felloggen visar hur långt SpeakerKit har kommit (0, 25, 50, 75 och 100 %), så att det syns om steget står still eller bara är långsamt.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.32/Transkribera-v0.9.32.zip" length="14683750" type="application/octet-stream" sparkle:edSignature="iuCAMZnIhmUD7Gr45g3INe/OyS7EDS9oXn6TooHG84edoWGSa9nc/fuChptDoOQjzqK/xHKNIuf6z0S1Am4aAw==" />
+    </item>
+    <item>
       <title>Version 0.9.31</title>
       <pubDate>Sun, 08 Nov 2026 16:02:29 GMT</pubDate>
       <sparkle:version>68</sparkle:version>
@@ -422,25 +436,6 @@
 &lt;li&gt;Vänsterpanelen ligger fast i toppen. Är fönstret för lågt för Mötesinspelning scrollar rutan i stället för att tryckas ut ovanför fönstret.&lt;/li&gt;
 &lt;/ul&gt;</description>
       <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.3/Transkribera-v0.9.3.zip" length="14504422" type="application/octet-stream" sparkle:edSignature="ziW/xblhdMHcir403eZigYgeeQhv4A0PovYTihUIaEQU5vHDnQLYMJSAAmOpFYfN02HxkGf+RNiSWT2PY8woCg==" />
-    </item>
-    <item>
-      <title>Version 0.9.2</title>
-      <pubDate>Wed, 04 Nov 2026 13:10:31 GMT</pubDate>
-      <sparkle:version>39</sparkle:version>
-      <sparkle:shortVersionString>0.9.2</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.2</sparkle:fullReleaseNotesLink>
-      <description>&lt;h3&gt;Ändrat&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Redigering: knappen Redigera i titelbaren öppnar nu alla stycken på en gång (Spara och Avbryt i titelbaren), och knappen Redigera som visas vid ett stycke öppnar bara det. Medan ett stycke rättas har det egna Avbryt och Spara i stället för Redigera.&lt;/li&gt;
-&lt;li&gt;Play/Pause ligger på en rund platta i accentfärgen.&lt;/li&gt;
-&lt;li&gt;Helskärm ligger i samma lilla meny som bildstorlekarna. I helskärmen finns en knapp i videons kontrollpanel som tar dig tillbaka, förutom Esc.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h3&gt;Rättat&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Vänsterpanelen hamnade delvis utanför fönstrets överkant när du valde Mötesinspelning. Rutan med inställningarna scrollar nu om den inte får plats.&lt;/li&gt;
-&lt;/ul&gt;</description>
-      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.2/Transkribera-v0.9.2.zip" length="14501174" type="application/octet-stream" sparkle:edSignature="WpdGkcOWSMmSZqS5sL1Kc3qY1mUTZoc+okNF1N+tyYLNC4iSCtwUT09uYcYjtVMAu28iJCnhTr8IVfFkPZJ7Bw==" />
     </item>
   </channel>
 </rss>
