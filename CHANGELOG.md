@@ -6,6 +6,12 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.9.32] – 2026-11-08
+
+### Rättat
+- På Mac där Neural Engine inte fungerar (sett på en MacBook Air M1 med macOS 14) fastnade talaridentifieringen med SpeakerKit när den kördes på grafikkretsen. Nu körs SpeakerKit helt på processorn i det läget. Det kan ta längre tid.
+- Felloggen visar hur långt SpeakerKit har kommit (0, 25, 50, 75 och 100 %), så att det syns om steget står still eller bara är långsamt.
+
 ## [0.9.31] – 2026-11-08
 
 ### Rättat

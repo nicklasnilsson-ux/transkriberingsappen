@@ -94,6 +94,8 @@ final class TranscriberService {
 
     /// Beräkningsenheterna utan Neural Engine.
     nonisolated static let withoutNeuralEngine: MLComputeUnits = .cpuAndGPU
+    /// SpeakerKits röstmodell utan Neural Engine: bara processorn (se `speakerKitTurns`).
+    nonisolated static let speakerKitWithoutNeuralEngine: MLComputeUnits = .cpuOnly
 
     /// Hur länge ett talarsteg får ta innan det släpps: 3 minuter plus en fjärdedel av ljudets längd
     /// (5 minuter ljud ger drygt 4 minuter, en timme 18 minuter). Första gången kompileras modellen.
@@ -756,9 +758,12 @@ final class TranscriberService {
             )
             if avoidsNeuralEngine {
                 // Segmenteraren kör redan på processorn; bara embeddern använder Neural Engine.
+                // Den körs då helt på processorn, inte på grafikkretsen: på MacBook Air M1 med
+                // macOS 14 (2026-11-08) svarade SpeakerKit aldrig efter bytet till .cpuAndGPU,
+                // utan att någon tråd räknade.
                 config.diarizer = SpeakerKitDiarizer.pyannote(
                     config: config,
-                    embedderModelInfo: .embedder(computeUnits: Self.withoutNeuralEngine)
+                    embedderModelInfo: .embedder(computeUnits: Self.speakerKitWithoutNeuralEngine)
                 )
             }
             kit = try await SpeakerKit(config)
@@ -766,10 +771,36 @@ final class TranscriberService {
         }
 
         let diarizationOptions = PyannoteDiarizationOptions(numberOfSpeakers: speakers.exact)
-        let diarization = try await kit.diarize(audioArray: samples, options: diarizationOptions)
+        let progress = SpeakerProgressLog()
+        let diarization = try await kit.diarize(audioArray: samples, options: diarizationOptions) { update in
+            progress.report(update.fractionCompleted)
+        }
         return diarization.segments.compactMap { segment -> SpeakerTurn? in
             guard let id = segment.speaker.speakerId else { return nil }
             return SpeakerTurn(start: Double(segment.startTime), end: Double(segment.endTime), speaker: id)
+        }
+    }
+}
+
+/// Skriver SpeakerKits förlopp i Felloggen var fjärdedel, så att en hängning visar om modellen
+/// står still från början eller fastnar halvvägs. Anropas från SpeakerKits egna trådar.
+final class SpeakerProgressLog: @unchecked Sendable {
+    private let lock = NSLock()
+    private var lastQuarter = -1
+
+    /// Den fjärdedel (0–4) som ska loggas för `fraction`, eller `nil` om den redan är loggad.
+    func quarterToLog(_ fraction: Double) -> Int? {
+        let quarter = Int((min(max(fraction, 0), 1) * 4).rounded(.down))
+        lock.lock(); defer { lock.unlock() }
+        guard quarter > lastQuarter else { return nil }
+        lastQuarter = quarter
+        return quarter
+    }
+
+    func report(_ fraction: Double) {
+        guard let quarter = quarterToLog(fraction) else { return }
+        Task { @MainActor in
+            ErrorLog.append(model: "SpeakerKit", step: .identifySpeakers, technical: "Info: SpeakerKit \(quarter * 25) %")
         }
     }
 }
