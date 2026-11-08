@@ -53,13 +53,11 @@ public enum FailureExplainer {
     ) -> String {
         var parts = ["Det gick fel i steget ”\(step.label)”."]
         if isModelComputeFailure(technical) {
-            var hint = "Datorns modellmotor (Core ML) kunde inte köra modellen."
+            var hint = "Core ML kunde inte köra modellen."
             if isLowMemory(physicalMemory) {
-                hint += " Din Mac har \(gigabytes(physicalMemory)) GB minne, och brist på ledigt minne är en trolig orsak. Stäng andra program och försök igen."
-            } else {
-                hint += " Vanliga orsaker är för lite ledigt minne eller en modell som inte laddades ned hela. Stäng andra program och försök igen."
+                hint += " Din Mac har \(gigabytes(physicalMemory)) GB minne, så stäng gärna andra program."
             }
-            hint += " Hjälper inte det: ladda ned modellen igen."
+            hint += " Försök igen, och hjälper inte det: ladda ned modellen igen."
             parts.append(hint)
         }
         parts.append("Teknisk information: \(technical)")

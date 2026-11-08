@@ -20,10 +20,20 @@ class ModelFailureTests(unittest.TestCase):
         self.assertIn("ErrorLog.append(model: model.displayName, step: step", SERVICE)
         self.assertGreaterEqual(len(re.findall(r"throw fail\(error, model:", SERVICE)), 3)
 
-    def test_pianissimo_retries_on_cpu_once(self):
-        self.assertIn("computeUnits = .cpuOnly", PARAKEET)
-        self.assertRegex(SERVICE, r"catch let error where !parakeetCPUOnly && FailureExplainer\.isModelComputeFailure")
-        self.assertIn("cpuOnly: parakeetCPUOnly", SERVICE)
+    def test_every_model_retries_once_without_neural_engine(self):
+        # Nicklas M1: ANEProgramProcessRequestDirect() Failed status=0xf, sedan E5RT-fel.
+        self.assertIn("configuration.computeUnits = .cpuAndGPU", PARAKEET)
+        self.assertIn("avoidsNeuralEngine: avoidsNeuralEngine", SERVICE)
+        self.assertIn("computeOptions: avoidsNeuralEngine", SERVICE)
+        self.assertIn("embedderModelInfo: .embedder(computeUnits: Self.withoutNeuralEngine)", SERVICE)
+        self.assertIn("computeUnits: avoidsNeuralEngine ? Self.withoutNeuralEngine : .all", SERVICE)
+        # Pianissimo, Whisper och talarsteget har var sitt nytt försök.
+        self.assertEqual(len(re.findall(r"catch let error where canRetryWithoutNeuralEngine\(error\)", SERVICE)), 3)
+        self.assertIn("!avoidsNeuralEngine && FailureExplainer.isModelComputeFailure", SERVICE)
+
+    def test_nemotron_failure_is_logged_not_swallowed(self):
+        self.assertNotIn("try? await shortReplyDiarizer.turns", SERVICE)
+        self.assertIn('ErrorLog.append(model: "Nemotron 3"', SERVICE)
 
     def test_low_memory_runs_one_model_at_a_time(self):
         speakers = SERVICE[SERVICE.index("} else if options.identifySpeakers {"):]

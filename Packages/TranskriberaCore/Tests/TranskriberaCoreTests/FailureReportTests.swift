@@ -7,6 +7,7 @@ final class FailureReportTests: XCTestCase {
 
     func testNicklasErrorIsRecognisedAsModelFailure() {
         XCTAssertTrue(FailureExplainer.isModelComputeFailure(nicklasError))
+        XCTAssertTrue(FailureExplainer.isModelComputeFailure("E5RT: (10)"))
         XCTAssertFalse(FailureExplainer.isModelComputeFailure("Filen innehåller inget ljud"))
     }
 
