@@ -6,6 +6,12 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.9.33] – 2026-11-08
+
+### Rättat
+- Skrollningen i en lång transkribering kändes seg på MacBook Air M1. Varje synligt stycke räknade om sin plats vid varje skrollsteg; nu görs det bara när det behövs (när du slår på eller av redigering). Orsaken är härledd, inte mätt på Mac.
+- Appen kändes seg på MacBook Air M1 (till exempel 2–3 sekunder när du slår på Anonymisera). Ett stickprov från Airen visade att vyn vid varje omritning sorterade alla segment en gång per stycke, och att varje jämförelse i sorteringen gick via databasen. Nu sorteras en gång och index läses en gång per segment, och talarna läses en gång per lista.
+
 ## [0.9.32] – 2026-11-08
 
 ### Rättat

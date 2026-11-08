@@ -86,16 +86,35 @@ struct ScrollOffsetObserver: NSViewRepresentable {
 }
 
 /// Håller stycket du läser på samma plats på skärmen när redigeringsläget slås av eller på.
-/// Raderna rapporterar var de ligger i fönstret (`RowFrameReporter`). Före bytet väljs raden
-/// som ligger vid fönstrets överkant; efter bytet skrollas lika mycket som den raden flyttade sig.
+/// Raderna registrerar en osynlig vy (`RowFrameReporter`). Läget läses först när det behövs:
+/// före bytet väljs raden som ligger vid fönstrets överkant; efter bytet skrollas lika mycket
+/// som den raden flyttade sig. Under skrollning görs alltså inget arbete per rad (0.9.33).
 final class ScrollAnchor {
     weak var scrollView: NSScrollView?
-    /// Radernas överkant i förhållande till fönstrets överkant, bara för rader som visas.
-    var rowTops: [AnyHashable: CGFloat] = [:]
+    private struct WeakView { weak var view: NSView? }
+    private var rowViews: [AnyHashable: WeakView] = [:]
     /// När du senast skrollade själv.
     private(set) var lastUserScroll: Date?
     /// Så länge efter att du slutat skrolla väntar "Följ uppspelning" innan texten följer med igen.
     static let followPause: TimeInterval = 3
+
+    func register(_ id: AnyHashable, view: NSView) { rowViews[id] = WeakView(view: view) }
+    func unregister(_ id: AnyHashable, view: NSView) {
+        if rowViews[id]?.view === view { rowViews[id] = nil }
+    }
+
+    /// Radernas överkant i förhållande till fönstrets överkant, bara för rader som visas.
+    var rowTops: [AnyHashable: CGFloat] {
+        guard let clip = scrollView?.contentView else { return [:] }
+        var result: [AnyHashable: CGFloat] = [:]
+        for (id, box) in rowViews {
+            guard let view = box.view, view.window != nil else { continue }
+            let rect = view.convert(view.bounds, to: clip)
+            // Vyerna är vända (y växer nedåt); annars räknas från nederkanten.
+            result[id] = clip.isFlipped ? rect.minY - clip.bounds.origin.y : -(rect.maxY - clip.bounds.maxY)
+        }
+        return result
+    }
 
     func noteUserScroll(at date: Date = Date()) { lastUserScroll = date }
 
@@ -107,8 +126,9 @@ final class ScrollAnchor {
 
     /// Raden vid fönstrets överkant: den som börjar ovanför och närmast kanten, annars den första under.
     func currentAnchor() -> (id: AnyHashable, top: CGFloat)? {
-        let above = rowTops.filter { $0.value <= 0 }.max { $0.value < $1.value }
-        let below = rowTops.filter { $0.value > 0 }.min { $0.value < $1.value }
+        let tops = rowTops
+        let above = tops.filter { $0.value <= 0 }.max { $0.value < $1.value }
+        let below = tops.filter { $0.value > 0 }.min { $0.value < $1.value }
         guard let row = above ?? below else { return nil }
         return (row.key, row.value)
     }
@@ -129,20 +149,33 @@ final class ScrollAnchor {
     }
 }
 
-/// Rapporterar radens överkant i skrollytan till `ScrollAnchor`. Skriver bara till en vanlig
-/// klass, så att vyn inte ritas om när man skrollar.
-struct RowFrameReporter: View {
+/// Registrerar radens plats hos `ScrollAnchor` med en osynlig vy. Ingen `GeometryReader` och
+/// ingen `onChange` per rad: förut skrevs radens läge vid varje skrollsteg för varje rad som visades.
+struct RowFrameReporter: NSViewRepresentable {
     let id: AnyHashable
     let anchor: ScrollAnchor
-    let space: String
 
-    var body: some View {
-        GeometryReader { geo in
-            let top = geo.frame(in: .named(space)).minY
-            Color.clear
-                .onAppear { anchor.rowTops[id] = top }
-                .onChange(of: top) { _, newTop in anchor.rowTops[id] = newTop }
-                .onDisappear { anchor.rowTops[id] = nil }
-        }
+    func makeNSView(context: Context) -> Probe {
+        let view = Probe()
+        view.id = id
+        view.anchor = anchor
+        anchor.register(id, view: view)
+        return view
+    }
+
+    func updateNSView(_ view: Probe, context: Context) {
+        view.id = id
+        view.anchor = anchor
+        anchor.register(id, view: view)
+    }
+
+    static func dismantleNSView(_ view: Probe, coordinator: ()) {
+        view.anchor?.unregister(view.id, view: view)
+    }
+
+    final class Probe: NSView {
+        var id: AnyHashable = 0
+        weak var anchor: ScrollAnchor?
+        override func hitTest(_ point: NSPoint) -> NSView? { nil }
     }
 }

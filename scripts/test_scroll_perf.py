@@ -91,6 +91,30 @@ class ScrollPerformanceTests(unittest.TestCase):
         self.assertIn("willStartLiveScrollNotification", observer)
         self.assertIn("NSEvent.removeMonitor", observer)
 
+    def test_rows_do_no_work_per_scroll_step(self):
+        # 0.9.33: RowFrameReporter var en GeometryReader med onChange per rad, som skrev radens läge
+        # vid varje skrollsteg. Läget läses nu först när det behövs (ScrollAnchor.rowTops).
+        observer = (DETAIL / "ScrollOffsetObserver.swift").read_text(encoding="utf-8")
+        reporter = observer[observer.index("struct RowFrameReporter"):]
+        for forbidden in ("GeometryReader", "onChange", "onAppear", "geo.frame"):
+            self.assertNotIn(forbidden, reporter, f"Raderna gör arbete vid varje skrollsteg ({forbidden})")
+        self.assertIn("var rowTops: [AnyHashable: CGFloat] {", observer, "rowTops ska räknas vid behov, inte lagras")
+
+    def test_rows_do_not_sort_all_segments(self):
+        # 0.9.33, sample från M1 Air (macOS 14): vyn ritades om med ~150 av ~1500 samplingar i
+        # Transcript.speakers -> sortedSegments, anropat per stycke (talarmenyn och menuSpeakers).
+        # Varje jämförelse i sorteringen läste index via SwiftData (performAndWait).
+        for name in ("segmentRows", "paragraphRows", "paragraphMenu", "segmentMenu", "speakerActions"):
+            start = self.text.index(f"private func {name}(")
+            body = self.text[start:self.text.index("\n    }\n", start)]
+            # Talarna får läsas en gång före ForEach, aldrig per rad eller i menyerna.
+            per_row = body[body.index("ForEach("):] if "ForEach(" in body and name.endswith("Rows") else body
+            self.assertNotIn("transcript.speakers", per_row, f"{name} läser talarna (och sorterar alla segment) per rad")
+            self.assertNotIn("sortedSegments", body.replace("transcript.sortedSegments.first", ""), f"{name} sorterar alla segment per rad")
+        model = (DETAIL.parent.parent / "Models" / "Transcript.swift").read_text(encoding="utf-8")
+        self.assertNotIn("segments.sorted { $0.index < $1.index }", model,
+                         "sortedSegments läser index n·log n gånger via SwiftData; läs varje index en gång")
+
     def test_body_does_not_build_all_rows_without_lazy_stack(self):
         self.assertGreaterEqual(self.text.count("LazyVStack"), 2)
 

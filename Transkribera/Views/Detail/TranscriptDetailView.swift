@@ -64,7 +64,6 @@ struct TranscriptDetailView: View {
     @AppStorage(MiniPlayerSize.storageKey) private var miniSizeRaw = MiniPlayerSize.small.rawValue
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private static let scrollSpace = "detailScroll"
     private static let topID = "detailTop"
 
     var body: some View {
@@ -119,7 +118,6 @@ struct TranscriptDetailView: View {
             // Skrollvyn läses av, så att stycket du läser kan stå kvar när läget växlar.
             .background(ScrollOffsetObserver(onChange: { _ in }, anchor: scrollAnchor))
         }
-        .coordinateSpace(name: Self.scrollSpace)
         // Stycket vid fönstrets överkant står kvar på samma plats när läget växlar.
         .onChange(of: isEditing) { _, _ in
             if let anchor = scrollAnchor.currentAnchor() { scrollAnchor.restore(anchor) }
@@ -958,7 +956,9 @@ struct TranscriptDetailView: View {
 
     private func segmentRows(rows: [DisplaySegment], hit: SearchHit<PersistentIdentifier>?, activeID: PersistentIdentifier?, proxy: ScrollViewProxy) -> some View {
         // Hela texten visas alltid; sökningen markerar och stegar mellan träffarna.
-        VStack(alignment: .leading, spacing: 0) {
+        // Talarna läses en gång här, inte per rad: varje läsning sorterar alla segment (0.9.33).
+        let speakers = transcript.speakers
+        return VStack(alignment: .leading, spacing: 0) {
             LazyVStack(alignment: .leading, spacing: 0) {
                 ForEach(rows) { row in
                     let segment = row.segment
@@ -979,13 +979,13 @@ struct TranscriptDetailView: View {
                         onSave: { saveEditing() },
                         onCancel: { cancelEditing() },
                         onSeek: { player?.seek(to: segment.start) },
-                        speakerMenu: { AnyView(speakerActions([row], noun: "raden")) },
-                        menuSpeakers: transcript.speakers
+                        speakerMenu: { AnyView(speakerActions([row], noun: "raden", speakers: speakers)) },
+                        menuSpeakers: speakers
                     )
                     .equatable()
                     .id(segment.persistentModelID)
-                    .background(RowFrameReporter(id: AnyHashable(segment.persistentModelID), anchor: scrollAnchor, space: Self.scrollSpace))
-                    .contextMenu { segmentMenu(row) }
+                    .background(RowFrameReporter(id: AnyHashable(segment.persistentModelID), anchor: scrollAnchor))
+                    .contextMenu { segmentMenu(row, speakers: speakers) }
                     Divider()
                 }
             }
@@ -998,6 +998,8 @@ struct TranscriptDetailView: View {
     private func paragraphRows(paragraphs: [[DisplaySegment]], hit: SearchHit<PersistentIdentifier>?, activeID: PersistentIdentifier?, proxy: ScrollViewProxy) -> some View {
         // Hela texten visas alltid; sökningen markerar och stegar mellan träffarna.
         let activeParagraphID = paragraphs.first { paragraph in paragraph.contains { $0.id == activeID } }?.first?.id
+        // Talarna läses en gång här, inte per stycke: varje läsning sorterar alla segment (0.9.33).
+        let speakers = transcript.speakers
 
         return VStack(alignment: .leading, spacing: 0) {
             LazyVStack(alignment: .leading, spacing: 0) {
@@ -1019,13 +1021,13 @@ struct TranscriptDetailView: View {
                         onSave: { saveEditing() },
                         onCancel: { cancelEditing() },
                         onSeek: { player?.seek(to: $0) },
-                        speakerMenu: { _ in AnyView(speakerActions(paragraph, noun: "stycket")) },
-                        menuSpeakers: transcript.speakers
+                        speakerMenu: { _ in AnyView(speakerActions(paragraph, noun: "stycket", speakers: speakers)) },
+                        menuSpeakers: speakers
                     )
                     .equatable()
                     .id(paragraph.first?.id)
-                    .background(RowFrameReporter(id: AnyHashable(paragraph.first?.id), anchor: scrollAnchor, space: Self.scrollSpace))
-                    .contextMenu { paragraphMenu(paragraph) }
+                    .background(RowFrameReporter(id: AnyHashable(paragraph.first?.id), anchor: scrollAnchor))
+                    .contextMenu { paragraphMenu(paragraph, speakers: speakers) }
                     Divider()
                 }
             }
@@ -1042,7 +1044,7 @@ struct TranscriptDetailView: View {
     }
 
     @ViewBuilder
-    private func paragraphMenu(_ paragraph: [DisplaySegment]) -> some View {
+    private func paragraphMenu(_ paragraph: [DisplaySegment], speakers: [String]) -> some View {
         if let first = paragraph.first {
             let text = paragraph.map { $0.text.trimmingCharacters(in: .whitespacesAndNewlines) }
                 .filter { !$0.isEmpty }
@@ -1057,13 +1059,13 @@ struct TranscriptDetailView: View {
             }
             if first.segment.speaker != nil {
                 Divider()
-                speakerActions(paragraph, noun: "stycket")
+                speakerActions(paragraph, noun: "stycket", speakers: speakers)
             }
         }
     }
 
     @ViewBuilder
-    private func segmentMenu(_ row: DisplaySegment) -> some View {
+    private func segmentMenu(_ row: DisplaySegment, speakers: [String]) -> some View {
         let segment = row.segment
         Button("Spela upp härifrån") { player?.seek(to: segment.start) }
         Button("Redigera raden") { beginEditing(segment.persistentModelID) }
@@ -1073,7 +1075,7 @@ struct TranscriptDetailView: View {
         }
         if segment.speaker != nil {
             Divider()
-            speakerActions([row], noun: "raden")
+            speakerActions([row], noun: "raden", speakers: speakers)
         }
     }
 
@@ -1082,11 +1084,11 @@ struct TranscriptDetailView: View {
     /// ▾-menyn vid talarens namn och samma val i högerklicksmenyn: flytta bara det här stycket
     /// (eller raden) till en annan talare, byta namn på talaren överallt och ange intervjuare.
     @ViewBuilder
-    private func speakerActions(_ rows: [DisplaySegment], noun: String) -> some View {
+    private func speakerActions(_ rows: [DisplaySegment], noun: String, speakers: [String]) -> some View {
         let indices = rows.map(\.segment.index)
         let current = rows.first?.segment.speaker
         Menu("Flytta \(noun) till") {
-            ForEach(SpeakerMove.targets(speakers: transcript.speakers, current: current), id: \.self) { speaker in
+            ForEach(SpeakerMove.targets(speakers: speakers, current: current), id: \.self) { speaker in
                 Button(speaker) { move(indices, to: speaker) }
             }
             Divider()
