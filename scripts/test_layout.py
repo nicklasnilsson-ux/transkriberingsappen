@@ -27,6 +27,19 @@ class LayoutTests(unittest.TestCase):
         self.assertIn("SidebarGroup.group(", text)
 
 
+class RoleBannerWrapsTests(unittest.TestCase):
+    def test_speaker_chips_use_flow_layout_and_text_is_not_squeezed(self):
+        # 12 talare i en enda rad tryckte ihop chipen (inga namn syntes) och frågan bröts i "intervj/uare?".
+        text = (VIEWS / "Detail" / "TranscriptDetailView.swift").read_text(encoding="utf-8")
+        banner = text[text.index("private var rolesBanner"):text.index("private func chooseInterviewer")]
+        self.assertIn("FlowLayout(", banner, "talarchipen ska ligga i en radbrytande layout")
+        self.assertRegex(banner, r'Text\("Vem är intervjuare\?"\)\s*\.fixedSize\(\)')
+        self.assertRegex(banner, r"Button\(speaker\) \{ chooseInterviewer\(speaker\) \}\s*\.fixedSize\(\)")
+        # Chipen får inte ligga direkt i samma HStack som frågan.
+        self.assertNotRegex(banner, r"Vem är intervjuare\?\"\)[^}]*ForEach\(speakers")
+        self.assertTrue((VIEWS / "FlowLayout.swift").exists())
+
+
 class MeetingModeTests(unittest.TestCase):
     def test_no_live_text_during_recording(self):
         # Beslut: möte = inspelningsstatus, texten skapas först när inspelningen stoppas.
