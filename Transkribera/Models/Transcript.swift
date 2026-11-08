@@ -67,7 +67,9 @@ final class Transcript {
     var mediaURL: URL { MediaStore.url(for: mediaFileName) }
 
     var sortedSegments: [TranscriptSegment] {
-        segments.sorted { $0.index < $1.index }
+        // Varje segments index läses en gång. Att sortera på `$0.index < $1.index` läser det
+        // n·log n gånger, och varje läsning går via SwiftData/Core Data (mätt på M1 Air 0.9.32).
+        segments.map { ($0.index, $0) }.sorted { $0.0 < $1.0 }.map(\.1)
     }
 
     var segmentData: [SegmentData] {
