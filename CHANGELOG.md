@@ -6,6 +6,11 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.9.30] – 2026-11-08
+
+### Rättat
+- "Avbryt transkriberingen" gjorde ingenting när ett steg hängde sig (sett i "Identifierar talare" på en MacBook Air M1). Nu släpper appen det hängda steget två sekunder efter att du tryckt Avbryt, så att du kan gå vidare. Själva hängningen är inte rättad; steget kan ligga kvar i bakgrunden tills appen startas om.
+
 ## [0.9.29] – 2026-11-08
 
 ### Rättat

@@ -40,6 +40,18 @@ class RoleBannerWrapsTests(unittest.TestCase):
         self.assertTrue((VIEWS / "FlowLayout.swift").exists())
 
 
+class CancelAlwaysWorksTests(unittest.TestCase):
+    def test_queue_gives_up_on_a_job_that_ignores_cancellation(self):
+        # Ett hängt Core ML-anrop svarar aldrig på Task.cancel(); Avbryt måste ändå fungera.
+        text = (ROOT / "Transkribera" / "Services" / "TranscriptionQueue.swift").read_text(encoding="utf-8")
+        self.assertIn("AbandonableWait<TranscriptionOutput>", text)
+        self.assertIn("wait.wait(for: job)", text)
+        self.assertNotIn("try await job.value", text, "kön får inte vänta direkt på jobbet")
+        cancel = text[text.index("func cancel("):text.index("func delete(_ transcript")]
+        self.assertIn("currentJob?.cancel()", cancel)
+        self.assertIn("abandon()", cancel)
+
+
 class MeetingModeTests(unittest.TestCase):
     def test_no_live_text_during_recording(self):
         # Beslut: möte = inspelningsstatus, texten skapas först när inspelningen stoppas.
