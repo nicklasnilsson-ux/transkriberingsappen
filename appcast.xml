@@ -6,6 +6,19 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.9.29</title>
+      <pubDate>Sun, 08 Nov 2026 12:31:37 GMT</pubDate>
+      <sparkle:version>66</sparkle:version>
+      <sparkle:shortVersionString>0.9.29</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.29</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Rättat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Frågan &amp;quot;Vem är intervjuare?&amp;quot; tryckte ihop talarchipen när det var många talare (till exempel 12), så att namnen inte syntes och frågan bröts mitt i ordet. Nu ligger frågan på en egen rad och talarna lägger sig på nya rader under, med hela namnet synligt.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.29/Transkribera-v0.9.29.zip" length="14664597" type="application/octet-stream" sparkle:edSignature="nxgVSiOLkzrFUCosVj6NqyfRM4IOGCxzswUtPn6LPdF6ME4UM55EkXlJMBar4SfGF7J8QPMih+3RXGJoyUc7DA==" />
+    </item>
+    <item>
       <title>Version 0.9.28</title>
       <pubDate>Sun, 08 Nov 2026 11:42:33 GMT</pubDate>
       <sparkle:version>65</sparkle:version>
@@ -438,23 +451,6 @@
 &lt;li&gt;Ny, vitare och stramare färgpalett i hela appen (ljust, mörkt och Öka kontrast), i stället för systemets bakgrunder. Accentfärgen är densamma. Stoppa inspelning är nu en neutral svart knapp, Starta inspelning behåller accentfärgen.&lt;/li&gt;
 &lt;/ul&gt;</description>
       <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.0/Transkribera-v0.9.0.zip" length="14445265" type="application/octet-stream" sparkle:edSignature="L+nrGdld04HCWjKkW9ZicJyXd7sDMdM7yBqHbIq7z+aGzdHS9SFAMBadP2UGmIDi2O29y416EhUKy66ZN1G/DQ==" />
-    </item>
-    <item>
-      <title>Version 0.8.1</title>
-      <pubDate>Tue, 03 Nov 2026 08:45:35 GMT</pubDate>
-      <sparkle:version>36</sparkle:version>
-      <sparkle:shortVersionString>0.8.1</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.8.1</sparkle:fullReleaseNotesLink>
-      <description>&lt;h3&gt;Ändrat&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Modell, språk och antal talare ovanför titelkortet är nu en enda knapp, till exempel &amp;quot;KB Large ordagrann · Svenska · 3 talare&amp;quot;. De tre knapparna öppnade förut samma ruta. Klicka på knappen för att ändra valen till nästa omtagning.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h3&gt;Rättat&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Datum och tid på andra raden i titelkortet visade alltid när filen först transkriberades, även när en annan version var vald. Nu visar raden när den version du ser blev klar. Versionsmärket säger bara &amp;quot;Version 3 av 3&amp;quot;, eftersom klockslaget redan står i datumet.&lt;/li&gt;
-&lt;/ul&gt;</description>
-      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.8.1/Transkribera-v0.8.1.zip" length="14421204" type="application/octet-stream" sparkle:edSignature="5R0gA43vLoFXeNOFT/RXbPxJH07z+EF4V0JelAoeu+tsviTJRysWGGmYy/u7chlG4VHc+3q4kYUyYPbxldqABA==" />
     </item>
   </channel>
 </rss>
