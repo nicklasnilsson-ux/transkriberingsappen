@@ -64,7 +64,6 @@ struct TranscriptDetailView: View {
     @AppStorage(MiniPlayerSize.storageKey) private var miniSizeRaw = MiniPlayerSize.small.rawValue
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private static let scrollSpace = "detailScroll"
     private static let topID = "detailTop"
 
     var body: some View {
@@ -119,7 +118,6 @@ struct TranscriptDetailView: View {
             // Skrollvyn läses av, så att stycket du läser kan stå kvar när läget växlar.
             .background(ScrollOffsetObserver(onChange: { _ in }, anchor: scrollAnchor))
         }
-        .coordinateSpace(name: Self.scrollSpace)
         // Stycket vid fönstrets överkant står kvar på samma plats när läget växlar.
         .onChange(of: isEditing) { _, _ in
             if let anchor = scrollAnchor.currentAnchor() { scrollAnchor.restore(anchor) }
@@ -984,7 +982,7 @@ struct TranscriptDetailView: View {
                     )
                     .equatable()
                     .id(segment.persistentModelID)
-                    .background(RowFrameReporter(id: AnyHashable(segment.persistentModelID), anchor: scrollAnchor, space: Self.scrollSpace))
+                    .background(RowFrameReporter(id: AnyHashable(segment.persistentModelID), anchor: scrollAnchor))
                     .contextMenu { segmentMenu(row) }
                     Divider()
                 }
@@ -1024,7 +1022,7 @@ struct TranscriptDetailView: View {
                     )
                     .equatable()
                     .id(paragraph.first?.id)
-                    .background(RowFrameReporter(id: AnyHashable(paragraph.first?.id), anchor: scrollAnchor, space: Self.scrollSpace))
+                    .background(RowFrameReporter(id: AnyHashable(paragraph.first?.id), anchor: scrollAnchor))
                     .contextMenu { paragraphMenu(paragraph) }
                     Divider()
                 }

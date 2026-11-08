@@ -6,6 +6,11 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.9.33] – 2026-11-08
+
+### Rättat
+- Skrollningen i en lång transkribering kändes seg på MacBook Air M1. Varje synligt stycke räknade om sin plats vid varje skrollsteg; nu görs det bara när det behövs (när du slår på eller av redigering). Orsaken är härledd, inte mätt på Mac.
+
 ## [0.9.32] – 2026-11-08
 
 ### Rättat
