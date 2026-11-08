@@ -28,7 +28,7 @@ class VersionTests(unittest.TestCase):
         queue = read("Services/TranscriptionQueue.swift")
         self.assertIn("addNewVersion(", queue)
         process = queue[queue.index("private func process("):]
-        success = process[process.index("let output = try await job.value"):process.index("} catch is CancellationError")]
+        success = process[process.index("let output = try await wait.wait(for: job)"):process.index("} catch is CancellationError")]
         self.assertIn("addNewVersion(", success)
         # Modellen som texten gjordes med återställs när körningen avbryts eller misslyckas.
         self.assertEqual(process.count("transcript.modelName = previousModelName"), 2)

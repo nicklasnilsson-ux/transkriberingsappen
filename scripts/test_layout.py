@@ -47,7 +47,7 @@ class CancelAlwaysWorksTests(unittest.TestCase):
         self.assertIn("AbandonableWait<TranscriptionOutput>", text)
         self.assertIn("wait.wait(for: job)", text)
         self.assertNotIn("try await job.value", text, "kön får inte vänta direkt på jobbet")
-        cancel = text[text.index("func cancel("):text.index("func delete(_ transcript")]
+        cancel = text[text.index("func cancel("):text.index("func delete(_ transcript: Transcript)")]
         self.assertIn("currentJob?.cancel()", cancel)
         self.assertIn("abandon()", cancel)
 
