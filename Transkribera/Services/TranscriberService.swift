@@ -12,6 +12,9 @@ struct TranscriptionOutput {
     var segments: [SegmentData]
     var language: String?
     var diagnostics = TranscriptionDiagnostics()
+    /// Sätts när något i körningen inte gick som tänkt men texten ändå blev klar
+    /// (t.ex. talarna kunde inte identifieras). Visas för användaren.
+    var notice: String?
 }
 
 /// Tider och mått från en körning, för Testlabbet. Ingen text.
@@ -77,6 +80,9 @@ final class TranscriberService {
     @ObservationIgnored private var whisperKit: WhisperKit?
     @ObservationIgnored private var speakerKit: SpeakerKit?
     @ObservationIgnored private let shortReplyDiarizer = ShortReplyDiarizer()
+    /// Nemotron 3 har hängt sig i den här körningen av appen. Dess aktör är då upptagen, så nästa
+    /// anrop skulle bara stå i kö bakom det hängda; hoppa över den tills appen startats om.
+    @ObservationIgnored private var nemotronStalled = false
     @ObservationIgnored private let parakeet = ParakeetTranscriber()
     /// Sätts när Core ML inte kunde köra en modell på Neural Engine (sett på MacBook Air M1,
     /// 2026-11-08: "ANEProgramProcessRequestDirect() Failed with status=0xf" och sedan E5RT-fel).
@@ -88,6 +94,10 @@ final class TranscriberService {
 
     /// Beräkningsenheterna utan Neural Engine.
     nonisolated static let withoutNeuralEngine: MLComputeUnits = .cpuAndGPU
+
+    /// Hur länge ett talarsteg får ta innan det släpps: 3 minuter plus en fjärdedel av ljudets längd
+    /// (5 minuter ljud ger drygt 4 minuter, en timme 18 minuter). Första gången kompileras modellen.
+    nonisolated static func speakerDeadline(audioSeconds: Double) -> Double { 180 + audioSeconds / 4 }
 
     /// Datorer med lite minne (t.ex. 8 GB) kör en modell i taget och släpper den efteråt.
     static var hasLowMemory: Bool { FailureExplainer.isLowMemory(ProcessInfo.processInfo.physicalMemory) }
@@ -369,6 +379,7 @@ final class TranscriberService {
         speakerTurns: [SpeakerTurn]?
     ) async throws -> TranscriptionOutput {
         var diagnostics = TranscriptionDiagnostics()
+        var notice: String?
         let clock = ContinuousClock()
         let transcriptionStart = clock.now
 
@@ -428,12 +439,18 @@ final class TranscriberService {
             if Self.hasLowMemory { await releaseRecognitionModel() }
             phase = .identifyingSpeakers
             let speakersStart = clock.now
-            let diarized: (segments: [SegmentData], diarizer: String)
+            var diarized: (segments: [SegmentData], diarizer: String)
             do {
-                diarized = try await diarizedSegments(samples: samples, segments: segments, options: options)
-            } catch let error where canRetryWithoutNeuralEngine(error) {
-                await stopUsingNeuralEngine(after: error, model: options.model, step: .identifySpeakers)
-                diarized = try await diarizedSegments(samples: samples, segments: segments, options: options)
+                do {
+                    diarized = try await diarizedSegments(samples: samples, segments: segments, options: options)
+                } catch let error where canRetryWithoutNeuralEngine(error) {
+                    await stopUsingNeuralEngine(after: error, model: options.model, step: .identifySpeakers)
+                    diarized = try await diarizedSegments(samples: samples, segments: segments, options: options)
+                }
+            } catch let timeout as SpeakerStepTimedOut {
+                // Texten är klar; bara talarna saknas. Det ska synas, inte bara loggas.
+                diarized = (segments, "Ingen (tidsgräns)")
+                notice = "Talarna kunde inte identifieras: steget tog längre än \(timeout.seconds / 60) minuter och avbröts. Texten är klar utan talare. Kör om med \"Skilj på talare\" avstängt, eller starta om appen och försök igen."
             }
             if Self.hasLowMemory { await releaseSpeakerModels() }
             segments = diarized.segments
@@ -441,7 +458,7 @@ final class TranscriberService {
             diagnostics.speakersSeconds = Self.seconds(clock.now - speakersStart)
         }
         segments = segments.filter { !TextCleaning.isNonSpeechMarker($0.text) }
-        return TranscriptionOutput(segments: segments, language: language, diagnostics: diagnostics)
+        return TranscriptionOutput(segments: segments, language: language, diagnostics: diagnostics, notice: notice)
     }
 
     private func runParakeet(_ input: [Float], options: TranscriptionOptions) async throws -> ParakeetTranscriber.Output {
@@ -654,17 +671,39 @@ final class TranscriberService {
         return (assigned.contains { $0.speaker != nil } ? assigned : segments, diarizerName)
     }
 
-    /// Vem som talar när, och vilken modell som kom fram till det.
+    /// Vem som talar när, och vilken modell som kom fram till det. Varje modell har en tidsgräns
+    /// (`speakerDeadline`): hänger sig Nemotron byts den mot SpeakerKit, och hänger sig den också
+    /// kastas `SpeakerStepTimedOut`. Delstegen loggas i Felloggen, så att en hängning syns var den stannade.
     func speakerTurns(samples: [Float], options: TranscriptionOptions) async throws -> (turns: [SpeakerTurn], diarizer: String) {
+        let limit = Self.speakerDeadline(audioSeconds: Double(samples.count) / AudioLoader.sampleRate)
+        let clock = ContinuousClock()
+        let model = options.model.displayName
         // Nemotron tar inget antal talare, så ett fast antal går till de andra. Går
         // modellen inte att ladda ner eller ger den inga turer används den vanliga vägen.
         var nemotronTurns: [SpeakerTurn]?
-        if options.sortformerDiarization && options.speakerCount.exact == nil {
+        if options.sortformerDiarization && options.speakerCount.exact == nil && !nemotronStalled {
+            ErrorLog.append(model: model, step: .identifySpeakers, technical: "Info: Nemotron 3 startar (tidsgräns \(Int(limit)) s)")
+            let started = clock.now
+            let diarizer = shortReplyDiarizer
+            let avoidsNeuralEngine = self.avoidsNeuralEngine
             do {
-                nemotronTurns = try await shortReplyDiarizer.turns(
-                    samples: samples,
-                    computeUnits: avoidsNeuralEngine ? Self.withoutNeuralEngine : .all
-                )
+                let found = try await Deadline.run(seconds: limit) {
+                    try await diarizer.turns(
+                        samples: samples,
+                        computeUnits: avoidsNeuralEngine ? Self.withoutNeuralEngine : .all
+                    )
+                }
+                if let found {
+                    nemotronTurns = found
+                    ErrorLog.append(model: model, step: .identifySpeakers,
+                                    technical: "Info: Nemotron 3 klar på \(Int(Self.seconds(clock.now - started))) s")
+                } else {
+                    nemotronStalled = true
+                    ErrorLog.append(model: model, step: .identifySpeakers,
+                                    technical: "Tidsgräns: Nemotron 3 svarade inte på \(Int(limit)) s. Byter till SpeakerKit.")
+                }
+            } catch is CancellationError {
+                throw CancellationError()
             } catch {
                 // Felet stoppar inte körningen, men det ska synas i loggen (det försvann förut).
                 ErrorLog.append(model: "Nemotron 3", step: .identifySpeakers,
@@ -674,7 +713,20 @@ final class TranscriberService {
         if let nemotronTurns, !nemotronTurns.isEmpty {
             return (nemotronTurns, "Nemotron 3")
         }
-        return (try await speakerKitTurns(samples: samples, speakers: options.speakerCount), "SpeakerKit")
+        ErrorLog.append(model: model, step: .identifySpeakers, technical: "Info: SpeakerKit startar (tidsgräns \(Int(limit)) s)")
+        let started = clock.now
+        let turns = try await Deadline.run(seconds: limit) { [self] in
+            try await speakerKitTurns(samples: samples, speakers: options.speakerCount)
+        }
+        guard let turns else {
+            speakerKit = nil
+            ErrorLog.append(model: model, step: .identifySpeakers,
+                            technical: "Tidsgräns: SpeakerKit svarade inte på \(Int(limit)) s. Fortsätter utan talare.")
+            throw SpeakerStepTimedOut(seconds: Int(limit))
+        }
+        ErrorLog.append(model: model, step: .identifySpeakers,
+                        technical: "Info: SpeakerKit klar på \(Int(Self.seconds(clock.now - started))) s")
+        return (turns, "SpeakerKit")
     }
 
     /// Sparar turerna så att fel i talartilldelningen går att söka efter utan att dela texten.
