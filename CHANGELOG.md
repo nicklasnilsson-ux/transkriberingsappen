@@ -6,6 +6,11 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.9.34] – 2026-11-09
+
+### Ändrat
+- Modellväljaren lovar inte längre att KB Large ordagrann är bäst "när varje ord måste stämma". På ren svenska gör Pianissimo och KB Large nästan lika många ordfel; KB Large klarar däremot svagt ljud bättre. KB Large får därför märket "Bäst på svagt ljud" och texten "Välj den när ljudet är dåligt eller du vill ha några färre ordfel. Tar längre tid och behöver mer minne." Pianissimo får märket "Snabbast". Samma ordval står nu på landningssidan och i README.
+
 ## [0.9.33] – 2026-11-08
 
 ### Rättat
