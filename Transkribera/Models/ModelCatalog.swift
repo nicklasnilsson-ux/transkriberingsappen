@@ -35,7 +35,7 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
     }
 
     /// Modellerna som visas i väljaren, i visningsordning. Pianissimo först (snabbast och
-    /// standard), KB Large ordagrann när varje ord måste stämma, Large v3 Turbo för andra
+    /// standard), KB Large ordagrann när ljudet är dåligt, Large v3 Turbo för andra
     /// språk. Dölj en modell här tills dess nedladdning är publicerad;
     /// scripts/check-models.sh stoppar bygget om en visad modell saknas.
     static let offered: [WhisperModel] = [.pianissimo, .kbLargeStrict, .largeV3Turbo]
@@ -182,11 +182,17 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
         return "\(Int(wer.rounded())) av 100 ord fel på svenska"
     }
 
-    /// Kort etikett om språkstöd.
+    /// Kort etikett om vad modellen är bäst på. Bara påståenden som mätningarna står bakom:
+    /// Pianissimo är snabbast (10 mot 221 s för 18 min, Tidsmätning), KB Large klarar
+    /// svagt ljud bättre (vibe-vs-var-app: 9 mot 16 ordfel på 15 meningar med dåligt ljud).
+    /// På ren svenska är ordfelen lika (82,0 mot 82,4 % ord rätt), så ingen är "bäst för svenska".
+    /// scripts/test_model_texts.py vaktar formuleringarna.
     var languageNote: String {
-        switch family {
-        case .kb, .klang: return "Bäst för svenska"
-        case .openAI: return "99 språk"
+        switch self {
+        case .pianissimo: return "Snabbast"
+        case .kbLargeStrict, .kbLarge: return "Bäst på svagt ljud"
+        case .kbBase, .kbSmall, .kbMedium, .kbMediumStrict, .klang: return "Svenska"
+        default: return "99 språk"
         }
     }
 
@@ -200,11 +206,11 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
         case .kbMedium:
             return "Lite färre fel än Small men tre gånger så stor och långsammare. Passar om datorn har för lite minne för Large."
         case .kbLarge:
-            return "Färst fel, särskilt på namn, facktermer, dialekter och dåligt ljud. Tar 3–5 gånger så lång tid som Small. Välj den när varje ord måste stämma."
+            return "Färre fel, särskilt på dåligt ljud. Tar 3–5 gånger så lång tid som Small. Välj den när ljudet är dåligt eller du vill ha några färre ordfel."
         case .kbMediumStrict:
             return "Som Medium, men skriver mer ordagrant och stryker mindre. Bra för intervjuer om datorn har för lite minne för Large."
         case .kbLargeStrict:
-            return "Välj den när varje ord måste stämma, t.ex. för citat, namn och facktermer. Skriver ordagrant, men är långsammare och behöver mer minne."
+            return "Välj den när ljudet är dåligt eller du vill ha några färre ordfel. Tar längre tid och behöver mer minne."
         case .pianissimo:
             return "Snabbast och ger en komplett text. Välj den till de flesta svenska intervjuer och möten, även långa. Namn i ordlistan rättas i efterhand."
         case .tiny:

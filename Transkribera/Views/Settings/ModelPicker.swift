@@ -130,7 +130,7 @@ private struct ModelAdvice: View {
         Label {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Pratas det svenska? Välj Pianissimo.").font(.app(.regular, weight: .medium))
-                Text("Pianissimo är snabbast och ger en komplett text. Välj KB Large ordagrann när varje ord måste stämma, t.ex. för citat, namn och facktermer. Andra språk än svenska: välj Large v3 Turbo.")
+                Text("Pianissimo är snabbast och ger en komplett text. Välj KB Large ordagrann när ljudet är dåligt eller du vill ha några färre ordfel. Andra språk än svenska: välj Large v3 Turbo.")
                     .font(.app(.small))
                     .foregroundStyle(Color.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -214,8 +214,8 @@ struct ModelGuideView: View {
                      destination: URL(string: "https://huggingface.co/KlangAI/pianissimo-sv")!)
                     .font(.app(.small))
 
-                section("KB Large ordagrann: när varje ord måste stämma",
-                        "KB-modellerna kommer från Kungliga biblioteket (KBLab) och är vidaretränade på över 50 000 timmar svenskt tal. Den ordagranna varianten skriver mer exakt vad som sägs och stryker mindre. Välj den för citat, namn och facktermer, när du kan vänta längre och datorn har minst 16 GB minne.")
+                section("KB Large ordagrann: när ljudet är dåligt",
+                        "KB-modellerna kommer från Kungliga biblioteket (KBLab) och är vidaretränade på över 50 000 timmar svenskt tal. Den ordagranna varianten skriver mer exakt vad som sägs och stryker mindre. Välj den när ljudet är dåligt eller du vill ha några färre ordfel, när du kan vänta längre och datorn har minst 16 GB minne.")
 
                 section("Andra språk: Large v3 Turbo",
                         "Pianissimo och KB-modellen är tränade för svenska och blir sämre på andra språk. Pratas det engelska eller blandade språk, välj Large v3 Turbo.")
