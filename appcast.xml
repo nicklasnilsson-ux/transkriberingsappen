@@ -6,6 +6,19 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.9.34</title>
+      <pubDate>Mon, 09 Nov 2026 11:25:59 GMT</pubDate>
+      <sparkle:version>71</sparkle:version>
+      <sparkle:shortVersionString>0.9.34</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.34</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Ändrat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Modellväljaren lovar inte längre att KB Large ordagrann är bäst &amp;quot;när varje ord måste stämma&amp;quot;. På ren svenska gör Pianissimo och KB Large nästan lika många ordfel; KB Large klarar däremot svagt ljud bättre. KB Large får därför märket &amp;quot;Bäst på svagt ljud&amp;quot; och texten &amp;quot;Välj den när ljudet är dåligt eller du vill ha några färre ordfel. Tar längre tid och behöver mer minne.&amp;quot; Pianissimo får märket &amp;quot;Snabbast&amp;quot;. Samma ordval står nu på landningssidan och i README.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.34/Transkribera-v0.9.34.zip" length="14682841" type="application/octet-stream" sparkle:edSignature="eojN/3bbuCc1VLZn7pLbTuTOX7xuYj21CZGbLFjf/uMAf7JiNKVm7ocVL5JW9DzOKIIWoPQ0M76BV50GtNQcAQ==" />
+    </item>
+    <item>
       <title>Version 0.9.33</title>
       <pubDate>Sun, 08 Nov 2026 20:23:04 GMT</pubDate>
       <sparkle:version>70</sparkle:version>
@@ -417,19 +430,6 @@
 &lt;li&gt;Vänsterpanelen är en enda scrollvy: rutan för ny transkribering, rubriken, sökfältet och listan ligger efter varandra uppifrån och ned och scrollar tillsammans. Inget kan längre hamna ovanför appens yta.&lt;/li&gt;
 &lt;/ul&gt;</description>
       <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.5/Transkribera-v0.9.5.zip" length="14506361" type="application/octet-stream" sparkle:edSignature="I5RqvuoNz0sh+QjoxBJ03eSpItMLNV+BgA2QMjntwdLx/RG+GAlLpdllqXEThGxqXxwk/OxFwE1qmt4wAM8RBg==" />
-    </item>
-    <item>
-      <title>Version 0.9.4</title>
-      <pubDate>Wed, 04 Nov 2026 20:46:00 GMT</pubDate>
-      <sparkle:version>41</sparkle:version>
-      <sparkle:shortVersionString>0.9.4</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.4</sparkle:fullReleaseNotesLink>
-      <description>&lt;h3&gt;Rättat&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Vänsterpanelen läggs ut uppifrån och ned och börjar alltid i överkanten. Den centreras inte längre och hoppar inte när du byter läge eller ändrar inställningar.&lt;/li&gt;
-&lt;/ul&gt;</description>
-      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.4/Transkribera-v0.9.4.zip" length="14499620" type="application/octet-stream" sparkle:edSignature="6K3Y50HJULNVB62dEHv/uLP6Tgje1Eih7YPVB/7Kwp0LmrBPNqhpN9IwOHLzLfVfuO/ufM3RqaWCEW7aII0NAg==" />
     </item>
   </channel>
 </rss>
