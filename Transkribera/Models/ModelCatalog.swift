@@ -191,8 +191,7 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .pianissimo: return "Snabbast"
         case .kbLargeStrict, .kbLarge: return "Bäst på svagt ljud"
-        case .kbBase, .kbSmall, .kbMedium, .kbMediumStrict, .klang: return "Svenska"
-        default: return "99 språk"
+        default: return isSwedishOnly ? "Svenska" : "99 språk"
         }
     }
 
