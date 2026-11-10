@@ -4,15 +4,18 @@ import XCTest
 
 final class SpeakerMoveTests: XCTestCase {
     func testTargetsAreTheOtherSpeakersInOrder() {
-        XCTAssertEqual(SpeakerMove.targets(speakers: ["Intervjuare", "Kund 1", "Kund 2"], current: "Kund 1"), ["Intervjuare", "Kund 2"])
+        XCTAssertEqual(SpeakerMove.targets(speakers: ["Intervjuare", "Talare 1", "Talare 2"], current: "Talare 1"), ["Intervjuare", "Talare 2"])
         XCTAssertEqual(SpeakerMove.targets(speakers: ["Talare 1"], current: "Talare 1"), [])
         XCTAssertEqual(SpeakerMove.targets(speakers: ["Talare 1", "Talare 2"], current: nil), ["Talare 1", "Talare 2"])
     }
 
-    func testNewNameFollowsRoles() {
-        XCTAssertEqual(SpeakerMove.suggestedNewName(existing: ["Intervjuare", "Kund 1", "Kund 2"]), "Kund 3")
-        XCTAssertEqual(SpeakerMove.suggestedNewName(existing: ["Intervjuare"]), "Kund 1")
-        XCTAssertEqual(SpeakerMove.suggestedNewName(existing: ["Intervjuare 1", "Intervjuare 2", "Kund 1"]), "Kund 2")
+    /// Övriga talare heter "Talare N", aldrig "Kund N" (Nicklas 2026-11-10).
+    func testNewNameIsTalareAlsoWithRoles() {
+        XCTAssertEqual(SpeakerMove.suggestedNewName(existing: ["Intervjuare", "Talare 1", "Talare 3"]), "Talare 4")
+        XCTAssertEqual(SpeakerMove.suggestedNewName(existing: ["Intervjuare"]), "Talare 1")
+        XCTAssertEqual(SpeakerMove.suggestedNewName(existing: ["Intervjuare 1", "Intervjuare 2", "Talare 2"]), "Talare 3")
+        // Äldre transkribering med "Kund N": nya talare får ändå "Talare N".
+        XCTAssertEqual(SpeakerMove.suggestedNewName(existing: ["Intervjuare", "Kund 1", "Kund 2"]), "Talare 1")
     }
 
     func testNewNameWithoutRoles() {
@@ -23,7 +26,7 @@ final class SpeakerMoveTests: XCTestCase {
     }
 
     func testNewNameIsNeverTaken() {
-        for existing in [["Talare 1", "Talare 2"], ["Intervjuare", "Kund 1"], ["Kund 2", "Kund 1", "Intervjuare"]] {
+        for existing in [["Talare 1", "Talare 2"], ["Intervjuare", "Talare 1"], ["Talare 2", "Talare 1", "Intervjuare"], ["Intervjuare", "Kund 1"]] {
             XCTAssertFalse(existing.contains(SpeakerMove.suggestedNewName(existing: existing)))
         }
     }
@@ -54,7 +57,7 @@ final class SpeakerMoveTests: XCTestCase {
     func testUndoOnlyWhileTheMoveStillHolds() {
         let undo = SpeakerMove.Undo(entries: [.init(index: 3, speaker: "Talare 1", wordsData: nil)], speaker: "Talare 2")
         XCTAssertTrue(undo.canUndo(currentSpeakers: [3: "Talare 2"]))
-        XCTAssertFalse(undo.canUndo(currentSpeakers: [3: "Kund 1"]), "talaren har fått en roll sedan bytet")
+        XCTAssertFalse(undo.canUndo(currentSpeakers: [3: "Intervjuare"]), "talaren har fått en roll sedan bytet")
         XCTAssertFalse(undo.canUndo(currentSpeakers: [:]), "segmentet finns inte längre")
         XCTAssertFalse(SpeakerMove.Undo(entries: [], speaker: "Talare 2").canUndo(currentSpeakers: [:]))
     }

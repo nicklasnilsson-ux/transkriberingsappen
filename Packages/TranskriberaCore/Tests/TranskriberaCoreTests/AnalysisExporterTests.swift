@@ -42,7 +42,7 @@ final class AnalysisExporterTests: XCTestCase {
     func testUncertainSpeakerIsMarked() {
         let segments = [
             SegmentData(start: 0, end: 2, text: "Hur ofta loggar ni in?", speaker: "Intervjuare"),
-            SegmentData(start: 2, end: 3, text: "Varje dag.", speaker: "Kund 1", uncertainSpeaker: true),
+            SegmentData(start: 2, end: 3, text: "Varje dag.", speaker: "Talare 1", uncertainSpeaker: true),
             SegmentData(start: 3, end: 5, text: "Okej.", speaker: "Intervjuare")
         ]
         let output = AnalysisExporter.markdown(segments, metadata: metadata, timeZone: utc)
@@ -51,7 +51,7 @@ final class AnalysisExporterTests: XCTestCase {
 
         - Datum: 2026-10-26 07:33
         - Längd: 2 min 05 s
-        - Talare: Intervjuare, Kund 1
+        - Talare: Intervjuare, Talare 1
         - Språk: Svenska
         - ⚠ = osäkert vem som sa repliken
 
@@ -59,7 +59,7 @@ final class AnalysisExporterTests: XCTestCase {
 
         [00:00] **Intervjuare:** Hur ofta loggar ni in?
 
-        [00:02] **Kund 1:** ⚠ Varje dag.
+        [00:02] **Talare 1:** ⚠ Varje dag.
 
         [00:03] **Intervjuare:** Okej.
 
@@ -124,15 +124,24 @@ final class AnalysisExporterTests: XCTestCase {
         XCTAssertTrue(simple.contains("automatisk transkribering"))
         XCTAssertFalse(simple.contains("osäkert vem som sa just den repliken"))
         XCTAssertFalse(simple.contains("platshållare"))
-        XCTAssertFalse(simple.contains("är roller"))
+        XCTAssertFalse(simple.contains("är en roll"))
 
         let rich = [
             SegmentData(start: 0, end: 2, text: "Hej [PERSON 1].", speaker: "Intervjuare"),
-            SegmentData(start: 2, end: 4, text: "Hej.", speaker: "Kund 1", uncertainSpeaker: true)
+            SegmentData(start: 2, end: 4, text: "Hej.", speaker: "Talare 1", uncertainSpeaker: true)
         ]
         let full = AnalysisExporter.markdown(rich, metadata: metadata, timeZone: utc, includeGuide: true)
         XCTAssertTrue(full.contains("platshållare"))
-        XCTAssertTrue(full.contains("är roller"))
+        XCTAssertTrue(full.contains("Intervjuare är en roll"))
+        XCTAssertTrue(full.contains("Talare 1, Talare 2"))
+        XCTAssertFalse(full.contains("Kund"), "Kund nämns bara när filen har det rollnamnet (äldre transkriberingar)")
+
+        let legacy = [
+            SegmentData(start: 0, end: 2, text: "Hej.", speaker: "Intervjuare"),
+            SegmentData(start: 2, end: 4, text: "Hej.", speaker: "Kund 1")
+        ]
+        let old = AnalysisExporter.markdown(legacy, metadata: metadata, timeZone: utc, includeGuide: true)
+        XCTAssertTrue(old.contains("Kund 1, Kund 2 … är också roller"))
         // Förklaringen står före första replikens tidskod.
         let guideAt = full.range(of: AnalysisExporter.guideHeading)?.lowerBound
         let firstLineAt = full.range(of: "[00:00]")?.lowerBound

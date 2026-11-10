@@ -37,8 +37,12 @@ public enum AnalysisExporter {
         if hasUncertainty {
             lines.append("\(uncertainMark) betyder att det är osäkert vem som sa just den repliken (eller delen efter märket). Det säger inget om hur säker texten är. Märkta delar kan höra till grannens replik.")
         }
-        if speakers.contains(where: { $0.hasPrefix("Intervjuare") || $0.hasPrefix("Kund") }) {
-            lines.append("Intervjuare och Kund 1, Kund 2 … är roller, inte namn. Rollerna har bestämts av programmet och användaren.")
+        if speakers.contains(where: SpeakerRoles.isInterviewer) {
+            lines.append("Intervjuare är en roll, inte ett namn (är de flera heter de Intervjuare 1, Intervjuare 2 …). Övriga talare heter Talare 1, Talare 2 … Rollerna har bestämts av programmet och användaren.")
+        }
+        // Äldre transkriberingar (före 0.9.35) kan ha kvar "Kund N".
+        if speakers.contains(where: { $0.hasPrefix(SpeakerRoles.legacyCustomerPrefix) }) {
+            lines.append("Kund 1, Kund 2 … är också roller, inte namn.") // kund-ok: äldre transkriberingar
         }
         if isAnonymized {
             lines.append("Namn och andra uppgifter som kan identifiera någon är ersatta med platshållare som [PERSON 1] eller [PLATS 1]. Samma nummer är samma person eller plats i hela filen. Platshållarna är inga ord i originalet.")

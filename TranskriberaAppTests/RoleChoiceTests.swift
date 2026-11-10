@@ -31,7 +31,18 @@ final class RoleChoiceTests: XCTestCase {
         let before = t.speakerSnapshot
         t.setInterviewer("Talare 1")
         XCTAssertNotEqual(t.speakerSnapshot, before)
-        XCTAssertEqual(t.sortedSegments.map(\.speaker), ["Intervjuare", "Kund 1", "Intervjuare"])
+        XCTAssertEqual(t.sortedSegments.map(\.speaker), ["Intervjuare", "Talare 2", "Intervjuare"])
+        t.restoreSpeakers(before)
+        XCTAssertEqual(t.sortedSegments.map(\.speaker), ["Talare 1", "Talare 2", "Talare 1"])
+    }
+
+    /// Efter valet går det att lägga till en intervjuare till, och Ångra tar bort båda (Nicklas 2026-11-10).
+    func testAddingASecondInterviewerAndUndo() {
+        let t = transcript()
+        let before = t.speakerSnapshot
+        t.setInterviewer("Talare 1")
+        t.setInterviewer("Talare 2", to: true)
+        XCTAssertEqual(t.sortedSegments.map(\.speaker), ["Intervjuare 1", "Intervjuare 2", "Intervjuare 1"])
         t.restoreSpeakers(before)
         XCTAssertEqual(t.sortedSegments.map(\.speaker), ["Talare 1", "Talare 2", "Talare 1"])
     }
