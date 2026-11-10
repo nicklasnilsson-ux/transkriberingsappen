@@ -6,6 +6,24 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.9.35</title>
+      <pubDate>Tue, 10 Nov 2026 08:08:01 GMT</pubDate>
+      <sparkle:version>72</sparkle:version>
+      <sparkle:shortVersionString>0.9.35</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.35</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Ändrat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Talare som inte är intervjuare heter nu Talare 1, Talare 2 och så vidare i stället för Kund 1, Kund 2. Talare är ett mer öppet ord, eftersom alla intervjuer inte är med kunder. När du väljer intervjuare behåller övriga talare sina nummer, så att till exempel Talare 3 inte plötsligt blir en annan person. Därför kan det bli luckor (Intervjuare, Talare 1, Talare 3). Gäller också förslaget under &amp;quot;Ny talare…&amp;quot; och förklaringen i exporten för analys.&lt;/li&gt;
+&lt;li&gt;Äldre transkriberingar har kvar Kund 1, Kund 2 tills du ändrar vem som är intervjuare. Då blir de Talare 1, Talare 2.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Nytt&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Fler intervjuare direkt efter &amp;quot;Vem är intervjuare?&amp;quot;: under &amp;quot;Klart. Talare 2 är intervjuare.&amp;quot; står &amp;quot;Fler intervjuare?&amp;quot; med övriga talare. Väljer du en till heter de Intervjuare 1 och Intervjuare 2. Ångra tar bort hela valet. Det går som förut också att välja under Talare i verktygsfältet och i ▾-menyn vid talarens namn.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.35/Transkribera-v0.9.35.zip" length="14688003" type="application/octet-stream" sparkle:edSignature="ONcYNu+b1cfS/pwWslZA//Bbtxb+xn5cl1PtnbIBqgAmS9c5kgaQ+4Jl9ZkyLQwrusl1B59XaAk5YATtVHhgAQ==" />
+    </item>
+    <item>
       <title>Version 0.9.34</title>
       <pubDate>Mon, 09 Nov 2026 11:25:59 GMT</pubDate>
       <sparkle:version>71</sparkle:version>
@@ -417,19 +435,6 @@
 &lt;li&gt;Mötesinspelning: sidopanelen försvinner inte längre uppåt utanför appen. Orsaken var en text i huvudytan som gjorde hela fönstrets inre högre än fönstret. Det hade inget med sidopanelens uppbyggnad att göra.&lt;/li&gt;
 &lt;/ul&gt;</description>
       <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.6/Transkribera-v0.9.6.zip" length="14505765" type="application/octet-stream" sparkle:edSignature="YcJzpxQ8gCc9UUxsBorEh/LSHHtr8vFmWmRy1DMR61aGMvccRrskuI3nJvOUVGubf+omF68IXmyVqGlZhMa6BQ==" />
-    </item>
-    <item>
-      <title>Version 0.9.5</title>
-      <pubDate>Wed, 04 Nov 2026 21:59:12 GMT</pubDate>
-      <sparkle:version>42</sparkle:version>
-      <sparkle:shortVersionString>0.9.5</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.5</sparkle:fullReleaseNotesLink>
-      <description>&lt;h3&gt;Rättat&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Vänsterpanelen är en enda scrollvy: rutan för ny transkribering, rubriken, sökfältet och listan ligger efter varandra uppifrån och ned och scrollar tillsammans. Inget kan längre hamna ovanför appens yta.&lt;/li&gt;
-&lt;/ul&gt;</description>
-      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.5/Transkribera-v0.9.5.zip" length="14506361" type="application/octet-stream" sparkle:edSignature="I5RqvuoNz0sh+QjoxBJ03eSpItMLNV+BgA2QMjntwdLx/RG+GAlLpdllqXEThGxqXxwk/OxFwE1qmt4wAM8RBg==" />
     </item>
   </channel>
 </rss>
