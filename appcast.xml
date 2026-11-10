@@ -6,6 +6,19 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.9.36</title>
+      <pubDate>Tue, 10 Nov 2026 11:39:19 GMT</pubDate>
+      <sparkle:version>73</sparkle:version>
+      <sparkle:shortVersionString>0.9.36</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.36</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Ändrat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Meddelandet när mötesinspelningen saknar tillåtelse är nu tre numrerade steg: öppna Skärm- och systemljudsinspelning (på macOS 14 heter raden Skärminspelning), slå på Transkribera och öppna appen igen. Står Transkribera redan påslaget förklaras hur du tar bort och lägger till appen med − och +. Samma steg, med vad du ser när det lyckats, finns nu i README och på landningssidan under &amp;quot;Slå på mötesinspelning&amp;quot;. Installationsstegen där är också tydligare.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.36/Transkribera-v0.9.36.zip" length="14688153" type="application/octet-stream" sparkle:edSignature="GpDTNo+d34sRywcN0FVj0oMhGXPh3O9A3Uv0xIyNBPhIHiMMB4RQdweB5E/ep3axRczAPp7n2TlO/95imzuiBA==" />
+    </item>
+    <item>
       <title>Version 0.9.35</title>
       <pubDate>Tue, 10 Nov 2026 08:08:01 GMT</pubDate>
       <sparkle:version>72</sparkle:version>
@@ -422,19 +435,6 @@
 &lt;li&gt;Markerad rad i listan: texten och ikonen är vita mot den mörka markeringen. Förut var texten mörk på mörkt.&lt;/li&gt;
 &lt;/ul&gt;</description>
       <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.7/Transkribera-v0.9.7.zip" length="14508916" type="application/octet-stream" sparkle:edSignature="UR5s9E8fZvSfVt2jR9v427twiIXz+foeVT+qqCelkP5gc4BOe4Wf/NQnfziepijYbAWcPtcfcyYrNLuHOY8YAw==" />
-    </item>
-    <item>
-      <title>Version 0.9.6</title>
-      <pubDate>Wed, 04 Nov 2026 23:53:24 GMT</pubDate>
-      <sparkle:version>43</sparkle:version>
-      <sparkle:shortVersionString>0.9.6</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.6</sparkle:fullReleaseNotesLink>
-      <description>&lt;h3&gt;Rättat&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Mötesinspelning: sidopanelen försvinner inte längre uppåt utanför appen. Orsaken var en text i huvudytan som gjorde hela fönstrets inre högre än fönstret. Det hade inget med sidopanelens uppbyggnad att göra.&lt;/li&gt;
-&lt;/ul&gt;</description>
-      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.6/Transkribera-v0.9.6.zip" length="14505765" type="application/octet-stream" sparkle:edSignature="YcJzpxQ8gCc9UUxsBorEh/LSHHtr8vFmWmRy1DMR61aGMvccRrskuI3nJvOUVGubf+omF68IXmyVqGlZhMa6BQ==" />
     </item>
   </channel>
 </rss>
