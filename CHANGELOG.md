@@ -6,6 +6,11 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.9.36] – 2026-11-10
+
+### Ändrat
+- Meddelandet när mötesinspelningen saknar tillåtelse är nu tre numrerade steg: öppna Skärm- och systemljudsinspelning (på macOS 14 heter raden Skärminspelning), slå på Transkribera och öppna appen igen. Står Transkribera redan påslaget förklaras hur du tar bort och lägger till appen med − och +. Samma steg, med vad du ser när det lyckats, finns nu i README och på landningssidan under "Slå på mötesinspelning". Installationsstegen där är också tydligare.
+
 ## [0.9.35] – 2026-11-10
 
 ### Ändrat

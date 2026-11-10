@@ -20,7 +20,9 @@ En native macOS-app för att transkribera ljud och video **helt lokalt** på din
 
 ## Installera
 
-Ladda ner senaste `Transkribera-vX.Y.Z.dmg` under [Releases](../../releases) (eller från senaste bygget under *Actions → Bygg → Artifacts*). Öppna den och dra **Transkribera** till **Program**.
+1. Ladda ner senaste `Transkribera-vX.Y.Z.dmg` under [Releases](../../releases) (eller från senaste bygget under *Actions → Bygg → Artifacts*).
+2. Öppna .dmg-filen och dra **Transkribera** till mappen **Program**.
+3. Öppna appen från **Program**, inte från .dmg-fönstret. Första gången varnar macOS (se nedan).
 
 **Krav:** Mac med Apple Silicon (M1 eller senare) och macOS 14 Sonoma eller senare.
 
@@ -28,17 +30,30 @@ Ladda ner senaste `Transkribera-vX.Y.Z.dmg` under [Releases](../../releases) (el
 
 Tills appen signeras med ett Apple Developer ID-certifikat varnar macOS första gången du öppnar den ("Apple kan inte kontrollera …"). Gör så här en gång:
 
-1. Försök öppna Transkribera som vanligt och tryck **Klar/OK** i varningen.
-2. Öppna **Systeminställningar › Integritet och säkerhet**, scrolla ner och klicka **Öppna ändå** vid Transkribera.
-3. Bekräfta med ditt lösenord.
+1. Öppna Transkribera och klicka på **Klar** i varningen (på macOS 14 heter knappen **OK**). Klicka inte på Flytta till papperskorgen.
+2. Öppna **Systeminställningar › Integritet och säkerhet**, skrolla ner till Säkerhet och klicka på **Öppna ändå** vid Transkribera. Knappen visas först efter att du försökt öppna appen.
+3. Bekräfta med ditt lösenord eller Touch ID. Om macOS frågar igen, klicka på **Öppna**.
 
-Alternativt i Terminal: `xattr -dr com.apple.quarantine /Applications/Transkribera.app`
+Då öppnas appen, och nästa gång öppnar du den som vanligt. Alternativt i Terminal: `xattr -dr com.apple.quarantine /Applications/Transkribera.app`
 
 ### Behörigheter
 
-- **Mötesinspelning** kräver *Skärm- och systemljudsinspelning* (Systeminställningar › Integritet och säkerhet). macOS frågar första gången.
-- **Mikrofon** frågas om när du spelar in med mikrofonen påslagen.
-- Nätverk används bara för att ladda ner modeller (OpenAI-modellerna från Hugging Face, KB-Whisper från repots release [`kb-whisper-v1`](../../releases/tag/kb-whisper-v1), Pianissimo från [`pianissimo-v1`](../../releases/tag/pianissimo-v1)). Ljudet lämnar aldrig datorn.
+**Mötesinspelning** (behövs bara för den, inte för att transkribera filer):
+
+1. Välj **Mötesinspelning** i sidopanelen och klicka på **Starta inspelning**. macOS frågar om tillåtelse, eller så visar appen knappen **Öppna Systeminställningar**.
+2. Öppna **Systeminställningar › Integritet och säkerhet › Skärm- och systemljudsinspelning** (på macOS 14 heter raden **Skärminspelning**) och slå på reglaget vid **Transkribera**.
+3. Klicka på **Avsluta och öppna igen**, eller stäng appen med ⌘Q och öppna den igen.
+4. Klicka på **Starta inspelning**. Det gick bra när sidopanelen visar en röd prick, texten "Spelar in" och en tidtagare.
+
+Står reglaget på, men appen säger att tillåtelse saknas? Då har macOS tappat kopplingen, vilket kan hända efter en uppdatering:
+
+1. Klicka på raden Transkribera i samma lista och sedan på **−** (minus) under listan.
+2. Klicka på **+** (plus), välj Transkribera i mappen Program och slå på reglaget.
+3. Stäng appen med ⌘Q, öppna den igen och prova på nytt.
+
+**Mikrofon** (macOS 15 och senare): macOS frågar när du spelar in med mikrofonen påslagen. Klicka på **Tillåt** om din egen röst ska komma med.
+
+**Nätverk** används bara för att ladda ner modeller (OpenAI-modellerna från Hugging Face, KB-Whisper från repots release [`kb-whisper-v1`](../../releases/tag/kb-whisper-v1), Pianissimo från [`pianissimo-v1`](../../releases/tag/pianissimo-v1)). Ljudet lämnar aldrig datorn.
 
 ## Bygga själv
 
