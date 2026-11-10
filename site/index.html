@@ -120,6 +120,8 @@
   ol.steps > li > strong { display: block; }
   ol.steps ol { margin: .4rem 0 0; padding-left: 1.3rem; color: var(--muted); }
   ol.steps > li > p { margin: .15rem 0 0; color: var(--muted); }
+  ol.steps > li > p.ok { margin-top: .5rem; color: var(--text); }
+  .note ol { margin: .6rem 0 0; padding-left: 1.3rem; }
 
   .note {
     border: 1px solid var(--line); border-left: 4px solid var(--accent); background: var(--card);
@@ -199,7 +201,7 @@
         </li>
         <li class="card">
           <h3>Spela in möten</h3>
-          <p>Spela in ett digitalt möte direkt i appen, till exempel i Teams eller Google Meet. Appen spelar in datorns ljud och från macOS 15 även din mikrofon. Du får texten när du stoppar inspelningen. Berätta för deltagarna att du spelar in.</p>
+          <p>Spela in ett digitalt möte direkt i appen, till exempel i Teams eller Google Meet. Appen spelar in datorns ljud och från macOS 15 även din mikrofon. Du får texten när du stoppar inspelningen. Berätta för deltagarna att du spelar in. <a href="#motesinspelning">Så slår du på mötesinspelning</a>.</p>
         </li>
         <li class="card">
           <h3>Lyssna och rätta</h3>
@@ -223,17 +225,24 @@
       <p class="intro">Det tar ett par minuter. Första gången laddar appen ner den modell du väljer.</p>
       <ol class="steps">
         <li>
-          <strong>Ladda ner och installera</strong>
-          <p>Öppna .dmg-filen och dra Transkribera till mappen Program.</p>
+          <strong>Ladda ner och flytta appen till Program</strong>
+          <ol>
+            <li>Klicka på <strong>Ladda ner för Mac</strong> högst upp på sidan.</li>
+            <li>Öppna .dmg-filen när hämtningen är klar. Den ligger i mappen Hämtade filer.</li>
+            <li>Dra <strong>Transkribera</strong> till mappen <strong>Program</strong> i samma fönster.</li>
+          </ol>
+          <p class="ok"><strong>Då ser du:</strong> Transkribera i mappen Program. Starta appen därifrån, inte från .dmg-fönstret.</p>
         </li>
         <li id="forsta-gangen">
           <strong>Öppna appen första gången</strong>
           <p>Appen är ännu inte signerad hos Apple. Därför visar macOS en varning första gången: ”Apple kan inte kontrollera …”. Det behövs bara en gång. Gör så här:</p>
           <ol>
-            <li>Försök öppna Transkribera och klicka på <strong>Klar</strong> i varningen.</li>
-            <li>Öppna <strong>Systeminställningar › Integritet och säkerhet</strong>, skrolla ner och klicka på <strong>Öppna ändå</strong> vid Transkribera.</li>
-            <li>Bekräfta med ditt lösenord eller Touch ID.</li>
+            <li>Öppna Transkribera från mappen Program. Klicka på <strong>Klar</strong> i varningen. På macOS 14 heter knappen <strong>OK</strong>. Klicka inte på Flytta till papperskorgen.</li>
+            <li>Öppna <strong>Systeminställningar › Integritet och säkerhet</strong>. Skrolla ner till avsnittet Säkerhet och klicka på <strong>Öppna ändå</strong> vid Transkribera.</li>
+            <li>Bekräfta med ditt lösenord eller Touch ID. Om macOS frågar igen, klicka på <strong>Öppna</strong>.</li>
           </ol>
+          <p class="ok"><strong>Då ser du:</strong> Transkribera öppnas. Nästa gång öppnar du appen som vanligt.</p>
+          <p>Ser du ingen knapp Öppna ändå? Försök öppna appen en gång till och titta sedan igen. Knappen visas först efter ett försök.</p>
           <details>
             <summary>Alternativ för dig som använder Terminal</summary>
             <p>Kör <code>xattr -dr com.apple.quarantine /Applications/Transkribera.app</code> och öppna sedan appen som vanligt.</p>
@@ -242,6 +251,7 @@
         <li>
           <strong>Släpp in en inspelning</strong>
           <p>Dra en ljudfil (till exempel M4A, MP3 eller WAV) eller en videofil (till exempel MP4 eller MOV) till appens fönster. Appen tar själv ut ljudet ur videon. Om du drar in flera filer hamnar de i kö.</p>
+          <p class="ok"><strong>Då ser du:</strong> filen i listan till vänster medan texten skapas.</p>
         </li>
       </ol>
       <div class="note">
@@ -250,7 +260,45 @@
     </div>
   </section>
 
-  <section class="soft" id="integritet" aria-labelledby="integritet-rubrik">
+  <section class="soft" id="motesinspelning" aria-labelledby="motesinspelning-rubrik">
+    <div class="wrap">
+      <h2 id="motesinspelning-rubrik">Slå på mötesinspelning</h2>
+      <p class="intro">Det här behöver du bara om du vill spela in möten i appen. Att transkribera filer fungerar utan det. macOS kräver att du själv tillåter appen att spela in datorns ljud.</p>
+      <ol class="steps">
+        <li>
+          <strong>Be om tillåtelse</strong>
+          <ol>
+            <li>Öppna Transkribera och välj <strong>Mötesinspelning</strong> högst upp i sidopanelen.</li>
+            <li>Klicka på <strong>Starta inspelning</strong>. macOS frågar om tillåtelse, eller så visar appen knappen <strong>Öppna Systeminställningar</strong>.</li>
+          </ol>
+        </li>
+        <li>
+          <strong>Slå på Transkribera i Systeminställningar</strong>
+          <ol>
+            <li>Öppna <strong>Systeminställningar › Integritet och säkerhet › Skärm- och systemljudsinspelning</strong>. På macOS 14 heter raden <strong>Skärminspelning</strong>.</li>
+            <li>Slå på reglaget vid <strong>Transkribera</strong>. Bekräfta med ditt lösenord eller Touch ID om macOS ber om det.</li>
+            <li>Klicka på <strong>Avsluta och öppna igen</strong> om macOS föreslår det. Annars stänger du Transkribera helt med ⌘Q och öppnar appen igen.</li>
+          </ol>
+        </li>
+        <li>
+          <strong>Starta inspelningen</strong>
+          <p>Välj Mötesinspelning igen och klicka på <strong>Starta inspelning</strong>. Spela upp något med ljud för att prova. Från macOS 15 frågar macOS också om mikrofonen. Klicka på <strong>Tillåt</strong> om du vill att din egen röst ska komma med.</p>
+          <p class="ok"><strong>Då ser du:</strong> en röd prick och texten ”Spelar in” med en tidtagare i sidopanelen. Knappen har bytt namn till Stoppa inspelning.</p>
+        </li>
+      </ol>
+      <div class="note">
+        <p><strong>Står reglaget på, men appen säger att tillåtelse saknas?</strong> Då har macOS tappat kopplingen, vilket kan hända efter en uppdatering. Gör så här:</p>
+        <ol>
+          <li>Öppna <strong>Systeminställningar › Integritet och säkerhet › Skärm- och systemljudsinspelning</strong>.</li>
+          <li>Klicka på raden Transkribera och sedan på <strong>−</strong> (minus) under listan. Bekräfta med ditt lösenord.</li>
+          <li>Klicka på <strong>+</strong> (plus), välj Transkribera i mappen Program och klicka på <strong>Öppna</strong>. Slå på reglaget.</li>
+          <li>Stäng Transkribera helt med ⌘Q och öppna appen igen. Prova sedan att starta inspelningen.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section id="integritet" aria-labelledby="integritet-rubrik">
     <div class="wrap">
       <h2 id="integritet-rubrik">Integritet och förbehåll</h2>
       <p class="intro">Intervjuer innehåller ofta känsliga uppgifter. Här ser du hur appen hanterar dem och vad du själv behöver tänka på.</p>
@@ -274,7 +322,7 @@
     </div>
   </section>
 
-  <section aria-labelledby="krav-rubrik">
+  <section class="soft" aria-labelledby="krav-rubrik">
     <div class="wrap">
       <h2 id="krav-rubrik">Krav</h2>
       <dl class="facts">

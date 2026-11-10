@@ -18,7 +18,7 @@ enum RecordingError: LocalizedError {
         case .nothingRecorded:
             return "Inget ljud spelades in. Kontrollera att ljud faktiskt spelades upp på datorn under inspelningen."
         case .permissionDenied:
-            return "Transkribera behöver tillåtelse att spela in datorns ljud. Slå på Transkribera under Systeminställningar › Integritet och säkerhet › Skärm- och systemljudsinspelning och försök igen.\n\nStår Transkribera redan påslaget? Efter en uppdatering kan macOS ha tappat kopplingen. Ta bort Transkribera ur listan med − och lägg till den igen med +, och starta sedan om appen."
+            return "Transkribera behöver tillåtelse att spela in datorns ljud.\n\n1. Öppna Systeminställningar › Integritet och säkerhet › Skärm- och systemljudsinspelning (på macOS 14: Skärminspelning).\n2. Slå på Transkribera.\n3. Avsluta Transkribera och öppna appen igen.\n\nStår Transkribera redan påslaget? Då har macOS tappat kopplingen, vilket kan hända efter en uppdatering. Markera Transkribera i listan, klicka på − och sedan på + och lägg till appen från mappen Program. Slå på den och öppna appen igen."
         case .startFailed(let detail):
             return "Inspelningen kunde inte starta: \(detail)"
         }
