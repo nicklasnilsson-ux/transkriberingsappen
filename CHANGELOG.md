@@ -6,6 +6,15 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.9.35] – 2026-11-10
+
+### Ändrat
+- Talare som inte är intervjuare heter nu Talare 1, Talare 2 och så vidare i stället för Kund 1, Kund 2. Talare är ett mer öppet ord, eftersom alla intervjuer inte är med kunder. När du väljer intervjuare behåller övriga talare sina nummer, så att till exempel Talare 3 inte plötsligt blir en annan person. Därför kan det bli luckor (Intervjuare, Talare 1, Talare 3). Gäller också förslaget under "Ny talare…" och förklaringen i exporten för analys.
+- Äldre transkriberingar har kvar Kund 1, Kund 2 tills du ändrar vem som är intervjuare. Då blir de Talare 1, Talare 2.
+
+### Nytt
+- Fler intervjuare direkt efter "Vem är intervjuare?": under "Klart. Talare 2 är intervjuare." står "Fler intervjuare?" med övriga talare. Väljer du en till heter de Intervjuare 1 och Intervjuare 2. Ångra tar bort hela valet. Det går som förut också att välja under Talare i verktygsfältet och i ▾-menyn vid talarens namn.
+
 ## [0.9.34] – 2026-11-09
 
 ### Ändrat

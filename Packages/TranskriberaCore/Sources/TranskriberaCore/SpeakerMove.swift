@@ -8,11 +8,10 @@ public enum SpeakerMove {
         speakers.filter { $0 != current }
     }
 
-    /// Förslag på namn till en ny talare. Har talarna roller blir det nästa kund ("Kund 3"),
-    /// annars nästa "Talare N". Namnet finns aldrig redan.
+    /// Förslag på namn till en ny talare: nästa "Talare N", även när talarna har roller.
+    /// Namnet finns aldrig redan.
     public static func suggestedNewName(existing: [String]) -> String {
-        let usesRoles = existing.contains { SpeakerRoles.isInterviewer($0) || number(in: $0, prefix: SpeakerRoles.customerPrefix) != nil }
-        let prefix = usesRoles ? SpeakerRoles.customerPrefix : "Talare"
+        let prefix = SpeakerRoles.speakerPrefix
         var next = (existing.compactMap { number(in: $0, prefix: prefix) }.max() ?? 0) + 1
         while existing.contains("\(prefix) \(next)") { next += 1 }
         return "\(prefix) \(next)"

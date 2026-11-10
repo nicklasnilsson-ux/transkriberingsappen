@@ -1148,7 +1148,7 @@ struct TranscriptDetailView: View {
                                 .accessibilityHidden(true)
                             Button(speaker) { chooseInterviewer(speaker) }
                                 .fixedSize()
-                                .help("\(speaker) blir Intervjuare och övriga Kund 1, Kund 2 … Det går att ändra under Talare i verktygsfältet.")
+                                .help("\(speaker) blir Intervjuare. Övriga talare behåller sina namn (Talare 1, Talare 2 …). Fler intervjuare kan du lägga till efteråt.")
                             Button {
                                 if let first = transcript.sortedSegments.first(where: { $0.speaker == speaker }) {
                                     player?.seek(to: first.start)
@@ -1170,22 +1170,51 @@ struct TranscriptDetailView: View {
     private func chooseInterviewer(_ speaker: String) {
         let before = transcript.speakerSnapshot
         transcript.setInterviewer(speaker)
-        roleChoice = RoleChoice(speaker: speaker, before: before)
+        roleChoice = RoleChoice(speakers: [speaker], before: before)
     }
 
-    /// "Klart. Talare 1 är intervjuare." med Ångra, tills man gör något annat.
+    /// Lägger till en intervjuare till efter valet ("Intervjuare 1", "Intervjuare 2" …).
+    /// Ångra återställer fortfarande läget före det första valet.
+    private func addInterviewer(_ speaker: String) {
+        guard var choice = roleChoice else { return }
+        transcript.setInterviewer(speaker, to: true)
+        choice.speakers.append(speaker)
+        roleChoice = choice
+    }
+
+    /// "Klart. Talare 1 är intervjuare." med Ångra, tills man gör något annat. Under den kan man
+    /// lägga till fler intervjuare, eftersom en intervju ibland har flera (Nicklas 2026-11-10).
     @ViewBuilder
     private var roleChoiceRow: some View {
         if let choice = roleChoice {
-            HStack(spacing: 8) {
-                Image(icon: .checkCircle).foregroundStyle(Color.success).accessibilityHidden(true)
-                Text("Klart. \(choice.speaker) är intervjuare.")
-                Spacer(minLength: 8)
-                Button("Ångra") {
-                    transcript.restoreSpeakers(choice.before)
-                    roleChoice = nil
+            let others = transcript.speakers.filter { SpeakerRoles.speakerNumber($0) != nil }
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 8) {
+                    Image(icon: .checkCircle).foregroundStyle(Color.success).accessibilityHidden(true)
+                    Text("Klart. \(choice.speakers.formatted(.list(type: .and, width: .standard))) är intervjuare.")
+                    Spacer(minLength: 8)
+                    Button("Ångra") {
+                        transcript.restoreSpeakers(choice.before)
+                        roleChoice = nil
+                    }
+                    .buttonStyle(.link)
                 }
-                .buttonStyle(.link)
+                if !others.isEmpty {
+                    FlowLayout(spacing: 12, lineSpacing: 6) {
+                        Text("Fler intervjuare?")
+                            .foregroundStyle(Color.textSecondary)
+                            .fixedSize()
+                        ForEach(others, id: \.self) { speaker in
+                            HStack(spacing: 2) {
+                                Circle().fill(SpeakerPalette.color(for: speaker)).frame(width: 8, height: 8)
+                                    .accessibilityHidden(true)
+                                Button(speaker) { addInterviewer(speaker) }
+                                    .fixedSize()
+                                    .help("\(speaker) blir också intervjuare. Intervjuarna heter då Intervjuare 1, Intervjuare 2 …")
+                            }
+                        }
+                    }
+                }
             }
             .font(.app(.regular))
         }
@@ -1365,7 +1394,8 @@ struct NewSpeakerTarget {
 
 /// Ett rollval som går att ångra: vem som valdes och talarna per segment före valet.
 private struct RoleChoice {
-    let speaker: String
+    /// Talarna som valts till intervjuare, med namnen de hade när de valdes.
+    var speakers: [String]
     let before: [String?]
 }
 

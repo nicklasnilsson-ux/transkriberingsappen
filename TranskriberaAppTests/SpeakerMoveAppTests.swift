@@ -25,7 +25,7 @@ final class SpeakerMoveAppTests: XCTestCase {
         context.insert(t)
         t.replaceSegments(with: [
             SegmentData(start: 0, end: 2, text: "Hur ofta?", speaker: "Intervjuare", words: [word("Hur", 0), word("ofta?", 1)]),
-            SegmentData(start: 2, end: 4, text: "Ganska ofta.", speaker: "Kund 1", words: [word("Ganska", 2), word("ofta.", 3)]),
+            SegmentData(start: 2, end: 4, text: "Ganska ofta.", speaker: "Talare 1", words: [word("Ganska", 2), word("ofta.", 3)]),
             SegmentData(start: 4, end: 6, text: "Varje dag.", speaker: "Intervjuare", words: [word("Varje", 4, uncertain: true), word("dag.", 5, uncertain: true)]),
             SegmentData(start: 6, end: 8, text: "Okej.", speaker: "Intervjuare", words: [word("Okej.", 6)]),
         ], in: context)
@@ -41,18 +41,18 @@ final class SpeakerMoveAppTests: XCTestCase {
     func testMovingOneRowChangesOnlyThatRowAndClearsTheMark() throws {
         let t = transcript()
         XCTAssertTrue(t.sortedSegments[2].isSpeakerUncertain)
-        let undo = try XCTUnwrap(t.moveSegments([2], to: "Kund 1"))
-        XCTAssertEqual(speakers(t), ["Intervjuare", "Kund 1", "Kund 1", "Intervjuare"])
+        let undo = try XCTUnwrap(t.moveSegments([2], to: "Talare 1"))
+        XCTAssertEqual(speakers(t), ["Intervjuare", "Talare 1", "Talare 1", "Intervjuare"])
         XCTAssertFalse(t.sortedSegments[2].isSpeakerUncertain, "⚠ ska bort när användaren själv valt talare")
         XCTAssertEqual(t.sortedSegments[2].words.map(\.word), ["Varje", "dag."], "ordtiderna ska finnas kvar")
-        XCTAssertEqual(undo.speaker, "Kund 1")
+        XCTAssertEqual(undo.speaker, "Talare 1")
     }
 
     func testParagraphsFromTheSameSpeakerMerge() {
         let t = transcript()
         XCTAssertEqual(paragraphCount(t), 3)
-        _ = t.moveSegments([2], to: "Kund 1")
-        XCTAssertEqual(paragraphCount(t), 3, "svaret följer med kundens stycke; intervjuaren får ett eget efter")
+        _ = t.moveSegments([2], to: "Talare 1")
+        XCTAssertEqual(paragraphCount(t), 3, "svaret följer med talarens stycke; intervjuaren får ett eget efter")
         _ = t.moveSegments([2, 3], to: "Intervjuare")
         _ = t.moveSegments([1], to: "Intervjuare")
         XCTAssertEqual(paragraphCount(t), 1, "allt hos samma talare blir ett stycke")
@@ -60,25 +60,25 @@ final class SpeakerMoveAppTests: XCTestCase {
 
     func testUndoGivesBackSpeakerAndMark() throws {
         let t = transcript()
-        let undo = try XCTUnwrap(t.moveSegments([2], to: "Kund 1"))
+        let undo = try XCTUnwrap(t.moveSegments([2], to: "Talare 1"))
         XCTAssertTrue(t.canUndo(undo))
         t.undo(undo)
-        XCTAssertEqual(speakers(t), ["Intervjuare", "Kund 1", "Intervjuare", "Intervjuare"])
+        XCTAssertEqual(speakers(t), ["Intervjuare", "Talare 1", "Intervjuare", "Intervjuare"])
         XCTAssertTrue(t.sortedSegments[2].isSpeakerUncertain)
     }
 
     func testNewSpeakerAppearsInTheList() throws {
         let t = transcript()
         let name = SpeakerMove.suggestedNewName(existing: t.speakers)
-        XCTAssertEqual(name, "Kund 2")
+        XCTAssertEqual(name, "Talare 2")
         _ = try XCTUnwrap(t.moveSegments([3], to: name))
-        XCTAssertEqual(t.speakers, ["Intervjuare", "Kund 1", "Kund 2"])
+        XCTAssertEqual(t.speakers, ["Intervjuare", "Talare 1", "Talare 2"])
     }
 
     func testUndoIsRefusedAfterARename() throws {
         let t = transcript()
-        let undo = try XCTUnwrap(t.moveSegments([2], to: "Kund 1"))
-        t.renameSpeaker("Kund 1", to: "Maria")
+        let undo = try XCTUnwrap(t.moveSegments([2], to: "Talare 1"))
+        t.renameSpeaker("Talare 1", to: "Maria")
         XCTAssertFalse(t.canUndo(undo))
         t.undo(undo)
         XCTAssertEqual(speakers(t), ["Intervjuare", "Maria", "Maria", "Intervjuare"], "Ångra får inte ge tillbaka ett namn som inte finns")

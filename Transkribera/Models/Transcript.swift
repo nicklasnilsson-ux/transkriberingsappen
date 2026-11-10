@@ -116,7 +116,7 @@ final class Transcript {
         }
     }
 
-    /// Byter flera talares namn på en gång, t.ex. till roller ("Intervjuare", "Kund 1").
+    /// Byter flera talares namn på en gång, t.ex. till roller ("Intervjuare", "Intervjuare 2").
     func applySpeakerNames(_ names: [String: String]) {
         for segment in segments {
             if let speaker = segment.speaker, let name = names[speaker] {
@@ -137,13 +137,13 @@ final class Transcript {
         }
     }
 
-    /// Gör `speaker` till intervjuare och övriga talare till kunder.
+    /// Gör `speaker` till intervjuare. Övriga talare heter "Talare N".
     func setInterviewer(_ speaker: String) {
         applySpeakerNames(SpeakerRoles.names(for: speakers, interviewer: speaker))
     }
 
     /// Lägger till eller tar bort `speaker` som intervjuare utan att ändra de andra rollerna.
-    /// Flera intervjuare numreras ("Intervjuare 1", "Intervjuare 2"), övriga blir kunder.
+    /// Flera intervjuare numreras ("Intervjuare 1", "Intervjuare 2"), övriga heter "Talare N".
     func setInterviewer(_ speaker: String, to isInterviewer: Bool) {
         var interviewers = Set(speakers.filter(SpeakerRoles.isInterviewer))
         if isInterviewer { interviewers.insert(speaker) } else { interviewers.remove(speaker) }
