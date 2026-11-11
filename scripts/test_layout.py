@@ -22,6 +22,12 @@ class LayoutTests(unittest.TestCase):
         self.assertIn("private var modeSwitcher", text)
         self.assertIn(".pickerStyle(.segmented)", text)
 
+    def test_mode_switcher_fills_the_card_width(self):
+        # Fil / Mötesinspelning hade fast bredd och följde inte sidopanelens bredd.
+        text = (VIEWS / "Sidebar" / "SidebarView.swift").read_text(encoding="utf-8")
+        body = text[text.index("private var modeSwitcher"):text.index("private var settingsCard")]
+        self.assertRegex(body, r"\.pickerStyle\(\.segmented\)[\s\S]*\.frame\(maxWidth: \.infinity\)")
+
     def test_sidebar_groups_come_from_the_tested_core_function(self):
         text = (VIEWS / "Sidebar" / "SidebarView.swift").read_text(encoding="utf-8")
         self.assertIn("SidebarGroup.group(", text)

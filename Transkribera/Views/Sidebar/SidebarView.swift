@@ -145,6 +145,8 @@ struct SidebarView: View {
         }
         .pickerStyle(.segmented)
         .labelsHidden()
+        // Fyller kortets bredd (två lika breda segment) i stället för sin egen minsta bredd.
+        .frame(maxWidth: .infinity)
         .help("Fil: transkribera ljud- och videofiler. Mötesinspelning: spela in datorns ljud.")
     }
 
