@@ -6,6 +6,19 @@
     <description>Uppdateringar för Transkribera</description>
     <language>sv</language>
     <item>
+      <title>Version 0.9.37</title>
+      <pubDate>Wed, 11 Nov 2026 10:48:18 GMT</pubDate>
+      <sparkle:version>74</sparkle:version>
+      <sparkle:shortVersionString>0.9.37</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.37</sparkle:fullReleaseNotesLink>
+      <description>&lt;h3&gt;Rättat&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Knappen Fil / Mötesinspelning i &amp;quot;Ny transkribering&amp;quot; har samma bredd som kortet och följer sidopanelen när du gör den bredare eller smalare. Förut var den lika bred hela tiden.&lt;/li&gt;
+&lt;/ul&gt;</description>
+      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.37/Transkribera-v0.9.37.zip" length="14689097" type="application/octet-stream" sparkle:edSignature="n8IhsjDdVsaJTewNgGmwBUG1BPa0dSCirwbNnAcJzpXJclAtCmdSgmyO0VbJCdR/mROImUNQMaXDX6QjqaMsBw==" />
+    </item>
+    <item>
       <title>Version 0.9.36</title>
       <pubDate>Tue, 10 Nov 2026 11:39:19 GMT</pubDate>
       <sparkle:version>73</sparkle:version>
@@ -420,21 +433,6 @@
 &lt;li&gt;Långa transkriberingar fryser inte längre när du scrollar medan ljudet spelas. Texten räknades om tio gånger i sekunden; nu ritas bara det stycke som spelas om.&lt;/li&gt;
 &lt;/ul&gt;</description>
       <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.8/Transkribera-v0.9.8.zip" length="14519621" type="application/octet-stream" sparkle:edSignature="obUfO7l9zsz0VKnJz8d6028KqhluFF8YzWK9PQIHhvFLuDk1IFwx/EUfM+EFPwox47myvuxkBsAPj/kuhgJDCg==" />
-    </item>
-    <item>
-      <title>Version 0.9.7</title>
-      <pubDate>Thu, 05 Nov 2026 08:10:54 GMT</pubDate>
-      <sparkle:version>44</sparkle:version>
-      <sparkle:shortVersionString>0.9.7</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:fullReleaseNotesLink>https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/tag/v0.9.7</sparkle:fullReleaseNotesLink>
-      <description>&lt;h3&gt;Rättat&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Ikonerna är skarpa på Retina-skärmar. De ritas nu om i skärmens upplösning i stället för att förstoras från en liten bild.&lt;/li&gt;
-&lt;li&gt;Sidopanelen har en enda sidmarginal: rutan för ny transkribering, rubriken, sökfältet och listraderna har sina kanter på samma avstånd från sidorna.&lt;/li&gt;
-&lt;li&gt;Markerad rad i listan: texten och ikonen är vita mot den mörka markeringen. Förut var texten mörk på mörkt.&lt;/li&gt;
-&lt;/ul&gt;</description>
-      <enclosure url="https://github.com/nicklasnilsson-ux/transkriberingsappen/releases/download/v0.9.7/Transkribera-v0.9.7.zip" length="14508916" type="application/octet-stream" sparkle:edSignature="UR5s9E8fZvSfVt2jR9v427twiIXz+foeVT+qqCelkP5gc4BOe4Wf/NQnfziepijYbAWcPtcfcyYrNLuHOY8YAw==" />
     </item>
   </channel>
 </rss>
