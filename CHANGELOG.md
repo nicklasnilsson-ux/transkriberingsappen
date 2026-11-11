@@ -6,6 +6,11 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+## [0.9.37] – 2026-11-11
+
+### Rättat
+- Knappen Fil / Mötesinspelning i "Ny transkribering" har samma bredd som kortet och följer sidopanelen när du gör den bredare eller smalare. Förut var den lika bred hela tiden.
+
 ## [0.9.36] – 2026-11-10
 
 ### Ändrat
