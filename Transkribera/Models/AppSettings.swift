@@ -29,6 +29,7 @@ enum SettingsKey {
     static let pianissimoCarefulSeams = "pianissimoCarefulSeams"
     static let levelVolume = "levelVolume"
     static let sortformerDiarization = "sortformerDiarization"
+    static let speakersFirst = "speakersFirst"
     /// Textstorlek på läsytan i punkter, ett av `ReadingTextSize.steps`.
     static let readingTextSize = "readingTextSize"
     /// Fråga innan Transkribera igen (på som standard). Gäller bara när det finns plats för
@@ -182,10 +183,14 @@ struct TranscriptionOptions {
     var levelVolume = true
     /// Talaridentifiering med Nemotron 3 Diarization (FluidAudio), byggd för korta repliker. Används när antal talare är automatiskt, annars SpeakerKit.
     var sortformerDiarization = true
+    /// Experiment "Talare först": talarna identifieras först och varje replik transkriberas
+    /// för sig (`ReplyPlan`). Bara med Pianissimo och "Skilj på vem som pratar".
+    var speakersFirst = false
     /// Taligenkänningens spärrar och gränser. Ändras bara av Testlabbet.
     var tuning = DecoderTuning.production
 
     var appliesLevelVolume: Bool { levelVolume && !model.usesParakeet }
+    var appliesSpeakersFirst: Bool { speakersFirst && identifySpeakers && model.usesParakeet }
 
     /// Modellens namn som sparas med transkriberingen, med experimenten som användes,
     /// så att olika körningar går att skilja åt vid en jämförelse.
@@ -193,6 +198,7 @@ struct TranscriptionOptions {
         var extras: [String] = []
         if carefulSeams, model.usesParakeet { extras.append("noggranna skarvar") }
         if appliesLevelVolume { extras.append("jämnad volym") }
+        if appliesSpeakersFirst { extras.append("talare först") }
         extras += tuning.differences
         if identifySpeakers {
             if sortformerDiarization, speakerCount.exact == nil { extras.append("Nemotron 3") }
@@ -213,7 +219,8 @@ struct TranscriptionOptions {
             translateToEnglish: defaults.string(forKey: SettingsKey.task) == "translate",
             carefulSeams: defaults.bool(forKey: SettingsKey.pianissimoCarefulSeams),
             levelVolume: defaults.object(forKey: SettingsKey.levelVolume) as? Bool ?? true,
-            sortformerDiarization: (defaults.object(forKey: SettingsKey.sortformerDiarization) as? Bool ?? true) && ShortReplyDiarizer.isSupported
+            sortformerDiarization: (defaults.object(forKey: SettingsKey.sortformerDiarization) as? Bool ?? true) && ShortReplyDiarizer.isSupported,
+            speakersFirst: defaults.bool(forKey: SettingsKey.speakersFirst)
         )
     }
 }

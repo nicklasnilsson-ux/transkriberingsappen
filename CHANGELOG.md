@@ -6,6 +6,9 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+### Nytt
+- Experiment: *Talare först* under Inställningar → Experiment. Appen tar först reda på vem som pratar och transkriberar sedan varje replik för sig med Pianissimo. Tanken är att korta svar som "Ja." och "Mm." ska komma med och att talaren aldrig ska bytas mitt i en mening. Kräver "Skilj på vem som pratar". Det som användes står efter modellens namn i transkriberingen ("talare först"). Ännu inte bevisat bättre.
+
 ## [0.9.37] – 2026-11-11
 
 ### Rättat

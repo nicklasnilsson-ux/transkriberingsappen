@@ -30,6 +30,7 @@ private struct TranscriptionSettingsView: View {
     @AppStorage(SettingsKey.wordTimestamps) private var wordTimestamps = true
     @AppStorage(SettingsKey.recordMicrophone) private var recordMicrophone = true
     @AppStorage(SettingsKey.pianissimoCarefulSeams) private var carefulSeams = false
+    @AppStorage(SettingsKey.speakersFirst) private var speakersFirst = false
     @AppStorage(SettingsKey.levelVolume) private var levelVolume = true
     @AppStorage(SettingsKey.askBeforeRetranscribe) private var askBeforeRetranscribe = true
     @AppStorage(SettingsKey.model) private var modelRaw = WhisperModel.default.rawValue
@@ -117,10 +118,13 @@ private struct TranscriptionSettingsView: View {
                 Toggle("Noggrannare skarvar", isOn: $carefulSeams)
                     .disabled(!usesParakeet)
                     .help("Pianissimo lyssnar på 15 sekunder i taget. Med det här provar den flera sätt att skarva bitarna och väljer det säkraste.")
+                Toggle("Talare först", isOn: $speakersFirst)
+                    .disabled(!usesParakeet || !identifySpeakers)
+                    .help("Talarna identifieras först och varje replik transkriberas för sig. Tänkt att fånga korta svar som \"Ja.\" och att aldrig byta talare mitt i en mening. Kräver \"Skilj på vem som pratar\".")
             } header: {
                 Text("Experiment")
             } footer: {
-                Text("Ännu inte bevisat bättre. Gäller bara Pianissimo och tar 10–50 % längre tid. Det som användes står efter modellens namn i transkriberingen.")
+                Text("Ännu inte bevisat bättre. Gäller bara Pianissimo; noggrannare skarvar tar 10–50 % längre tid. Det som användes står efter modellens namn i transkriberingen.")
                     .foregroundStyle(Color.textSecondary)
             }
 

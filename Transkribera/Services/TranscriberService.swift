@@ -303,7 +303,8 @@ final class TranscriberService {
         steps = TranscriptionStep.plan(
             needsModel: !modelReady,
             checksGaps: !options.model.usesParakeet,
-            identifiesSpeakers: options.identifySpeakers
+            identifiesSpeakers: options.identifySpeakers,
+            speakersFirst: options.appliesSpeakersFirst
         )
         defer { steps = [] }
         do {
@@ -390,7 +391,14 @@ final class TranscriberService {
         let input = options.appliesLevelVolume ? VolumeLeveler.level(samples, sampleRate: AudioLoader.sampleRate) : samples
         var segments: [SegmentData]
         let language: String?
-        if options.model.usesParakeet {
+        /// Sant när "Talare först" redan har satt talarna.
+        var speakersDone = false
+        if options.model.usesParakeet, speakerTurns == nil, options.appliesSpeakersFirst,
+           let first = try await speakersFirst(samples: samples, input: input, options: options, diagnostics: &diagnostics) {
+            segments = first
+            speakersDone = true
+            language = "sv"
+        } else if options.model.usesParakeet {
             let output: ParakeetTranscriber.Output
             do {
                 output = try await runParakeet(input, options: options)
@@ -433,7 +441,9 @@ final class TranscriberService {
         // ledtråd, och Whisper stavar ibland fel trots den.
         segments = VocabularyCorrection.apply(segments, vocabulary: TextCleaning.wordList(options.vocabulary))
 
-        if let speakerTurns {
+        if speakersDone {
+            // Talarna är redan satta per replik.
+        } else if let speakerTurns {
             let assigned = SpeakerAssignment.assign(segments, turns: speakerTurns)
             if assigned.contains(where: { $0.speaker != nil }) { segments = assigned }
         } else if options.identifySpeakers {
@@ -461,6 +471,79 @@ final class TranscriberService {
         }
         segments = segments.filter { !TextCleaning.isNonSpeechMarker($0.text) }
         return TranscriptionOutput(segments: segments, language: language, diagnostics: diagnostics, notice: notice)
+    }
+
+    /// "Talare först": identifierar talarna, delar ljudet i repliker (`ReplyPlan`) och låter
+    /// Pianissimo transkribera varje replik för sig. Ger `nil` när talarna inte gick att
+    /// identifiera; då körs den vanliga vägen (allt först, talare sedan).
+    private func speakersFirst(
+        samples: [Float],
+        input: [Float],
+        options: TranscriptionOptions,
+        diagnostics: inout TranscriptionDiagnostics
+    ) async throws -> [SegmentData]? {
+        let clock = ContinuousClock()
+        // Med lite minne körs en modell i taget, som i den vanliga vägen.
+        if Self.hasLowMemory { await releaseRecognitionModel() }
+        phase = .identifyingSpeakers
+        let speakersStart = clock.now
+        var diarized: (turns: [SpeakerTurn], diarizer: String)?
+        do {
+            diarized = try await speakerTurns(samples: samples, options: options)
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            ErrorLog.append(model: options.model.displayName, step: .identifySpeakers,
+                            technical: "Talare först: talarna kunde inte identifieras (\(error.localizedDescription)). Kör den vanliga vägen.")
+        }
+        if Self.hasLowMemory {
+            await releaseSpeakerModels()
+            try await prepare(model: options.model)
+        }
+        guard let found = diarized, !found.turns.isEmpty else {
+            phase = .transcribing(fraction: nil)
+            return nil
+        }
+        diagnostics.diarizer = "\(found.diarizer), talare först"
+        diagnostics.speakersSeconds = Self.seconds(clock.now - speakersStart)
+
+        let rate = AudioLoader.sampleRate
+        let duration = Double(input.count) / rate
+        let pieces = ReplyPlan.pieces(turns: found.turns, duration: duration)
+        phase = .transcribing(fraction: 0)
+        let transcriptionStart = clock.now
+        var words: [[WordTimingData]] = []
+        for piece in pieces {
+            try Task.checkCancellation()
+            let from = max(0, min(input.count, Int(piece.start * rate)))
+            let to = max(from, min(input.count, Int(piece.end * rate)))
+            let clip = Array(input[from..<to])
+            let pieceWords: [WordTimingData]
+            do {
+                pieceWords = try await parakeet.words(samples: clip, offset: Double(from) / rate,
+                                                      carefulSeams: options.carefulSeams, tuning: options.tuning)
+            } catch let error where canRetryWithoutNeuralEngine(error) {
+                await stopUsingNeuralEngine(after: error, model: options.model, step: .recognize)
+                try await prepare(model: options.model)
+                pieceWords = try await parakeet.words(samples: clip, offset: Double(from) / rate,
+                                                      carefulSeams: options.carefulSeams, tuning: options.tuning)
+            }
+            words.append(pieceWords)
+            advanceTranscribing(to: piece.end / duration)
+            if let last = pieceWords.last { liveText = TextCleaning.clean(last.word) }
+        }
+        diagnostics.transcriptionSeconds = Self.seconds(clock.now - transcriptionStart)
+
+        let segments = ReplyPlan.segments(pieces: pieces, words: words, turns: found.turns)
+        saveSpeakerTurns(
+            SpeakerDiagnostics(
+                diarizer: diagnostics.diarizer ?? found.diarizer,
+                speakers: options.speakerCount.label,
+                turns: found.turns,
+                segments: segments
+            )
+        )
+        return segments
     }
 
     private func runParakeet(_ input: [Float], options: TranscriptionOptions) async throws -> ParakeetTranscriber.Output {
