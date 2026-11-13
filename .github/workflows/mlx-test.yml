@@ -54,6 +54,9 @@ jobs:
             python scripts/mlx/reference.py "$repo" test.wav | tee -a resultat.txt
           done
 
+      - name: Nycklar i Klangs vikter
+        run: python scripts/mlx/keys.py KlangAI/pianissimo-sv-mlx | tee nycklar.txt
+
       - name: Bygg Swift-testet
         run: |
           cd scripts/mlx
