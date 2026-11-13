@@ -16,6 +16,6 @@ for file in glob.glob(f"{path}/*.safetensors"):
         print(key, weights[key].dtype, tuple(weights[key].shape))
 config = json.load(open(f"{path}/config.json"))
 print("CONFIG-NYCKLAR:", sorted(config))
-for k in ("encoder", "quantization", "model_type", "target"):
+for k in ("encoder", "quantization", "model_type", "target", "decoding"):
     if k in config:
-        print(k, json.dumps(config[k])[:600])
+        print(k, json.dumps(config[k]))

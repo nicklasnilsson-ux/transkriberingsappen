@@ -50,7 +50,7 @@ jobs:
       - name: Referens med Klangs laddare (Python)
         run: |
           pip install "parakeet-mlx==0.5.2" huggingface_hub sentencepiece numpy
-          for repo in KlangAI/pianissimo-sv-mlx KlangAI/pianissimo-sv-mlx-8bit; do
+          for repo in KlangAI/pianissimo-sv-mlx-8bit; do
             python scripts/mlx/reference.py "$repo" test.wav | tee -a resultat.txt
           done
 
