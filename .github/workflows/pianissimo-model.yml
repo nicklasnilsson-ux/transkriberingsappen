@@ -4,6 +4,10 @@ name: Pianissimo-modell
 # FluidAudio och lägger den som zip i releasen "pianissimo-v1", varifrån appen
 # laddar ner den. Exporten körs på Linux (mer minne), kvantisering, kompilering
 # och ett röktest på macOS. Körs när den här filen eller skripten ändras, eller manuellt.
+#
+# Två varianter: pianissimo-sv (kodaren i int8, den vanliga) och pianissimo-sv-fp16
+# (kodaren i 16 bitar, test 2026-11-13 av om kvantiseringen kostar ord). Bara en
+# variant som saknas i releasen byggs och laddas upp; en som finns skrivs aldrig över.
 
 on:
   push:
@@ -22,6 +26,8 @@ concurrency:
 env:
   RELEASE_TAG: pianissimo-v1
   ASSET: pianissimo-sv.zip
+  FP16_NAME: pianissimo-sv-fp16
+  FP16_ASSET: pianissimo-sv-fp16.zip
   PACKAGES_ASSET: pianissimo-sv-mlpackage.zip
   # Fasta versioner så att resultatet går att återskapa.
   MOBIUS_COMMIT: 26f5fa8059d5ab3d34449adce6ff6ed86734e522
@@ -33,17 +39,22 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       missing: ${{ steps.check.outputs.missing }}
+      int8: ${{ steps.check.outputs.int8 }}
+      fp16: ${{ steps.check.outputs.fp16 }}
     steps:
       - id: check
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           assets=$(gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --json assets -q '.assets[].name' 2>/dev/null || true)
-          if grep -qx "$ASSET" <<<"$assets"; then
-            echo "missing=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "missing=true" >> "$GITHUB_OUTPUT"
-          fi
+          int8=true; fp16=true
+          grep -qx "$ASSET" <<<"$assets" && int8=false
+          grep -qx "$FP16_ASSET" <<<"$assets" && fp16=false
+          echo "int8=$int8" >> "$GITHUB_OUTPUT"
+          echo "fp16=$fp16" >> "$GITHUB_OUTPUT"
+          if [ "$int8" = true ] || [ "$fp16" = true ]; then missing=true; else missing=false; fi
+          echo "missing=$missing" >> "$GITHUB_OUTPUT"
+          echo "Saknas: int8=$int8 fp16=$fp16"
 
   export:
     name: Exportera till CoreML (Linux)
@@ -92,7 +103,7 @@ jobs:
 
   finish:
     name: Kvantisera, kompilera och testa (macOS)
-    needs: export
+    needs: [check, export]
     runs-on: macos-15
     timeout-minutes: 120
     steps:
@@ -110,10 +121,18 @@ jobs:
           unzip -q "in/$PACKAGES_ASSET" -d in
 
       - name: Kvantisera kodaren och kompilera
+        if: needs.check.outputs.int8 == 'true'
         run: |
           pip install "coremltools==9.0b1"
           python scripts/pianissimo/finish.py --packages in/pianissimo-sv --out out/pianissimo-sv
           du -sh out/pianissimo-sv/*
+
+      - name: Kompilera med kodaren i fp16
+        if: needs.check.outputs.fp16 == 'true'
+        run: |
+          pip install "coremltools==9.0b1"
+          python scripts/pianissimo/finish.py --packages in/pianissimo-sv --out "out/$FP16_NAME" --encoder fp16
+          du -sh "out/$FP16_NAME"/*
 
       - name: Röktest med svensk talsyntes
         run: |
@@ -126,17 +145,28 @@ jobs:
           afconvert -f WAVE -d LEI16@16000 test.aiff test.wav
           git clone --depth 1 --branch "$FLUIDAUDIO_VERSION" https://github.com/FluidInference/FluidAudio ../FluidAudio
           (cd ../FluidAudio && swift build -c release --product fluidaudiocli)
-          ../FluidAudio/.build/release/fluidaudiocli transcribe test.wav \
-            --local-model-dir out/pianissimo-sv --model-version v3 | tee transcript.txt
-          grep -qi "test" transcript.txt
+          for dir in out/*/; do
+            ../FluidAudio/.build/release/fluidaudiocli transcribe test.wav \
+              --local-model-dir "$dir" --model-version v3 | tee transcript.txt
+            grep -qi "test" transcript.txt
+          done
 
       - name: Publicera i ${{ env.RELEASE_TAG }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           cd out
-          ditto -c -k --keepParent pianissimo-sv "$ASSET"
-          unzip -tq "$ASSET" >/dev/null
-          ls -lh "$ASSET"
-          gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --clobber "$ASSET"
+          # Bara varianter som saknades byggdes; ingen befintlig fil skrivs över.
+          if [ -d pianissimo-sv ]; then
+            ditto -c -k --keepParent pianissimo-sv "$ASSET"
+            unzip -tq "$ASSET" >/dev/null
+            ls -lh "$ASSET"
+            gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" "$ASSET"
+          fi
+          if [ -d "$FP16_NAME" ]; then
+            ditto -c -k --keepParent "$FP16_NAME" "$FP16_ASSET"
+            unzip -tq "$FP16_ASSET" >/dev/null
+            ls -lh "$FP16_ASSET"
+            gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" "$FP16_ASSET"
+          fi
           gh release delete-asset "$RELEASE_TAG" "$PACKAGES_ASSET" -R "$GITHUB_REPOSITORY" --yes

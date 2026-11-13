@@ -9,6 +9,7 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 ### Nytt
 - Experiment: *Fånga korta svar* under Inställningar → Experiment. Korta svar som "Ja.", "Mm." och "Tack så mycket." som Pianissimo missat transkriberas för sig och läggs in efter meningen de hördes i. Bara svar med ett vanligt svarsord tas med, så att brus inte blir påhittade ord. Resten av texten ändras inte. Kräver "Skilj på vem som pratar". Ännu inte bevisat bättre.
 - Experiment: *Korskolla* under Inställningar → Experiment. Ljudet transkriberas en gång till, antingen med KB Large eller med Pianissimo i repliker. Där körningarna hörde olika ord, till exempel "bör" och "behöver" eller ett "inte" som saknas, blir ordet prickat understruket. Klicka på ordet för att välja det andra ordet eller lyssna från två ord före till två ord efter. Stavning, böjningar och "eh" markeras inte. KB Large tar cirka 25 gånger längre tid. Pianissimo i repliker går fort men kräver "Skilj på vem som pratar".
+- Experiment: *Pianissimo i 16 bitar* under Inställningar → Experiment. Den vanliga Pianissimo har modellens största del (kodaren) förminskad till 8 bitar. Det här är samma modell med kodaren i 16 bitar, för att testa om förminskningen kostar ord. Laddar ner 1,2 GB första gången.
 - Exporten för analys har en rad *Modell* överst, till exempel "Modell: Pianissimo (korta svar, Nemotron 3)". Då framgår det alltid vilken modell och vilka inställningar en fil kommer från, även om filen byter namn.
 
 ## [0.9.37] – 2026-11-11

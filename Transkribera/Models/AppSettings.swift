@@ -32,6 +32,8 @@ enum SettingsKey {
     static let rescueShortReplies = "rescueShortReplies"
     /// `CrossCheckSource.rawValue`.
     static let crossCheck = "crossCheck"
+    /// Experiment: Pianissimo med kodaren i 16 bitar (`WhisperModel.pianissimoFP16`).
+    static let pianissimoFP16 = "pianissimoFP16"
     /// Textstorlek på läsytan i punkter, ett av `ReadingTextSize.steps`.
     static let readingTextSize = "readingTextSize"
     /// Fråga innan Transkribera igen (på som standard). Gäller bara när det finns plats för
@@ -156,7 +158,12 @@ struct TranscriptionOverrides: Equatable {
 
     func applied(to options: TranscriptionOptions) -> TranscriptionOptions {
         var o = options
-        if let modelRaw { o.model = WhisperModel.resolved(modelRaw) }
+        if let modelRaw {
+            let wasFP16 = o.model == .pianissimoFP16
+            o.model = WhisperModel.resolved(modelRaw)
+            // Experimentet "Pianissimo i 16 bitar" gäller även när man kör om.
+            if wasFP16, o.model == .pianissimo { o.model = .pianissimoFP16 }
+        }
         if let language { o.languageCode = language == "auto" ? nil : language }
         if let identifySpeakers { o.identifySpeakers = identifySpeakers }
         if let speakerCount { o.speakerCount = speakerCount }
@@ -222,7 +229,8 @@ struct TranscriptionOptions {
     }
 
     static func fromDefaults(_ defaults: UserDefaults = .standard) -> TranscriptionOptions {
-        let model = WhisperModel.resolved(defaults.string(forKey: SettingsKey.model))
+        var model = WhisperModel.resolved(defaults.string(forKey: SettingsKey.model))
+        if model == .pianissimo, defaults.bool(forKey: SettingsKey.pianissimoFP16) { model = .pianissimoFP16 }
         let language = defaults.string(forKey: SettingsKey.language) ?? "sv"
         return TranscriptionOptions(
             model: model,
