@@ -31,6 +31,7 @@ private struct TranscriptionSettingsView: View {
     @AppStorage(SettingsKey.recordMicrophone) private var recordMicrophone = true
     @AppStorage(SettingsKey.pianissimoCarefulSeams) private var carefulSeams = false
     @AppStorage(SettingsKey.rescueShortReplies) private var rescueShortReplies = false
+    @AppStorage(SettingsKey.crossCheck) private var crossCheck = CrossCheckSource.off
     @AppStorage(SettingsKey.levelVolume) private var levelVolume = true
     @AppStorage(SettingsKey.askBeforeRetranscribe) private var askBeforeRetranscribe = true
     @AppStorage(SettingsKey.model) private var modelRaw = WhisperModel.default.rawValue
@@ -121,6 +122,11 @@ private struct TranscriptionSettingsView: View {
                 Toggle("Fånga korta svar", isOn: $rescueShortReplies)
                     .disabled(!usesParakeet || !identifySpeakers)
                     .help("Korta svar som \"Ja.\" och \"Mm.\" som saknas i texten transkriberas för sig och läggs in efter meningen de hördes i. Resten av texten ändras inte. Kräver \"Skilj på vem som pratar\".")
+                Picker("Korskolla", selection: $crossCheck) {
+                    ForEach(CrossCheckSource.allCases) { Text($0.label).tag($0) }
+                }
+                .disabled(!usesParakeet)
+                .help("Ljudet transkriberas en gång till. Där körningarna hörde olika ord blir ordet prickat understruket; klicka på det för att välja och lyssna. KB Large tar cirka 25 gånger längre tid. Pianissimo i repliker går fort men kräver \"Skilj på vem som pratar\".")
             } header: {
                 Text("Experiment")
             } footer: {

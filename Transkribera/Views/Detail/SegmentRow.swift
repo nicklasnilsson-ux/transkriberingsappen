@@ -65,6 +65,8 @@ struct SegmentRow: View {
     var speakerMenu: (() -> AnyView)? = nil
     /// Talarna i filen. Menyn listar dem (Flytta raden till), så raden ritas om när de ändras.
     var menuSpeakers: [String] = []
+    /// Antal markerade ord (experimentet Korskolla), så att raden ritas om när ett val görs.
+    var alternatives = 0
 
     @AppStorage(SettingsKey.readingTextSize) private var readingSize = ReadingTextSize.standard
     @State private var hovering = false
@@ -105,7 +107,8 @@ struct SegmentRow: View {
                                 query: query,
                                 words: isActive && showsOriginal ? segment.words : [],
                                 currentTime: isActive && clock != nil ? time : nil,
-                                currentOccurrence: currentOccurrence
+                                currentOccurrence: currentOccurrence,
+                                alternatives: Alternatives(segment, displayText: displayText)
                             ),
                             font: .reading(readingSize), lineSpacing: 3, width: textWidth
                         )
@@ -141,7 +144,7 @@ extension SegmentRow: Equatable {
             && l.query == r.query && l.currentOccurrence == r.currentOccurrence
             && l.isActive == r.isActive && l.clock === r.clock
             && l.isEditing == r.isEditing && l.isAnonymized == r.isAnonymized && l.editsAll == r.editsAll
-            && l.menuSpeakers == r.menuSpeakers
+            && l.menuSpeakers == r.menuSpeakers && l.alternatives == r.alternatives
     }
 }
 

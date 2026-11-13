@@ -8,15 +8,18 @@ public enum TranscriptionStep: Equatable, Sendable {
     case transcribe
     case gapCheck
     case speakers
+    /// Experiment "Korskolla med KB Large": samma ljud transkriberas med KB Large och jämförs.
+    case crossCheck
 
     /// Stegen som körs, i ordning. Modellsteget finns bara när modellen måste laddas
     /// ner eller in, och luckkontrollen bara för Whisper-modellerna.
-    public static func plan(needsModel: Bool, checksGaps: Bool, identifiesSpeakers: Bool) -> [TranscriptionStep] {
+    public static func plan(needsModel: Bool, checksGaps: Bool, identifiesSpeakers: Bool, crossChecks: Bool = false) -> [TranscriptionStep] {
         var steps: [TranscriptionStep] = []
         if needsModel { steps.append(.model) }
         steps += [.audio, .transcribe]
         if checksGaps { steps.append(.gapCheck) }
         if identifiesSpeakers { steps.append(.speakers) }
+        if crossChecks { steps.append(.crossCheck) }
         return steps
     }
 

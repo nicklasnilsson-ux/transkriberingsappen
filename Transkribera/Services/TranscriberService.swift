@@ -67,6 +67,8 @@ final class TranscriberService {
         case transcribing(fraction: Double?)
         case recheckingGaps(fraction: Double)
         case identifyingSpeakers
+        /// Experiment "Korskolla": ljudet transkriberas en gång till och jämförs.
+        case crossChecking(fraction: Double?)
         case failed(String)
     }
 
@@ -121,6 +123,8 @@ final class TranscriberService {
         case .transcribing(let fraction?): return "Transkriberar… \(Int(fraction * 100)) %"
         case .recheckingGaps(let fraction): return "Kontrollerar att inget tal saknas… \(Int(fraction * 100)) %"
         case .identifyingSpeakers: return "Identifierar talare…"
+        case .crossChecking(.none): return "Korskollar…"
+        case .crossChecking(let fraction?): return "Korskollar… \(Int(fraction * 100)) %"
         case .failed(let message): return "Fel: \(message)"
         }
     }
@@ -134,6 +138,7 @@ final class TranscriberService {
         case .transcribing: step = .transcribe
         case .recheckingGaps: step = .gapCheck
         case .identifyingSpeakers: step = .speakers
+        case .crossChecking: step = .crossCheck
         case .idle, .failed: return nil
         }
         return TranscriptionStep.label(for: step, in: steps)
@@ -143,7 +148,7 @@ final class TranscriberService {
     var fraction: Double? {
         switch phase {
         case .downloadingModel(let fraction), .recheckingGaps(let fraction): return fraction
-        case .transcribing(let fraction): return fraction
+        case .transcribing(let fraction), .crossChecking(let fraction): return fraction
         default: return nil
         }
     }
@@ -303,7 +308,8 @@ final class TranscriberService {
         steps = TranscriptionStep.plan(
             needsModel: !modelReady,
             checksGaps: !options.model.usesParakeet,
-            identifiesSpeakers: options.identifySpeakers
+            identifiesSpeakers: options.identifySpeakers,
+            crossChecks: options.appliedCrossCheck != nil
         )
         defer { steps = [] }
         do {
@@ -369,6 +375,7 @@ final class TranscriberService {
         case .preparingAudio: return .prepareAudio
         case .transcribing, .recheckingGaps: return .recognize
         case .identifyingSpeakers: return .identifySpeakers
+        case .crossChecking: return .recognize
         case .idle, .failed: return .recognize
         }
     }
@@ -433,6 +440,8 @@ final class TranscriberService {
         // ledtråd, och Whisper stavar ibland fel trots den.
         segments = VocabularyCorrection.apply(segments, vocabulary: TextCleaning.wordList(options.vocabulary))
 
+        /// Talarturerna, för korskollen med Pianissimo i repliker.
+        var turns: [SpeakerTurn] = speakerTurns ?? []
         if let speakerTurns {
             let assigned = SpeakerAssignment.assign(segments, turns: speakerTurns)
             if assigned.contains(where: { $0.speaker != nil }) {
@@ -458,6 +467,7 @@ final class TranscriberService {
             }
             if Self.hasLowMemory { await releaseSpeakerModels() }
             segments = diarized.segments
+            turns = diarized.turns
             diagnostics.diarizer = diarized.diarizer
             diagnostics.speakersSeconds = Self.seconds(clock.now - speakersStart)
             if !diarized.turns.isEmpty, segments.contains(where: { $0.speaker != nil }) {
@@ -465,7 +475,99 @@ final class TranscriberService {
             }
         }
         segments = segments.filter { !TextCleaning.isNonSpeechMarker($0.text) }
+        if let check = options.appliedCrossCheck {
+            segments = try await crossCheck(segments, with: check, input: input, turns: turns, options: options)
+        }
         return TranscriptionOutput(segments: segments, language: language, diagnostics: diagnostics, notice: notice)
+    }
+
+    /// Experiment "Korskolla" (`CrossCheck`): ljudet transkriberas en gång till, och där
+    /// körningarna hörde olika får Pianissimos ord den andra tolkningen. Texten ändras inte.
+    /// Går något fel behålls texten utan markeringar.
+    private func crossCheck(
+        _ segments: [SegmentData],
+        with check: CrossCheckSource,
+        input: [Float],
+        turns: [SpeakerTurn],
+        options: TranscriptionOptions
+    ) async throws -> [SegmentData] {
+        do {
+            let other: [WordTimingData]
+            switch check {
+            case .off:
+                return segments
+            case .kbLarge:
+                other = try await kbLargeWords(input, options: options)
+            case .pianissimoReplies:
+                other = try await pianissimoReplyWords(input, turns: turns, options: options)
+            }
+            let (result, marked) = CrossCheck.mark(segments, against: other)
+            ErrorLog.append(model: options.model.displayName, step: .recognize,
+                            technical: "Info: Korskolla med \(check.label): \(marked) ställen markerade")
+            return result
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            ErrorLog.append(model: options.model.displayName, step: .recognize,
+                            technical: "Korskolla med \(check.label) avbröts (\(error.localizedDescription)). Texten behålls utan markeringar.")
+            return segments
+        }
+    }
+
+    /// Hela ljudet med KB Large ordagrann, som ord med tider. Pianissimo släpps ur minnet först.
+    private func kbLargeWords(_ input: [Float], options: TranscriptionOptions) async throws -> [WordTimingData] {
+        var kbOptions = options
+        kbOptions.model = CrossCheckSource.kbLarge.model
+        kbOptions.wordTimestamps = true
+        kbOptions.crossCheck = .off
+        try await prepare(model: kbOptions.model)
+        guard let kit = whisperKit else { throw TranscriberError.modelNotLoaded }
+        phase = .crossChecking(fraction: nil)
+        // Whisper-modellerna får ljudet med jämnad volym, som när KB Large körs för sig.
+        let leveled = kbOptions.appliesLevelVolume ? VolumeLeveler.level(input, sampleRate: AudioLoader.sampleRate) : input
+        let results: [TranscriptionResult]
+        do {
+            results = try await whisperTranscribe(kit: kit, samples: leveled, options: kbOptions, phase: .crossCheck)
+        } catch let error where canRetryWithoutNeuralEngine(error) {
+            await stopUsingNeuralEngine(after: error, model: kbOptions.model, step: .recognize)
+            try await prepare(model: kbOptions.model)
+            guard let reloaded = whisperKit else { throw TranscriberError.modelNotLoaded }
+            phase = .crossChecking(fraction: nil)
+            results = try await whisperTranscribe(kit: reloaded, samples: leveled, options: kbOptions, phase: .crossCheck)
+        }
+        return Self.segments(from: results).flatMap(\.words)
+    }
+
+    /// Pianissimo en gång till, med ljudet delat i repliker efter talarna (`ReplyPlan`).
+    private func pianissimoReplyWords(_ input: [Float], turns: [SpeakerTurn], options: TranscriptionOptions) async throws -> [WordTimingData] {
+        guard !turns.isEmpty else { return [] }
+        try await prepare(model: options.model)
+        phase = .crossChecking(fraction: 0)
+        let rate = AudioLoader.sampleRate
+        let duration = Double(input.count) / rate
+        var words: [WordTimingData] = []
+        for piece in ReplyPlan.pieces(turns: turns, duration: duration) {
+            try Task.checkCancellation()
+            let from = max(0, min(input.count, Int(piece.start * rate)))
+            let to = max(from, min(input.count, Int(piece.end * rate)))
+            let clip = Array(input[from..<to])
+            do {
+                words += try await parakeet.words(samples: clip, offset: Double(from) / rate,
+                                                  carefulSeams: options.carefulSeams, tuning: options.tuning)
+            } catch let error where canRetryWithoutNeuralEngine(error) {
+                await stopUsingNeuralEngine(after: error, model: options.model, step: .recognize)
+                try await prepare(model: options.model)
+                words += try await parakeet.words(samples: clip, offset: Double(from) / rate,
+                                                  carefulSeams: options.carefulSeams, tuning: options.tuning)
+            }
+            advanceCrossCheck(to: piece.end / max(duration, 1))
+        }
+        return words
+    }
+
+    private func advanceCrossCheck(to fraction: Double) {
+        guard case .crossChecking(let current) = phase, fraction > (current ?? 0) else { return }
+        phase = .crossChecking(fraction: min(1, fraction))
     }
 
     /// Experiment "Fånga korta svar" (`ShortReplyRescue`): korta turer vars ord saknas i
@@ -560,7 +662,8 @@ final class TranscriberService {
     private func whisperTranscribe(
         kit: WhisperKit,
         samples: [Float],
-        options: TranscriptionOptions
+        options: TranscriptionOptions,
+        phase step: TranscriptionStep = .transcribe
     ) async throws -> [TranscriptionResult] {
         let decodeOptions = DecodingOptions(
             task: options.translateToEnglish ? .translate : .transcribe,
@@ -589,7 +692,9 @@ final class TranscriberService {
             audioArray: samples,
             decodeOptions: decodeOptions,
             onProgress: { [weak self] fraction in
-                Task { @MainActor in self?.advanceTranscribing(to: fraction) }
+                Task { @MainActor in
+                    if step == .crossCheck { self?.advanceCrossCheck(to: fraction) } else { self?.advanceTranscribing(to: fraction) }
+                }
             },
             onText: { [weak self] text in
                 let text = TextCleaning.clean(text)

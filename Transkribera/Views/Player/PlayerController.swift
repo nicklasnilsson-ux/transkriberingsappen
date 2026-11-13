@@ -14,6 +14,8 @@ final class PlayerController {
 
     @ObservationIgnored private var timeObserver: Any?
     @ObservationIgnored private var rateObservation: NSKeyValueObservation?
+    /// Stoppar en uppspelad bit (`play(from:to:)`) när den är slut.
+    @ObservationIgnored private var clipEnd: Any?
 
     /// - Parameter speed: uppspelningshastigheten (`PlaybackSpeed`), sparad i inställningarna.
     init(url: URL, speed: Double = PlaybackSpeed.normal) {
@@ -38,6 +40,7 @@ final class PlayerController {
     }
 
     func invalidate() {
+        endClip()
         player.pause()
         if let timeObserver {
             player.removeTimeObserver(timeObserver)
@@ -48,10 +51,28 @@ final class PlayerController {
 
     /// Hoppar till en tidpunkt och startar uppspelningen.
     func seek(to seconds: Double, play: Bool = true) {
+        endClip()
         let time = CMTime(seconds: max(0, seconds), preferredTimescale: 600)
         player.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero)
         currentTime = seconds
         if play { player.play() }
+    }
+
+    /// Spelar bara biten `start`–`end` och stannar sedan (Lyssna i korskollens meny).
+    func play(from start: Double, to end: Double) {
+        seek(to: start)
+        let stop = CMTime(seconds: max(start, end), preferredTimescale: 600)
+        clipEnd = player.addBoundaryTimeObserver(forTimes: [NSValue(time: stop)], queue: .main) { [weak self] in
+            MainActor.assumeIsolated {
+                self?.player.pause()
+                self?.endClip()
+            }
+        }
+    }
+
+    private func endClip() {
+        if let clipEnd { player.removeTimeObserver(clipEnd) }
+        clipEnd = nil
     }
 
     func togglePlayPause() {
