@@ -30,6 +30,16 @@ class PianissimoWorkflowTests(unittest.TestCase):
         self.assertRegex(FINISH, r'if name == "Encoder" and args\.encoder == "int8"')
         self.assertIn("--precision FLOAT32", WORKFLOW)
 
+    def test_files_over_two_gib_are_split_and_the_app_joins_them(self):
+        # 2026-11-13: 32 bitar blev 2,2 GB och GitHub vägrade (gräns 2 GiB per fil).
+        self.assertIn("scripts/pianissimo/split.py \"$asset\"", WORKFLOW)
+        self.assertIn("scripts/pianissimo/split.py \"$PACKAGES_ASSET\"", WORKFLOW)
+        self.assertIn('-p "$PACKAGES_ASSET.part*"', WORKFLOW)
+        self.assertIn('grep -qx "$FP32_ASSET.part0"', WORKFLOW)
+        self.assertIn("sort -r", WORKFLOW, "part0 laddas upp sist, så att en halv uppladdning inte räknas som klar")
+        downloader = (ROOT / "Transkribera/Services/ModelDownloader.swift").read_text(encoding="utf-8")
+        self.assertIn('"\\(asset).part\\(index)"', downloader)
+
     def test_zip_folders_are_named_like_the_models_in_the_app(self):
         catalog = (ROOT / "Transkribera/Models/ModelCatalog.swift").read_text(encoding="utf-8")
         for case, key in (("pianissimoFP16", "FP16"), ("pianissimoFP32", "FP32")):

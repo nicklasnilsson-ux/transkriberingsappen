@@ -54,7 +54,9 @@ jobs:
           int8=true; fp16=true; fp32=true
           grep -qx "$ASSET" <<<"$assets" && int8=false
           grep -qx "$FP16_ASSET" <<<"$assets" && fp16=false
+          # Större än 2 GB läggs i delar (.part0, .part1 …); part0 laddas upp sist.
           grep -qx "$FP32_ASSET" <<<"$assets" && fp32=false
+          grep -qx "$FP32_ASSET.part0" <<<"$assets" && fp32=false
           echo "int8=$int8" >> "$GITHUB_OUTPUT"
           echo "fp16=$fp16" >> "$GITHUB_OUTPUT"
           echo "fp32=$fp32" >> "$GITHUB_OUTPUT"
@@ -109,13 +111,20 @@ jobs:
           zip -qr "$PACKAGES_ASSET" pianissimo-sv*
           unzip -tq "$PACKAGES_ASSET" >/dev/null
           ls -lh "$PACKAGES_ASSET"
+          # GitHub tar inte filer över 2 GB; 32 bitar blir större, så paketen delas.
+          python3 ../scripts/pianissimo/split.py "$PACKAGES_ASSET"
+          rm "$PACKAGES_ASSET"
+          ls -lh "$PACKAGES_ASSET".part*
           gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 \
             || gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" \
                  --target "$GITHUB_SHA" --prerelease --latest=false \
                  --title "Pianissimo (CoreML)" \
                  --notes "KlangAI:s svenska taligenkänningsmodell Pianissimo (https://huggingface.co/KlangAI/pianissimo-sv), en vidareträning av NVIDIA Parakeet TDT v3, konverterad till CoreML för FluidAudio. Appen laddar ner den automatiskt – du behöver inte ladda ner något här. Licens: CC BY 4.0 (KlangAI)." \
             || gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null
-          gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --clobber "$PACKAGES_ASSET"
+          for old in $(gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --json assets -q '.assets[].name' | grep "^$PACKAGES_ASSET" || true); do
+            gh release delete-asset "$RELEASE_TAG" "$old" -R "$GITHUB_REPOSITORY" --yes
+          done
+          gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --clobber "$PACKAGES_ASSET".part*
 
   finish:
     name: Kvantisera, kompilera och testa (macOS)
@@ -133,7 +142,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release download "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" -p "$PACKAGES_ASSET" -D in --clobber
+          gh release download "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" -p "$PACKAGES_ASSET.part*" -D in --clobber
+          cat in/"$PACKAGES_ASSET".part* > "in/$PACKAGES_ASSET"
+          rm in/"$PACKAGES_ASSET".part*
           unzip -q "in/$PACKAGES_ASSET" -d in
           rm "in/$PACKAGES_ASSET"
 
@@ -181,22 +192,26 @@ jobs:
         run: |
           cd out
           # Bara varianter som saknades byggdes; ingen befintlig fil skrivs över.
-          if [ -d pianissimo-sv ]; then
-            ditto -c -k --keepParent pianissimo-sv "$ASSET"
-            unzip -tq "$ASSET" >/dev/null
-            ls -lh "$ASSET"
-            gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" "$ASSET"
-          fi
-          if [ -d "$FP16_NAME" ]; then
-            ditto -c -k --keepParent "$FP16_NAME" "$FP16_ASSET"
-            unzip -tq "$FP16_ASSET" >/dev/null
-            ls -lh "$FP16_ASSET"
-            gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" "$FP16_ASSET"
-          fi
-          if [ -d "$FP32_NAME" ]; then
-            ditto -c -k --keepParent "$FP32_NAME" "$FP32_ASSET"
-            unzip -tq "$FP32_ASSET" >/dev/null
-            ls -lh "$FP32_ASSET"
-            gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" "$FP32_ASSET"
-          fi
-          gh release delete-asset "$RELEASE_TAG" "$PACKAGES_ASSET" -R "$GITHUB_REPOSITORY" --yes
+          # Över 2 GB tar GitHub inte emot, så då laddas filen upp i delar som appen
+          # sätter ihop. part0 laddas upp sist, så att en avbruten uppladdning syns.
+          publish() {
+            local dir="$1" asset="$2"
+            [ -d "$dir" ] || return 0
+            ditto -c -k --keepParent "$dir" "$asset"
+            unzip -tq "$asset" >/dev/null
+            ls -lh "$asset"
+            if [ "$(stat -f%z "$asset")" -lt 2000000000 ]; then
+              gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" "$asset"
+            else
+              python3 ../scripts/pianissimo/split.py "$asset"
+              for part in $(ls "$asset".part* | sort -r); do
+                gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" "$part"
+              done
+            fi
+          }
+          publish pianissimo-sv "$ASSET"
+          publish "$FP16_NAME" "$FP16_ASSET"
+          publish "$FP32_NAME" "$FP32_ASSET"
+          for part in $(gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --json assets -q '.assets[].name' | grep "^$PACKAGES_ASSET" || true); do
+            gh release delete-asset "$RELEASE_TAG" "$part" -R "$GITHUB_REPOSITORY" --yes
+          done

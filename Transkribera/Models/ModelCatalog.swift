@@ -226,7 +226,7 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
         case .pianissimoFP16:
             return "Test: Pianissimo med kodaren i 16 bitar i stället för 8. Dubbelt så stor nedladdning."
         case .pianissimoFP32:
-            return "Test: Pianissimo i 32 bitar, som originalet. Fyra gånger så stor och långsammare."
+            return "Test: Pianissimo i 32 bitar, som originalet. Fyra gånger så stor nedladdning."
         case .tiny:
             return "Minsta modellen, bra för att snabbt testa appen. Gör många fel på svenska."
         case .base:
