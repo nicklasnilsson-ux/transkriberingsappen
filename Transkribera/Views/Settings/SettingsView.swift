@@ -124,7 +124,7 @@ private struct TranscriptionSettingsView: View {
             } header: {
                 Text("Experiment")
             } footer: {
-                Text("Ännu inte bevisat bättre. Gäller bara Pianissimo; noggrannare skarvar tar 10–50 % längre tid. Det som användes står efter modellens namn i transkriberingen.")
+                Text("Ännu inte bevisat bättre. Gäller bara Pianissimo; noggrannare skarvar tar 10–50 % längre tid. Det som användes står på raden Modell i exporten för analys.")
                     .foregroundStyle(Color.textSecondary)
             }
 

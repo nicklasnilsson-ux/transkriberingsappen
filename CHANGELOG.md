@@ -7,7 +7,8 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 ## [Kommande]
 
 ### Nytt
-- Experiment: *Talare först* under Inställningar → Experiment. Appen tar först reda på vem som pratar och transkriberar sedan varje replik för sig med Pianissimo. Tanken är att korta svar som "Ja." och "Mm." ska komma med och att talaren aldrig ska bytas mitt i en mening. Kräver "Skilj på vem som pratar". Det som användes står efter modellens namn i transkriberingen ("talare först"). Ännu inte bevisat bättre.
+- Experiment: *Talare först* under Inställningar → Experiment. Appen tar först reda på vem som pratar och transkriberar sedan varje replik för sig med Pianissimo. Tanken är att korta svar som "Ja." och "Mm." ska komma med och att talaren aldrig ska bytas mitt i en mening. Kräver "Skilj på vem som pratar". Det som användes står på raden Modell i exporten för analys ("talare först"). Ännu inte bevisat bättre.
+- Exporten för analys har en rad *Modell* överst, till exempel "Modell: Pianissimo (talare först, Nemotron 3)". Då framgår det alltid vilken modell och vilka inställningar en fil kommer från, även om filen byter namn.
 
 ## [0.9.37] – 2026-11-11
 
