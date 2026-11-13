@@ -120,7 +120,7 @@ private struct TranscriptionSettingsView: View {
                     .help("Pianissimo lyssnar på 15 sekunder i taget. Med det här provar den flera sätt att skarva bitarna och väljer det säkraste.")
                 Toggle("Talare först", isOn: $speakersFirst)
                     .disabled(!usesParakeet || !identifySpeakers)
-                    .help("Talarna identifieras först och varje replik transkriberas för sig. Tänkt att fånga korta svar som \"Ja.\" och att aldrig byta talare mitt i en mening. Kräver \"Skilj på vem som pratar\".")
+                    .help("Talarna identifieras först och varje replik transkriberas för sig. Tänkt att fånga korta svar som \"Ja.\". Kan klippa meningar där två hörs samtidigt. Kräver \"Skilj på vem som pratar\".")
             } header: {
                 Text("Experiment")
             } footer: {

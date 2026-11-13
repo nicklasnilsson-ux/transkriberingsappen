@@ -100,8 +100,9 @@ final class ReplyPlanTests: XCTestCase {
         XCTAssertEqual(result[1].words.map(\.uncertainSpeaker), [true, true])
     }
 
-    /// En replik delas aldrig mellan två talare, även om meningen fortsätter.
-    func testSentenceIsNeverSplitBetweenSpeakers() {
+    /// Varje bit får en talare. En mening som fortsätter över en bitgräns klipps där
+    /// (mötet 2026-11-13: 64 talarbyten mitt i mening). Det här testet visar beteendet.
+    func testSentenceThatCrossesAPieceBoundaryIsCutThere() {
         let pieces = [ReplyPiece(start: 0, end: 1.2, speaker: 0), ReplyPiece(start: 1.2, end: 2, speaker: 1)]
         let words = [
             [word(" Jag", 0, 0.3), word(" kan", 0.3, 0.6), word(" säga", 0.6, 0.9), word(" om", 0.9, 1.0), word(" jag", 1.0, 1.15)],

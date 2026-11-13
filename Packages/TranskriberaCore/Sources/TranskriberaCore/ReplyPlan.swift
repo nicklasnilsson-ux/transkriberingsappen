@@ -21,8 +21,8 @@ public struct ReplyPiece: Hashable, Sendable {
 }
 
 /// "Talare först": ljudet delas i repliker efter talaridentifieringen, och varje replik
-/// transkriberas för sig. Då kan en replik aldrig byta talare mitt i en mening, och korta
-/// svar ("Ja.", "Mm.") får egen plats i stället för att drunkna i grannens tal.
+/// transkriberas för sig. Korta svar ("Ja.", "Mm.") får egen plats i stället för att
+/// drunkna i grannens tal. En mening som fortsätter över en bitgräns klipps där.
 ///
 /// Det omvända (transkribera allt och sedan fördela orden, `SpeakerAssignment`) är
 /// standard. Det här är ett experiment som jämförs mot det.
