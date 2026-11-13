@@ -23,6 +23,10 @@ public struct TestLabRun: Codable, Hashable, Identifiable, Sendable {
 
         /// Sant för alla Pianissimo-varianter.
         public var isPianissimo: Bool { self == .pianissimo || self == .pianissimoFP16 || self == .pianissimoFP32 }
+
+        /// Sant för modellerna i modellväljaren. Precisionstesterna finns bara i Testlabbets
+        /// precisionslista och hör inte hemma i tidsmätningen.
+        public var isInModelPicker: Bool { self != .pianissimoFP16 && self != .pianissimoFP32 }
     }
 
     /// Hur talarna tas fram i körningen.
@@ -118,7 +122,8 @@ public enum TestLabPlan {
     ]
 
     /// Samma Pianissimo med olika precision (2026-11-13). Den vanliga har kodaren förminskad
-    /// till 8 bitar, vilket aldrig mätts på svenska. Allt annat är som en vanlig transkribering.
+    /// till 8 bitar. Klangs kort (danska, 38 min) mäter Core ML 8 och 16 bitar
+    /// lika (6,9 och 7,0 % mot 6,5 i original); 32 bitar i Core ML är omätt. Allt annat är som en vanlig transkribering.
     public static let precision: [TestLabRun] = [
         TestLabRun(id: "01-pianissimo-8-bitar", title: "Pianissimo som i dag (kodaren i 8 bitar)", engine: .pianissimo),
         TestLabRun(id: "02-pianissimo-16-bitar", title: "Pianissimo 16 bitar", engine: .pianissimoFP16),

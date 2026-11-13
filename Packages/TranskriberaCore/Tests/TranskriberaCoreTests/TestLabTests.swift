@@ -79,11 +79,12 @@ final class TestLabTimingPlanTests: XCTestCase {
     /// Varje modell mäts en gång utan och en gång med talare, och inget annat ändras,
     /// så att tiderna gäller en vanlig transkribering.
     func testEveryModelWithAndWithoutSpeakers() {
-        for engine in TestLabRun.Engine.allCases {
+        for engine in TestLabRun.Engine.allCases where engine.isInModelPicker {
             let runs = plan.filter { $0.engine == engine }
             XCTAssertEqual(Set(runs.map(\.speakers)), [.none, .own], engine.rawValue)
         }
         for run in plan {
+            XCTAssertTrue(run.engine.isInModelPicker, run.id)
             XCTAssertEqual(run.tuning, .production, run.id)
             XCTAssertEqual(run.differences.count, 1, "\(run.id): \(run.differences)")
         }

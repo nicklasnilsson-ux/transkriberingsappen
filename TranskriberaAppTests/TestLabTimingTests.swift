@@ -10,6 +10,12 @@ final class TestLabTimingTests: XCTestCase {
         XCTAssertEqual(Set(TestLabRun.Engine.allCases.map(\.model)), Set(WhisperModel.offered).union(versions))
     }
 
+    /// `isInModelPicker` styr vilka motorer tidsmätningen kräver; den måste följa väljaren.
+    func testIsInModelPickerFollowsThePicker() {
+        let inPicker = TestLabRun.Engine.allCases.filter(\.isInModelPicker).map(\.model)
+        XCTAssertEqual(Set(inPicker), Set(WhisperModel.offered))
+    }
+
     func testTimingPlanCoversEveryModelInThePicker() {
         XCTAssertEqual(Set(TestLabPlan.timing.map(\.engine.model)), Set(WhisperModel.offered))
     }
