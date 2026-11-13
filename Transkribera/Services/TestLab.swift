@@ -225,7 +225,7 @@ final class TestLab {
                             CrossCheck.marks(in: segments), other: CrossCheckSource.kbLarge.label, minutes: source.duration / 60,
                             anonymize: { text in anonymization.map { Anonymizer.anonymize(text, options: $0) } ?? text }
                         )
-                        try Self.write(list, to: folder.appending(path: "\(run.id)-korskoll.txt"))
+                        try Self.write(list, to: folder.appending(path: "\(run.id)-ord-att-lyssna-pa.txt"))
                     }
                     if let anonymization {
                         let anonymizationStart = clock.now

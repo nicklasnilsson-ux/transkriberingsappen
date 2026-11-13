@@ -32,7 +32,6 @@ private struct TranscriptionSettingsView: View {
     @AppStorage(SettingsKey.pianissimoCarefulSeams) private var carefulSeams = false
     @AppStorage(SettingsKey.rescueShortReplies) private var rescueShortReplies = false
     @AppStorage(SettingsKey.crossCheck) private var crossCheck = CrossCheckSource.off
-    @AppStorage(SettingsKey.pianissimoVersion) private var pianissimoVersion = PianissimoVersion.standard
     @AppStorage(SettingsKey.levelVolume) private var levelVolume = true
     @AppStorage(SettingsKey.askBeforeRetranscribe) private var askBeforeRetranscribe = true
     @AppStorage(SettingsKey.model) private var modelRaw = WhisperModel.default.rawValue
@@ -123,17 +122,12 @@ private struct TranscriptionSettingsView: View {
                 Toggle("Fånga korta svar", isOn: $rescueShortReplies)
                     .disabled(!usesParakeet || !identifySpeakers)
                     .help("Korta svar som \"Ja.\" och \"Mm.\" som saknas i texten transkriberas för sig och läggs in efter meningen de hördes i. Resten av texten ändras inte. Kräver \"Skilj på vem som pratar\".")
-                Picker("Pianissimo-version", selection: $pianissimoVersion) {
-                    ForEach(PianissimoVersion.allCases) { Text($0.label).tag($0) }
-                }
-                .disabled(!usesParakeet)
-                .help("Den vanliga Pianissimo har modellens största del förminskad till 8 bitar. 16 och 32 bitar testar om förminskningen kostar ord. Laddar ner 1,2 respektive 2,4 GB första gången; 32 bitar är långsammare. Jämför flera filer på en gång i Testlabbet (⌥⇧⌘T).")
-                Toggle("Korskolla med KB Large", isOn: Binding(
+                Toggle("Markera ord att lyssna på", isOn: Binding(
                     get: { crossCheck == .kbLarge },
                     set: { crossCheck = $0 ? .kbLarge : .off }
                 ))
                 .disabled(!usesParakeet)
-                .help("KB Large lyssnar en gång till. Där den hörde ett annat ord som ändrar innebörden (inte, bör, måste …) blir Pianissimos ord prickat understruket; klicka på det för att välja och lyssna. Tar cirka 25 gånger längre tid. Prova hellre i Testlabbet (⌥⇧⌘T), som sparar alla ställen i en lista.")
+                .help("En andra modell (KB Large) lyssnar också på inspelningen. Där modellerna hörde olika i ord som kan ändra innebörden, till exempel inte, bör och måste, blir ordet prickat understruket. Klicka på det för att lyssna och välja rätt. Ungefär hälften av sådana fel hittas på det här sättet, så läs ändå igenom texten. Tar ungefär lika lång tid som att transkribera med KB Large.")
             } header: {
                 Text("Experiment")
             } footer: {

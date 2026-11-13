@@ -123,8 +123,8 @@ final class TranscriberService {
         case .transcribing(let fraction?): return "Transkriberar… \(Int(fraction * 100)) %"
         case .recheckingGaps(let fraction): return "Kontrollerar att inget tal saknas… \(Int(fraction * 100)) %"
         case .identifyingSpeakers: return "Identifierar talare…"
-        case .crossChecking(.none): return "Korskollar…"
-        case .crossChecking(let fraction?): return "Korskollar… \(Int(fraction * 100)) %"
+        case .crossChecking(.none): return "Markerar ord att lyssna på…"
+        case .crossChecking(let fraction?): return "Markerar ord att lyssna på… \(Int(fraction * 100)) %"
         case .failed(let message): return "Fel: \(message)"
         }
     }

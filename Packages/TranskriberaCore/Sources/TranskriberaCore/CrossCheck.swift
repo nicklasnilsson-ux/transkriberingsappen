@@ -251,7 +251,7 @@ public enum CrossCheck {
                               anonymize: (String) -> String = { $0 }) -> String {
         let rate = minutes > 0 ? String(format: "%.0f", Double(marks.count) / minutes * 60) : "–"
         var out = """
-        Korskoll med \(other): \(marks.count) \(marks.count == 1 ? "ställe" : "ställen") (\(rate) per timme).
+        Ord att lyssna på, markerade med \(other): \(marks.count) \(marks.count == 1 ? "ställe" : "ställen") (\(rate) per timme).
         Varje rad: tid, talare, texten med Pianissimos ord inom [ ], och vad \(other) hörde.
         Lyssna på tiden och skriv P om Pianissimo hade rätt, K om \(other) hade rätt, B om båda fel.
 

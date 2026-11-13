@@ -175,7 +175,7 @@ final class CrossCheckTests: XCTestCase {
         XCTAssertEqual(list.first?.before, "nästa månad")
         XCTAssertEqual(list.first?.after, "alla beställningar")
         let text = CrossCheck.report(list, other: "KB Large", minutes: 30)
-        XCTAssertTrue(text.hasPrefix("Korskoll med KB Large: 1 ställe (2 per timme)."), text)
+        XCTAssertTrue(text.hasPrefix("Ord att lyssna på, markerade med KB Large: 1 ställe (2 per timme)."), text)
         XCTAssertTrue(text.contains("01:00  Talare 2  …nästa månad [bör] alla beställningar…  →  KB Large: behöver"), text)
     }
 

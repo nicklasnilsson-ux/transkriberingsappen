@@ -79,7 +79,7 @@ public struct TestLabRun: Codable, Hashable, Identifiable, Sendable {
         if engine == .pianissimoFP16 { out.append("kodaren i 16 bitar i stället för 8") }
         if engine == .pianissimoFP32 { out.append("hela modellen i 32 bitar") }
         if engine == .kbLargeStrict, !levelVolume { out.append("volymutjämning av") }
-        if crossCheck { out.append("korskollad med KB Large") }
+        if crossCheck { out.append("ord att lyssna på markerade med KB Large") }
         switch speakers {
         case .shared: break
         case .none: out.append("utan talare")
@@ -99,12 +99,16 @@ public enum TestLabPlan {
 
         public var id: String { rawValue }
 
+        /// Listorna som visas. Precisionslistan är dold sedan 2026-11-13: 8, 16 och 32 bitar
+        /// mättes lika på fyra inspelningar. Den finns kvar ifall frågan kommer tillbaka.
+        public static let offered: [Kind] = [.comparison, .timing, .crossCheck]
+
         public var title: String {
             switch self {
             case .comparison: return "Jämför inställningar"
             case .timing: return "Tidsmätning"
             case .precision: return "Pianissimo: 8, 16 och 32 bitar"
-            case .crossCheck: return "Korskolla med KB Large"
+            case .crossCheck: return "Markera ord att lyssna på (KB Large)"
             }
         }
 
@@ -140,10 +144,10 @@ public enum TestLabPlan {
     ]
 
     /// Experimentet "Korskolla" (2026-11-13). Pianissimo körs som vanligt, KB Large ordagrann lyssnar
-    /// en gång till, och skillnaderna i innebördsord sparas som en lista (`-korskoll.txt`) att gå
+    /// en gång till, och skillnaderna i innebördsord sparas som en lista (`-ord-att-lyssna-pa.txt`) att gå
     /// igenom med ljudet. Bara KB Large som andra lyssnare (beslut Nicklas).
     public static let crossCheck: [TestLabRun] = [
-        TestLabRun(id: "01-pianissimo-korskollad", title: "Pianissimo, korskollad med KB Large", engine: .pianissimo, crossCheck: true)
+        TestLabRun(id: "01-pianissimo-korskollad", title: "Pianissimo med ord att lyssna på (KB Large)", engine: .pianissimo, crossCheck: true)
     ]
 
     /// Listan som körs som standard. Varje körning ändrar en sak mot referensen, utom de

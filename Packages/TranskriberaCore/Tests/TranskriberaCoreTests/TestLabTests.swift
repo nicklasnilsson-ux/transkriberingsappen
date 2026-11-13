@@ -156,7 +156,7 @@ final class TestLabReportTests: XCTestCase {
     func testCrossCheckListIsPianissimoCheckedByKBLarge() {
         let plan = TestLabPlan.Kind.crossCheck.runs
         XCTAssertEqual(plan.map(\.engine), [.pianissimo])
-        XCTAssertEqual(plan[0].differences, ["korskollad med KB Large"])
+        XCTAssertEqual(plan[0].differences, ["ord att lyssna på markerade med KB Large"])
         XCTAssertTrue(plan.allSatisfy { $0.crossCheck && $0.tuning == .production && $0.speakers == .shared })
         for kind in TestLabPlan.Kind.allCases where kind != .crossCheck {
             XCTAssertFalse(kind.runs.contains(where: \.crossCheck), kind.title)

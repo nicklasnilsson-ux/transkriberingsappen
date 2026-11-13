@@ -160,8 +160,6 @@ struct TranscriptionOverrides: Equatable {
         var o = options
         if let modelRaw {
             o.model = WhisperModel.resolved(modelRaw)
-            // Experimentet "Pianissimo-version" gäller även när man kör om.
-            if o.model == .pianissimo { o.model = PianissimoVersion.current().model }
         }
         if let language { o.languageCode = language == "auto" ? nil : language }
         if let identifySpeakers { o.identifySpeakers = identifySpeakers }
@@ -215,7 +213,7 @@ struct TranscriptionOptions {
         if carefulSeams, model.usesParakeet { extras.append("noggranna skarvar") }
         if appliesLevelVolume { extras.append("jämnad volym") }
         if appliesShortReplyRescue { extras.append("korta svar") }
-        if let check = appliedCrossCheck { extras.append("korskollad med \(check.label)") }
+        if let check = appliedCrossCheck { extras.append("ord att lyssna på markerade med \(check.label)") }
         extras += tuning.differences
         if identifySpeakers {
             if sortformerDiarization, speakerCount.exact == nil { extras.append("Nemotron 3") }
@@ -224,8 +222,9 @@ struct TranscriptionOptions {
     }
 
     static func fromDefaults(_ defaults: UserDefaults = .standard) -> TranscriptionOptions {
-        var model = WhisperModel.resolved(defaults.string(forKey: SettingsKey.model))
-        if model == .pianissimo { model = PianissimoVersion.current(defaults).model }
+        // 16 och 32 bitar finns bara i Testlabbet sedan 2026-11-13 (ingen mätbar skillnad mot 8 bitar).
+        // Ett tidigare sparat val av dem används inte.
+        let model = WhisperModel.resolved(defaults.string(forKey: SettingsKey.model))
         let language = defaults.string(forKey: SettingsKey.language) ?? "sv"
         return TranscriptionOptions(
             model: model,
