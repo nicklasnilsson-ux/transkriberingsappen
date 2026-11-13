@@ -32,7 +32,7 @@ private struct TranscriptionSettingsView: View {
     @AppStorage(SettingsKey.pianissimoCarefulSeams) private var carefulSeams = false
     @AppStorage(SettingsKey.rescueShortReplies) private var rescueShortReplies = false
     @AppStorage(SettingsKey.crossCheck) private var crossCheck = CrossCheckSource.off
-    @AppStorage(SettingsKey.pianissimoFP16) private var pianissimoFP16 = false
+    @AppStorage(SettingsKey.pianissimoVersion) private var pianissimoVersion = PianissimoVersion.standard
     @AppStorage(SettingsKey.levelVolume) private var levelVolume = true
     @AppStorage(SettingsKey.askBeforeRetranscribe) private var askBeforeRetranscribe = true
     @AppStorage(SettingsKey.model) private var modelRaw = WhisperModel.default.rawValue
@@ -123,9 +123,11 @@ private struct TranscriptionSettingsView: View {
                 Toggle("Fånga korta svar", isOn: $rescueShortReplies)
                     .disabled(!usesParakeet || !identifySpeakers)
                     .help("Korta svar som \"Ja.\" och \"Mm.\" som saknas i texten transkriberas för sig och läggs in efter meningen de hördes i. Resten av texten ändras inte. Kräver \"Skilj på vem som pratar\".")
-                Toggle("Pianissimo i 16 bitar", isOn: $pianissimoFP16)
-                    .disabled(!usesParakeet)
-                    .help("Pianissimo med modellens kodare i 16 bitar i stället för 8. Testar om den mindre vanliga versionen tappar ord. Laddar ner 1,2 GB första gången.")
+                Picker("Pianissimo-version", selection: $pianissimoVersion) {
+                    ForEach(PianissimoVersion.allCases) { Text($0.label).tag($0) }
+                }
+                .disabled(!usesParakeet)
+                .help("Den vanliga Pianissimo har modellens största del förminskad till 8 bitar. 16 och 32 bitar testar om förminskningen kostar ord. Laddar ner 1,2 respektive 2,4 GB första gången; 32 bitar är långsammare. Jämför flera filer på en gång i Testlabbet (⌥⇧⌘T).")
                 Picker("Korskolla", selection: $crossCheck) {
                     ForEach(CrossCheckSource.allCases) { Text($0.label).tag($0) }
                 }

@@ -6,14 +6,23 @@ public struct TestLabRun: Codable, Hashable, Identifiable, Sendable {
         case kbLargeStrict
         case pianissimo
         case largeV3Turbo
+        /// Test 2026-11-13: Pianissimo med kodaren i 16 bitar i stället för 8.
+        case pianissimoFP16
+        /// Test 2026-11-13: Pianissimo i 32 bitar, som originalet.
+        case pianissimoFP32
 
         public var title: String {
             switch self {
             case .kbLargeStrict: return "KB Large ordagrann"
             case .pianissimo: return "Pianissimo"
             case .largeV3Turbo: return "Large v3 Turbo"
+            case .pianissimoFP16: return "Pianissimo 16 bitar"
+            case .pianissimoFP32: return "Pianissimo 32 bitar"
             }
         }
+
+        /// Sant för alla Pianissimo-varianter.
+        public var isPianissimo: Bool { self == .pianissimo || self == .pianissimoFP16 || self == .pianissimoFP32 }
     }
 
     /// Hur talarna tas fram i körningen.
@@ -57,7 +66,9 @@ public struct TestLabRun: Codable, Hashable, Identifiable, Sendable {
     /// Det som skiljer från en vanlig transkribering med samma modell, i klartext.
     public var differences: [String] {
         var out = tuning.differences
-        if engine == .pianissimo, carefulSeams { out.append("noggrannare skarvar") }
+        if engine.isPianissimo, carefulSeams { out.append("noggrannare skarvar") }
+        if engine == .pianissimoFP16 { out.append("kodaren i 16 bitar i stället för 8") }
+        if engine == .pianissimoFP32 { out.append("hela modellen i 32 bitar") }
         if engine == .kbLargeStrict, !levelVolume { out.append("volymutjämning av") }
         switch speakers {
         case .shared: break
@@ -73,6 +84,7 @@ public enum TestLabPlan {
     public enum Kind: String, CaseIterable, Identifiable, Sendable {
         case comparison
         case timing
+        case precision
 
         public var id: String { rawValue }
 
@@ -80,6 +92,7 @@ public enum TestLabPlan {
             switch self {
             case .comparison: return "Jämför inställningar"
             case .timing: return "Tidsmätning"
+            case .precision: return "Pianissimo: 8, 16 och 32 bitar"
             }
         }
 
@@ -87,6 +100,7 @@ public enum TestLabPlan {
             switch self {
             case .comparison: return TestLabPlan.standard
             case .timing: return TestLabPlan.timing
+            case .precision: return TestLabPlan.precision
             }
         }
     }
@@ -101,6 +115,14 @@ public enum TestLabPlan {
         TestLabRun(id: "04-kb-med-talare", title: "KB Large ordagrann med talare", engine: .kbLargeStrict, speakers: .own),
         TestLabRun(id: "05-turbo-utan-talare", title: "Large v3 Turbo utan talare", engine: .largeV3Turbo, speakers: .none),
         TestLabRun(id: "06-turbo-med-talare", title: "Large v3 Turbo med talare", engine: .largeV3Turbo, speakers: .own)
+    ]
+
+    /// Samma Pianissimo med olika precision (2026-11-13). Den vanliga har kodaren förminskad
+    /// till 8 bitar, vilket aldrig mätts på svenska. Allt annat är som en vanlig transkribering.
+    public static let precision: [TestLabRun] = [
+        TestLabRun(id: "01-pianissimo-8-bitar", title: "Pianissimo som i dag (kodaren i 8 bitar)", engine: .pianissimo),
+        TestLabRun(id: "02-pianissimo-16-bitar", title: "Pianissimo 16 bitar", engine: .pianissimoFP16),
+        TestLabRun(id: "03-pianissimo-32-bitar", title: "Pianissimo 32 bitar", engine: .pianissimoFP32)
     ]
 
     /// Listan som körs som standard. Varje körning ändrar en sak mot referensen, utom de

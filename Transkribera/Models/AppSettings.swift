@@ -32,8 +32,8 @@ enum SettingsKey {
     static let rescueShortReplies = "rescueShortReplies"
     /// `CrossCheckSource.rawValue`.
     static let crossCheck = "crossCheck"
-    /// Experiment: Pianissimo med kodaren i 16 bitar (`WhisperModel.pianissimoFP16`).
-    static let pianissimoFP16 = "pianissimoFP16"
+    /// Experiment: vilken Pianissimo som används, `PianissimoVersion.rawValue`.
+    static let pianissimoVersion = "pianissimoVersion"
     /// Textstorlek på läsytan i punkter, ett av `ReadingTextSize.steps`.
     static let readingTextSize = "readingTextSize"
     /// Fråga innan Transkribera igen (på som standard). Gäller bara när det finns plats för
@@ -159,10 +159,9 @@ struct TranscriptionOverrides: Equatable {
     func applied(to options: TranscriptionOptions) -> TranscriptionOptions {
         var o = options
         if let modelRaw {
-            let wasFP16 = o.model == .pianissimoFP16
             o.model = WhisperModel.resolved(modelRaw)
-            // Experimentet "Pianissimo i 16 bitar" gäller även när man kör om.
-            if wasFP16, o.model == .pianissimo { o.model = .pianissimoFP16 }
+            // Experimentet "Pianissimo-version" gäller även när man kör om.
+            if o.model == .pianissimo { o.model = PianissimoVersion.current().model }
         }
         if let language { o.languageCode = language == "auto" ? nil : language }
         if let identifySpeakers { o.identifySpeakers = identifySpeakers }
@@ -230,7 +229,7 @@ struct TranscriptionOptions {
 
     static func fromDefaults(_ defaults: UserDefaults = .standard) -> TranscriptionOptions {
         var model = WhisperModel.resolved(defaults.string(forKey: SettingsKey.model))
-        if model == .pianissimo, defaults.bool(forKey: SettingsKey.pianissimoFP16) { model = .pianissimoFP16 }
+        if model == .pianissimo { model = PianissimoVersion.current(defaults).model }
         let language = defaults.string(forKey: SettingsKey.language) ?? "sv"
         return TranscriptionOptions(
             model: model,
@@ -272,6 +271,37 @@ enum CrossCheckSource: String, CaseIterable, Identifiable {
         case .off: return "Av"
         case .kbLarge: return "KB Large"
         case .pianissimoReplies: return "Pianissimo i repliker"
+        }
+    }
+}
+
+/// Experiment 2026-11-13: vilken Pianissimo som används. Den vanliga har kodaren förminskad till
+/// 8 bitar, vilket aldrig mätts på svenska. Testlabbets lista "Pianissimo: 8, 16 och 32 bitar"
+/// jämför dem på flera filer på en gång.
+enum PianissimoVersion: String, CaseIterable, Identifiable {
+    case standard
+    case fp16
+    case fp32
+
+    var id: String { rawValue }
+
+    static func current(_ defaults: UserDefaults = .standard) -> PianissimoVersion {
+        PianissimoVersion(rawValue: defaults.string(forKey: SettingsKey.pianissimoVersion) ?? "") ?? .standard
+    }
+
+    var model: WhisperModel {
+        switch self {
+        case .standard: return .pianissimo
+        case .fp16: return .pianissimoFP16
+        case .fp32: return .pianissimoFP32
+        }
+    }
+
+    var label: String {
+        switch self {
+        case .standard: return "Vanlig (8 bitar)"
+        case .fp16: return "16 bitar"
+        case .fp32: return "32 bitar"
         }
     }
 }

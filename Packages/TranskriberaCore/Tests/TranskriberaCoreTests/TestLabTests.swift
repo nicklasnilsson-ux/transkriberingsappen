@@ -138,4 +138,15 @@ final class TestLabReportTests: XCTestCase {
         let json = try XCTUnwrap(String(data: report.encoded(), encoding: .utf8))
         XCTAssertFalse(json.contains("\"text\""))
     }
+
+    /// 2026-11-13: samma Pianissimo i 8, 16 och 32 bitar, och inget annat som skiljer.
+    func testPrecisionListComparesOnlyThePrecision() {
+        let plan = TestLabPlan.Kind.precision.runs
+        XCTAssertEqual(plan.map(\.engine), [.pianissimo, .pianissimoFP16, .pianissimoFP32])
+        XCTAssertEqual(Set(plan.map(\.id)).count, 3)
+        XCTAssertEqual(plan[0].differences, [], "Referensen är en vanlig transkribering")
+        XCTAssertEqual(plan[1].differences, ["kodaren i 16 bitar i stället för 8"])
+        XCTAssertEqual(plan[2].differences, ["hela modellen i 32 bitar"])
+        XCTAssertTrue(plan.allSatisfy { $0.tuning == .production && $0.speakers == .shared && !$0.carefulSeams })
+    }
 }
