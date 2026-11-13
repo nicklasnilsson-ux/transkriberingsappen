@@ -7,7 +7,7 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 ## [Kommande]
 
 ### Nytt
-- Experiment: *Fånga korta svar* under Inställningar → Experiment. Korta svar som "Ja." och "Mm." som Pianissimo missat transkriberas för sig och läggs in efter meningen de hördes i. Resten av texten ändras inte. Kräver "Skilj på vem som pratar". Ännu inte bevisat bättre.
+- Experiment: *Fånga korta svar* under Inställningar → Experiment. Korta svar som "Ja.", "Mm." och "Tack så mycket." som Pianissimo missat transkriberas för sig och läggs in efter meningen de hördes i. Bara svar med ett vanligt svarsord tas med, så att brus inte blir påhittade ord. Resten av texten ändras inte. Kräver "Skilj på vem som pratar". Ännu inte bevisat bättre.
 - Exporten för analys har en rad *Modell* överst, till exempel "Modell: Pianissimo (korta svar, Nemotron 3)". Då framgår det alltid vilken modell och vilka inställningar en fil kommer från, även om filen byter namn.
 
 ## [0.9.37] – 2026-11-11

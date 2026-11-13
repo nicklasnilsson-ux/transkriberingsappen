@@ -19,6 +19,15 @@ public enum ShortReplyRescue {
     public static let margin = 0.15
     /// Ord i texten inom så här många sekunder från turen räknas som "redan där".
     static let nearby = 1.0
+    /// Ett räddat svar måste innehålla minst ett av de här orden. På mötet 2026-11-13 gav
+    /// korta bitar utan något av dem nästan bara påhittade ord ("Ding.", "Mint.", "Läsk.",
+    /// "God arrangör."), medan de riktiga svaren ("Ja.", "Tack så mycket.", "Oj, förlåt.")
+    /// alltid hade ett.
+    static let answerWords: Set<String> = [
+        "ja", "jaa", "japp", "jo", "jaha", "jaså", "nej", "nä", "näe", "nää", "mm", "mhm", "mmm", "hm", "hmm",
+        "aa", "aha", "okej", "ok", "precis", "exakt", "absolut", "visst", "javisst", "tack", "hej", "hallå",
+        "oj", "förlåt", "just", "yes", "no", "okay"
+    ]
     /// Högst så många bitar transkriberas om, så att ett mycket långt möte inte drar iväg.
     public static let mostCandidates = 400
 
@@ -89,6 +98,7 @@ public enum ShortReplyRescue {
             guard !inside.isEmpty, inside.count <= mostWords else { continue }
             let text = TextCleaning.clean(inside.map(\.word).joined())
             guard !text.isEmpty, !TextCleaning.isNonSpeechMarker(text) else { continue }
+            guard inside.contains(where: { answerWords.contains(normalized($0.word)) }) else { continue }
 
             // Står orden redan i texten nära turen är det troligen grannens ord: hoppa över.
             let existing = Set(result.flatMap(\.words).filter {
@@ -96,6 +106,9 @@ public enum ShortReplyRescue {
             }.map { normalized($0.word) })
             if inside.allSatisfy({ existing.contains(normalized($0.word)) }) { continue }
 
+            // Samma talare som pratar runt omkring: en paus i den egna repliken, inget svar.
+            // (Mötet 2026-11-13: "Inget.", "Bra." och påhittade namn mitt i en monolog.)
+            if let known = names[turn.speaker], isInsideOwnReply(known, at: turn, in: result) { continue }
             let name: String
             if let known = names[turn.speaker] {
                 name = known
@@ -132,8 +145,8 @@ public enum ShortReplyRescue {
             return
         }
         let words = segments[host].words
-        // Meningen slutar vid första ord efter svaret som avslutar en mening, eller före
-        // en paus. Finns inget sådant ord står svaret efter hela segmentet.
+        // Meningen slutar vid första ord efter svaret som avslutar en mening. Finns inget
+        // sådant ord står svaret efter hela segmentet.
         if let cut = words.indices.first(where: { index in
             words[index].end >= reply.start && endsSentence(words, at: index)
         }), cut < words.count - 1 {
@@ -154,10 +167,17 @@ public enum ShortReplyRescue {
         }
     }
 
+    /// Bara vid skiljetecken. En paus mitt i en mening räcker inte (mötet 2026-11-13: att dela
+    /// vid pauser gav fler talarbyten mitt i meningar).
     static func endsSentence(_ words: [WordTimingData], at index: Int) -> Bool {
         let trimmed = words[index].word.trimmingCharacters(in: .whitespaces)
-        if let last = trimmed.last, ".?!…".contains(last) { return true }
-        return index + 1 < words.count && words[index + 1].start - words[index].end >= 0.3
+        guard let last = trimmed.last else { return false }
+        return ".?!…".contains(last)
+    }
+
+    /// Sant när texten som pågår eller just slutat när turen börjar har talaren `name`.
+    static func isInsideOwnReply(_ name: String, at turn: SpeakerTurn, in segments: [SegmentData]) -> Bool {
+        segments.last { $0.start <= turn.start }?.speaker == name
     }
 
     /// Vilket namn ("Talare 1" …) varje talarnummer fick, efter hur orden fördelades.

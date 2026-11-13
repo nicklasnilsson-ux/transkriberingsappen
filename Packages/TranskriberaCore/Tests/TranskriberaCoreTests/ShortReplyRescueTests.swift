@@ -39,10 +39,10 @@ final class ShortReplyRescueTests: XCTestCase {
         XCTAssertEqual(candidates.first?.clipEnd ?? 0, 3.05, accuracy: 1e-9)
 
         let result = ShortReplyRescue.insert(
-            [(turn(2.3, 2.9, 1), [word(" Varje", 2.35, 2.6), word(" dag.", 2.6, 2.85)])],
+            [(turn(2.3, 2.9, 1), [word(" Ja,", 2.35, 2.5), word(" varje", 2.5, 2.65), word(" dag.", 2.65, 2.85)])],
             into: segments, turns: turns
         )
-        XCTAssertEqual(result.map(\.text), ["Hur ofta loggar ni in?", "Varje dag.", "Okej."])
+        XCTAssertEqual(result.map(\.text), ["Hur ofta loggar ni in?", "Ja, varje dag.", "Okej."])
         XCTAssertEqual(result.map(\.speaker), ["Talare 1", "Talare 2", "Talare 1"])
         XCTAssertEqual(result.map(\.uncertainSpeaker), [false, false, false])
     }
@@ -78,8 +78,8 @@ final class ShortReplyRescueTests: XCTestCase {
 
     func testAlreadyTranscribedWordsAreNotAddedAgain() {
         let (segments, turns) = questionAnswer
-        let result = ShortReplyRescue.insert([(turn(2.3, 2.9, 1), [word(" in?", 2.35, 2.6)])], into: segments, turns: turns)
-        XCTAssertEqual(result, segments)
+        let result = ShortReplyRescue.insert([(turn(2.3, 2.9, 1), [word(" Okej.", 2.35, 2.6)])], into: segments, turns: turns)
+        XCTAssertEqual(result, segments, "Okej. står redan strax efter")
     }
 
     func testLongEmptyOrNonSpeechResultsAreSkipped() {
@@ -105,8 +105,39 @@ final class ShortReplyRescueTests: XCTestCase {
             segment([word(" Hur", 2, 2.3), word(" mår", 2.3, 2.6), word(" du?", 2.6, 3)], "Talare 1")
         ]
         let turns = [turn(0, 0.6, 0), turn(0.9, 1.7, 1), turn(1.9, 3.1, 0), turn(3.3, 3.8, 1)]
-        let result = ShortReplyRescue.insert([(turn(3.3, 3.8, 1), [word(" Bra.", 3.35, 3.7)])], into: segments, turns: turns)
+        let result = ShortReplyRescue.insert([(turn(3.3, 3.8, 1), [word(" Ja,", 3.35, 3.5), word(" bra.", 3.5, 3.7)])], into: segments, turns: turns)
         XCTAssertEqual(result.last?.speaker, "Talare 2")
-        XCTAssertEqual(result.last?.text, "Bra.")
+        XCTAssertEqual(result.last?.text, "Ja, bra.")
+    }
+
+    /// Mötet 2026-11-13: korta bitar utan svarsord gav påhittade ord ("Ding.", "Mint.",
+    /// "Läsk.", "God arrangör."). De läggs inte in.
+    func testResultsWithoutAnAnswerWordAreSkipped() {
+        let (segments, turns) = questionAnswer
+        for words in [[word(" Ding.", 2.4, 2.8)], [word(" God", 2.35, 2.6), word(" arrangör.", 2.6, 2.85)]] {
+            XCTAssertEqual(ShortReplyRescue.insert([(turn(2.3, 2.9, 1), words)], into: segments, turns: turns), segments, "\(words)")
+        }
+        let accepted = ShortReplyRescue.insert([(turn(2.3, 2.9, 1), [word(" Tack", 2.35, 2.5), word(" så", 2.5, 2.6), word(" mycket.", 2.6, 2.85)])],
+                                               into: segments, turns: turns)
+        XCTAssertEqual(accepted.map(\.text), ["Hur ofta loggar ni in?", "Tack så mycket.", "Okej."])
+    }
+
+    /// En paus i någons egen replik är inget svar (mötet 2026-11-13: "Inget." och "Bra." mitt
+    /// i en monolog).
+    func testPauseInsideOwnReplyIsNotAnAnswer() {
+        let segments = [
+            segment([word(" Det", 0, 0.3), word(" är", 0.3, 0.6), word(" så.", 0.6, 1.0)], "Talare 1"),
+            segment([word(" Sen", 2.5, 2.8), word(" vidare.", 2.8, 3.2)], "Talare 1")
+        ]
+        let turns = [turn(0, 1.1, 0), turn(1.4, 1.9, 0), turn(2.4, 3.3, 0)]
+        XCTAssertEqual(ShortReplyRescue.insert([(turn(1.4, 1.9, 0), [word(" Ja.", 1.5, 1.8)])], into: segments, turns: turns), segments)
+    }
+
+    /// En paus mitt i en mening delar den inte: svaret läggs efter meningen.
+    func testPauseWithoutPunctuationDoesNotSplitTheSentence() {
+        let segments = [segment([word(" Och", 0, 0.3), word(" sen", 0.3, 0.6), word(" förutom", 1.2, 1.6), word(" det.", 1.6, 2.0)], "Talare 1")]
+        let turns = [turn(0, 2.1, 0), turn(0.6, 1.1, 1)]
+        let result = ShortReplyRescue.insert([(turn(0.6, 1.1, 1), [word(" Mm.", 0.7, 1.0)])], into: segments, turns: turns)
+        XCTAssertEqual(result.map(\.text), ["Och sen förutom det.", "Mm."])
     }
 }
