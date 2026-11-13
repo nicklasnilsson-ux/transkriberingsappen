@@ -2,6 +2,7 @@ import AppKit
 import SwiftData
 import SwiftUI
 import TranskriberaCore
+import UniformTypeIdentifiers
 
 /// Fönstret för Testlabbet (öppnas med ⌥⇧⌘T, finns inte i någon meny): välj en eller flera inspelningar
 /// och vilka inställningar som ska provas, och få en text per körning i en mapp per inspelning.
@@ -27,9 +28,15 @@ struct TestLabView: View {
                         }
                     ))
                     .disabled(lab.isRunning)
+                    if chosenIDs.contains(transcript.id) {
+                        facitRow(for: transcript)
+                    }
                 }
             } header: {
                 Text(chosen.isEmpty ? "Inspelningar" : "Inspelningar (\(chosen.count) valda)")
+            } footer: {
+                Text("Facit är valfritt: en textfil med samma samtal, till exempel exporten från Klang. Med facit räknar labbet ut ordträff och fel som ändrar innebörden, och hur många av dem som markerades. Resultatet hamnar i \"jämförelse med facit.txt\".")
+                    .foregroundStyle(Color.textSecondary)
             }
 
             Section {
@@ -107,6 +114,36 @@ struct TestLabView: View {
         }
         .formStyle(.grouped)
         .frame(minWidth: 520, minHeight: 640)
+    }
+
+    /// Facit för en vald inspelning: filnamnet, eller en knapp för att välja.
+    private func facitRow(for transcript: Transcript) -> some View {
+        HStack {
+            if let url = lab.facits[transcript.id] {
+                Text("Facit: \(url.lastPathComponent)")
+                    .foregroundStyle(Color.textSecondary)
+                Spacer()
+                Button("Ta bort") { lab.facits[transcript.id] = nil }
+            } else {
+                Text("Inget facit")
+                    .foregroundStyle(Color.textSecondary)
+                Spacer()
+                Button("Välj facit…") { chooseFacit(for: transcript) }
+            }
+        }
+        .font(.app(.small))
+        .padding(.leading, 20)
+        .disabled(lab.isRunning)
+    }
+
+    private func chooseFacit(for transcript: Transcript) {
+        let panel = NSOpenPanel()
+        panel.title = "Facit för \(transcript.title)"
+        panel.allowedContentTypes = [.plainText]
+        panel.allowsMultipleSelection = false
+        if panel.runModal() == .OK, let url = panel.url {
+            lab.facits[transcript.id] = url
+        }
     }
 
     private var footer: String {

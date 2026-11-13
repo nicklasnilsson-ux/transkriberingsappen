@@ -35,6 +35,8 @@ final class TestLab {
     /// Mappen som den senaste körningen skrev till.
     private(set) var folder: URL?
     private(set) var message: String?
+    /// Facit per inspelning (t.ex. Klangs text), valt i fönstret. Jämförelsen hoppas över utan facit.
+    var facits: [UUID: URL] = [:]
     @ObservationIgnored private var task: Task<Void, Never>?
 
     static var baseDirectory: URL {
@@ -55,8 +57,12 @@ final class TestLab {
         let runs = plan.filter { selected.contains($0.id) }
         guard !runs.isEmpty else { return }
 
-        let sources = transcripts.map {
-            Source(title: $0.title, createdAt: $0.createdAt, duration: $0.duration, mediaURL: $0.mediaURL)
+        let sources = transcripts.map { transcript in
+            let facit = facits[transcript.id].flatMap { url in
+                (try? String(contentsOf: url, encoding: .utf8)).map { (name: url.lastPathComponent, text: $0) }
+            }
+            return Source(title: transcript.title, createdAt: transcript.createdAt, duration: transcript.duration,
+                          mediaURL: transcript.mediaURL, facit: facit)
         }
         queue.hold()
         isRunning = true
@@ -90,11 +96,30 @@ final class TestLab {
         var createdAt: Date
         var duration: Double
         var mediaURL: URL
+        var facit: (name: String, text: String)?
+    }
+
+    /// Jämförelserna med facit, för den gemensamma sammanfattningen.
+    private var facitLines: [String] = []
+    private var facitTotals = FacitTotals()
+
+    struct FacitTotals {
+        var meaningErrors = 0, marks = 0, rightMarks = 0, caught = 0, minutes = 0.0
+        mutating func add(_ result: FacitComparison.Result, minutes: Double) {
+            guard !result.marks.isEmpty || result.caught > 0 else { return }
+            meaningErrors += result.meaningErrors.count
+            marks += result.marks.count
+            rightMarks += result.marks.filter(\.isError).count
+            caught += result.caught
+            self.minutes += minutes
+        }
     }
 
     /// Inspelningarna en i taget. Flera inspelningar får en gemensam mapp med en mapp per inspelning.
     private func run(_ runs: [TestLabRun], sources: [Source], transcriber: TranscriberService) async {
         var failures: [String] = []
+        facitLines = []
+        facitTotals = FacitTotals()
         do {
             let parent = sources.count > 1 ? try makeFolder(for: "\(sources.count) inspelningar") : nil
             folder = parent
@@ -111,6 +136,9 @@ final class TestLab {
                     // En inspelning som inte går att köra stoppar inte de andra.
                     failures.append("\(source.title): \(error.localizedDescription)")
                 }
+            }
+            if !facitLines.isEmpty, let top = folder {
+                try Self.write(facitSummary(), to: top.appending(path: "jämförelse med facit.txt"))
             }
             message = failures.isEmpty
                 ? "Klart. \(runs.count) körningar per inspelning sparade\(sources.count > 1 ? " för \(sources.count) inspelningar" : "")."
@@ -220,6 +248,18 @@ final class TestLab {
                     report.pianissimoConfidence = diagnostics.pianissimoConfidence
 
                     var segments = output.segments
+                    if let facit = source.facit {
+                        let result = FacitComparison.compare(segments, facit: facit.text)
+                        let name = "\(source.title) – \(run.title)"
+                        let minutes = source.duration / 60
+                        try Self.write(
+                            FacitComparison.report(result, title: name, facitName: facit.name, minutes: minutes,
+                                                   anonymize: { text in anonymization.map { Anonymizer.anonymize(text, options: $0) } ?? text }),
+                            to: folder.appending(path: "\(run.id)-facit.txt")
+                        )
+                        facitLines.append(FacitComparison.summaryLine(result, title: name, minutes: minutes))
+                        facitTotals.add(result, minutes: minutes)
+                    }
                     if run.crossCheck {
                         let list = CrossCheck.report(
                             CrossCheck.marks(in: segments), other: CrossCheckSource.kbLarge.label, minutes: source.duration / 60,
@@ -255,6 +295,20 @@ final class TestLab {
                 try Self.write("\u{FEFF}" + lines.joined(separator: "\n") + "\n", to: folder.appending(path: "sammanfattning.csv"))
             }
         }
+    }
+
+    private func facitSummary() -> String {
+        var out = "Jämförelse med facit. Facit har också fel, så siffrorna är ungefärliga.\n\n"
+        out += facitLines.joined(separator: "\n") + "\n"
+        let t = facitTotals
+        if t.marks > 0 || t.caught > 0 {
+            let perHour = t.minutes > 0 ? Int((Double(t.marks) / t.minutes * 60).rounded()) : 0
+            let share = t.marks > 0 ? Int((Double(t.rightMarks) / Double(t.marks) * 100).rounded()) : 0
+            let found = t.meaningErrors > 0 ? Int((Double(t.caught) / Double(t.meaningErrors) * 100).rounded()) : 0
+            out += "\nMarkera ord att lyssna på, alla inspelningar: \(t.marks) markeringar (\(perHour) per timme), "
+            out += "\(t.rightMarks) riktiga fel (\(share) %), \(t.caught) av \(t.meaningErrors) innebördsfel markerade (\(found) %).\n"
+        }
+        return out
     }
 
     private func makeFolder(for title: String, in parent: URL? = nil) throws -> URL {
