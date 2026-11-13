@@ -1,0 +1,56 @@
+name: MLX-test
+
+# Test 2026-11-13: kan Klangs MLX-version av Pianissimo köras från Swift
+# (mlx-audio-swift) utan att modellen byggs om, och blir texten samma som med
+# Klangs egen Python-laddare? Svensk talsyntes som ljud; ingen riktig inspelning.
+
+on:
+  push:
+    paths:
+      - .github/workflows/mlx-test.yml
+      - scripts/mlx/**
+  workflow_dispatch:
+
+jobs:
+  mlx:
+    name: Pianissimo MLX i Swift och Python (macOS)
+    runs-on: macos-15
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - name: Ljud med svensk talsyntes
+        run: |
+          voice=$(say -v '?' | grep sv_SE | head -1 | awk '{print $1}')
+          test -n "$voice"
+          say -v "$voice" -o test.aiff "Från och med nästa månad behöver alla nya beställningar gå via portalen. Det är inte bara att skriva ett mejl längre. Vi följer samma praxis som leverantörerna, och jag skickar ut instruktionerna på torsdag."
+          afconvert -f WAVE -d LEI16@16000 -c 1 test.aiff test.wav
+
+      - name: Referens med Klangs laddare (Python)
+        run: |
+          pip install "parakeet-mlx==0.5.2" huggingface_hub sentencepiece numpy
+          for repo in KlangAI/pianissimo-sv-mlx KlangAI/pianissimo-sv-mlx-8bit; do
+            python scripts/mlx/reference.py "$repo" test.wav | tee -a resultat.txt
+          done
+
+      - name: Bygg Swift-testet
+        run: |
+          cd scripts/mlx
+          xcodebuild -scheme mlx-pianissimo -destination 'platform=macOS,arch=arm64' \
+            -configuration Release -derivedDataPath build -skipMacroValidation -skipPackagePluginValidation build \
+            | tail -30
+
+      - name: Swift med mlx-audio-swift
+        run: |
+          bin=scripts/mlx/build/Build/Products/Release/mlx-pianissimo
+          "$bin" KlangAI/pianissimo-sv-mlx test.wav | tee -a resultat.txt
+          "$bin" KlangAI/pianissimo-sv-mlx-8bit test.wav | tee -a resultat.txt
+
+      - name: Sammanfattning
+        if: always()
+        run: |
+          test -f resultat.txt && cat resultat.txt >> "$GITHUB_STEP_SUMMARY" || true
