@@ -19,7 +19,8 @@ defaults:
 jobs:
   mlx:
     name: Pianissimo MLX i Swift och Python (macOS)
-    runs-on: macos-15
+    # mlx-swift 0.33 kräver Swift 6.3 (Xcode 26.4 eller senare).
+    runs-on: macos-26
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v7
@@ -27,7 +28,13 @@ jobs:
       - name: Välj senaste Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: latest-stable
+          xcode-version: latest
+
+      - name: Visa Xcode
+        run: |
+          ls /Applications | grep -i xcode
+          xcodebuild -version
+          swift --version
 
       - uses: actions/setup-python@v7
         with:
