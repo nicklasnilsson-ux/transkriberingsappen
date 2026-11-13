@@ -11,6 +11,11 @@ on:
       - scripts/mlx/**
   workflow_dispatch:
 
+defaults:
+  run:
+    # Utan pipefail döljer "| tail" och "| tee" ett fel (hände i första körningen).
+    shell: bash -eo pipefail {0}
+
 jobs:
   mlx:
     name: Pianissimo MLX i Swift och Python (macOS)
@@ -18,6 +23,11 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v7
+
+      - name: Välj senaste Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
 
       - uses: actions/setup-python@v7
         with:
