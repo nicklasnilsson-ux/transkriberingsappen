@@ -14,7 +14,13 @@ let audioURL = URL(fileURLWithPath: args[2])
 let dtype: DType? = args.count > 3 && args[3] == "fp32" ? .float32 : nil
 
 let loadStart = Date()
-let model = try await ParakeetModel.fromPretrained(repo, computeDType: dtype)
+var isDirectory: ObjCBool = false
+let model: ParakeetModel
+if FileManager.default.fileExists(atPath: repo, isDirectory: &isDirectory), isDirectory.boolValue {
+    model = try ParakeetModel.fromDirectory(URL(fileURLWithPath: repo), computeDType: dtype)
+} else {
+    model = try await ParakeetModel.fromPretrained(repo, computeDType: dtype)
+}
 let loadTime = Date().timeIntervalSince(loadStart)
 
 let (_, audio) = try loadAudioArray(from: audioURL, sampleRate: 16000)

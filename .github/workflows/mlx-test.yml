@@ -67,8 +67,10 @@ jobs:
       - name: Swift med mlx-audio-swift
         run: |
           bin=scripts/mlx/build/Build/Products/Release/mlx-pianissimo
-          "$bin" KlangAI/pianissimo-sv-mlx test.wav | tee -a resultat.txt
-          "$bin" KlangAI/pianissimo-sv-mlx-8bit test.wav | tee -a resultat.txt
+          python scripts/mlx/prepare.py KlangAI/pianissimo-sv-mlx bf16 | tee -a resultat.txt
+          python scripts/mlx/prepare.py KlangAI/pianissimo-sv-mlx-8bit q8 | tee -a resultat.txt
+          "$bin" "$PWD/bf16" test.wav | tee -a resultat.txt
+          "$bin" "$PWD/q8" test.wav | tee -a resultat.txt
 
       - name: Sammanfattning
         if: always()
