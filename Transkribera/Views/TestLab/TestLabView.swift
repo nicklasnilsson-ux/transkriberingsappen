@@ -67,9 +67,17 @@ struct TestLabView: View {
                     LabeledContent("Uppskattad tid", value: estimate(for: chosen))
                 }
                 if lab.isRunning {
-                    HStack {
+                    HStack(alignment: .firstTextBaseline) {
                         ProgressView().controlSize(.small)
-                        Text(lab.stepText)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(lab.stepText)
+                            // Vad som händer just nu: nedladdning, första inläsningen eller
+                            // transkriberingen. Utan raden såg en lång nedladdning ut som ett stopp.
+                            if queue.transcriber.phase != .idle {
+                                Text(queue.transcriber.statusText)
+                                    .foregroundStyle(Color.textSecondary)
+                            }
+                        }
                     }
                 }
                 if let message = lab.message {
@@ -153,7 +161,8 @@ private struct StatusLabel: View {
         case .running:
             ProgressView().controlSize(.small)
         case .done(let seconds):
-            Label("\(Int((seconds / 60).rounded())) min", icon: .checkCircle)
+            // Under en minut i sekunder: "0 min" såg ut som att inget hade körts.
+            Label(TimeFormatting.duration(seconds), icon: .checkCircle)
                 .foregroundStyle(.green)
         case .failed(let error):
             Label("Fel", icon: .warning)
