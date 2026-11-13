@@ -22,6 +22,8 @@ struct TranscriptDetailView: View {
     @State private var editsAll = false
     /// Den senaste sparade rättningen, så att den går att ångra tills ett nytt stycke öppnas.
     @State private var lastEdit: EditUndo?
+    /// Menyn vid ett prickat understruket ord (experimentet Korskolla).
+    @State private var crossCheckMenu = CrossCheckMenu()
     /// Det senaste bytet av talare på ett stycke eller en rad, så att det går att ångra.
     @State private var lastMove: SpeakerMove.Undo?
     /// Stycket eller raden som ska flyttas till en ny talare (frågan om namnet är öppen).
@@ -980,7 +982,8 @@ struct TranscriptDetailView: View {
                         onCancel: { cancelEditing() },
                         onSeek: { player?.seek(to: segment.start) },
                         speakerMenu: { AnyView(speakerActions([row], noun: "raden", speakers: speakers)) },
-                        menuSpeakers: speakers
+                        menuSpeakers: speakers,
+                        alternatives: row.alternatives
                     )
                     .equatable()
                     .id(segment.persistentModelID)
@@ -990,6 +993,7 @@ struct TranscriptDetailView: View {
                 }
             }
         }
+        .environment(\.openURL, OpenURLAction { openCrossCheck($0) })
         .onChange(of: activeID) { _, newValue in
             if let newValue { follow(newValue, proxy: proxy) }
         }
@@ -1032,9 +1036,40 @@ struct TranscriptDetailView: View {
                 }
             }
         }
+        .environment(\.openURL, OpenURLAction { openCrossCheck($0) })
         .onChange(of: activeParagraphID) { _, newValue in
             if let newValue { follow(newValue, proxy: proxy) }
         }
+    }
+
+    /// Klick på ett prickat understruket ord (experimentet Korskolla): menyn med de två
+    /// tolkningarna och Lyssna. Andra länkar öppnas som vanligt.
+    private func openCrossCheck(_ url: URL) -> OpenURLAction.Result {
+        guard let target = CrossCheck.parse(url) else { return .systemAction }
+        let (segmentIndex, wordIndex) = (target.segment, target.word)
+        guard !isEditing, let segment = transcript.segments.first(where: { $0.index == segmentIndex }) else { return .handled }
+        let words = segment.words
+        guard words.indices.contains(wordIndex), let alternative = words[wordIndex].alternative else { return .handled }
+        let length = max(1, min(words[wordIndex].alternativeLength ?? 1, words.count - wordIndex))
+        let current = TextCleaning.clean(words[wordIndex..<wordIndex + length].map(\.word).joined())
+        var onListen: (() -> Void)?
+        if let listening = CrossCheck.listeningRange(at: wordIndex, in: words), let player {
+            onListen = { player.play(from: listening.lowerBound, to: listening.upperBound) }
+        }
+        crossCheckMenu.show(
+            current: current,
+            alternative: alternative,
+            onKeep: {
+                segment.keepWord(at: wordIndex)
+                try? transcript.modelContext?.save()
+            },
+            onChoose: {
+                segment.chooseAlternative(at: wordIndex)
+                try? transcript.modelContext?.save()
+            },
+            onListen: onListen
+        )
+        return .handled
     }
 
     /// Delar upp raderna i stycken på samma sätt som "Exportera för analys".
@@ -1297,7 +1332,7 @@ struct TranscriptDetailView: View {
     /// originaltexten aldrig blinkar förbi.
     private func displaySegments(_ segments: [TranscriptSegment]) -> [DisplaySegment]? {
         guard anonymizationOptions != nil else {
-            return segments.map { DisplaySegment(segment: $0, text: $0.text, speaker: $0.speaker) }
+            return segments.map { DisplaySegment(segment: $0, text: $0.text, speaker: $0.speaker, alternatives: $0.alternativeCount) }
         }
         // Medan man rättar räknas anonymiseringen om efter varje sparning. Då behålls det förra
         // resultatet, så att fälten inte försvinner och layouten inte hoppar.
@@ -1406,12 +1441,15 @@ struct DisplaySegment: Identifiable {
     let speaker: String?
     /// Texten är anonymiserad (platshållare i stället för de dolda uppgifterna).
     var isAnonymized = false
+    /// Antal markerade ord (experimentet Korskolla), så att raden ritas om när ett val görs.
+    var alternatives = 0
 
     var id: PersistentIdentifier { segment.persistentModelID }
 
     /// Samma synliga innehåll. Ändringar i själva modellen når raderna via SwiftData-observationen.
     func sameContent(as other: DisplaySegment) -> Bool {
         id == other.id && text == other.text && speaker == other.speaker && isAnonymized == other.isAnonymized
+            && alternatives == other.alternatives
     }
 }
 

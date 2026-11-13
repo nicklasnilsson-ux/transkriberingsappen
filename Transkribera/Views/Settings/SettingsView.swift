@@ -30,6 +30,8 @@ private struct TranscriptionSettingsView: View {
     @AppStorage(SettingsKey.wordTimestamps) private var wordTimestamps = true
     @AppStorage(SettingsKey.recordMicrophone) private var recordMicrophone = true
     @AppStorage(SettingsKey.pianissimoCarefulSeams) private var carefulSeams = false
+    @AppStorage(SettingsKey.rescueShortReplies) private var rescueShortReplies = false
+    @AppStorage(SettingsKey.crossCheck) private var crossCheck = CrossCheckSource.off
     @AppStorage(SettingsKey.levelVolume) private var levelVolume = true
     @AppStorage(SettingsKey.askBeforeRetranscribe) private var askBeforeRetranscribe = true
     @AppStorage(SettingsKey.model) private var modelRaw = WhisperModel.default.rawValue
@@ -117,10 +119,19 @@ private struct TranscriptionSettingsView: View {
                 Toggle("Noggrannare skarvar", isOn: $carefulSeams)
                     .disabled(!usesParakeet)
                     .help("Pianissimo lyssnar på 15 sekunder i taget. Med det här provar den flera sätt att skarva bitarna och väljer det säkraste.")
+                Toggle("Fånga korta svar", isOn: $rescueShortReplies)
+                    .disabled(!usesParakeet || !identifySpeakers)
+                    .help("Korta svar som \"Ja.\" och \"Mm.\" som saknas i texten transkriberas för sig och läggs in efter meningen de hördes i. Resten av texten ändras inte. Kräver \"Skilj på vem som pratar\".")
+                Toggle("Markera ord att lyssna på", isOn: Binding(
+                    get: { crossCheck == .kbLarge },
+                    set: { crossCheck = $0 ? .kbLarge : .off }
+                ))
+                .disabled(!usesParakeet)
+                .help("En andra modell (KB Large) lyssnar också på inspelningen. Där modellerna hörde olika i ord som kan ändra innebörden, till exempel inte, bör och måste, blir ordet prickat understruket. Klicka på det för att lyssna och välja rätt. Ungefär hälften av sådana fel hittas på det här sättet, så läs ändå igenom texten. Tar ungefär lika lång tid som att transkribera med KB Large.")
             } header: {
                 Text("Experiment")
             } footer: {
-                Text("Ännu inte bevisat bättre. Gäller bara Pianissimo och tar 10–50 % längre tid. Det som användes står efter modellens namn i transkriberingen.")
+                Text("Ännu inte bevisat bättre. Gäller bara Pianissimo; noggrannare skarvar tar 10–50 % längre tid. Det som användes står på raden Modell i exporten för analys.")
                     .foregroundStyle(Color.textSecondary)
             }
 

@@ -235,6 +235,28 @@ final class TranscriptSegment {
         wordsData.map(WordTimingData.hasUncertainSpeaker(inEncoded:)) ?? false
     }
 
+    /// Hur många ställen i segmentet som har en annan tolkning (experimentet Korskolla).
+    /// Läses utan att avkoda orden, så att listan bara avkodar segment som har några.
+    var alternativeCount: Int {
+        wordsData.map(WordTimingData.alternativeCount(inEncoded:)) ?? 0
+    }
+
+    /// Den andra tolkningen valdes i menyn: orden byts ut och markeringen försvinner. Som en
+    /// vanlig rättning, men ordtiderna (och ⚠) behålls. Ingen ångra (beslut 2026-11-13).
+    func chooseAlternative(at index: Int) {
+        apply(CrossCheck.choose(alternativeAt: index, in: data))
+    }
+
+    /// Ordet som står behölls: markeringen försvinner.
+    func keepWord(at index: Int) {
+        apply(CrossCheck.keep(at: index, in: data))
+    }
+
+    private func apply(_ updated: SegmentData) {
+        text = updated.text
+        wordsData = updated.words.isEmpty ? nil : try? JSONEncoder().encode(updated.words)
+    }
+
     /// Uppdaterar texten. Ordtidsstämplarna slängs eftersom de inte längre stämmer.
     func updateText(_ newText: String) {
         guard newText != text else { return }

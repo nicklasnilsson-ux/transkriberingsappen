@@ -1,0 +1,78 @@
+name: MLX-test
+
+# Test 2026-11-13: kan Klangs MLX-version av Pianissimo köras från Swift
+# (mlx-audio-swift) utan att modellen byggs om, och blir texten samma som med
+# Klangs egen Python-laddare? Svensk talsyntes som ljud; ingen riktig inspelning.
+
+on:
+  push:
+    paths:
+      - .github/workflows/mlx-test.yml
+      - scripts/mlx/**
+  workflow_dispatch:
+
+defaults:
+  run:
+    # Utan pipefail döljer "| tail" och "| tee" ett fel (hände i första körningen).
+    shell: bash -eo pipefail {0}
+
+jobs:
+  mlx:
+    name: Pianissimo MLX i Swift och Python (macOS)
+    # mlx-swift 0.33 kräver Swift 6.3 (Xcode 26.4 eller senare).
+    runs-on: macos-26
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Välj senaste Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest
+
+      - name: Visa Xcode
+        run: |
+          ls /Applications | grep -i xcode
+          xcodebuild -version
+          swift --version
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - name: Ljud med svensk talsyntes
+        run: |
+          voice=$(say -v '?' | grep sv_SE | head -1 | awk '{print $1}')
+          test -n "$voice"
+          say -v "$voice" -o test.aiff "Från och med nästa månad behöver alla nya beställningar gå via portalen. Det är inte bara att skriva ett mejl längre. Vi följer samma praxis som leverantörerna, och jag skickar ut instruktionerna på torsdag."
+          afconvert -f WAVE -d LEI16@16000 -c 1 test.aiff test.wav
+
+      - name: Referens med Klangs laddare (Python)
+        run: |
+          pip install "parakeet-mlx==0.5.2" huggingface_hub sentencepiece numpy
+          for repo in KlangAI/pianissimo-sv-mlx-8bit; do
+            python scripts/mlx/reference.py "$repo" test.wav | tee -a resultat.txt
+          done
+
+      - name: Nycklar i Klangs vikter
+        run: python scripts/mlx/keys.py KlangAI/pianissimo-sv-mlx | tee nycklar.txt
+
+      - name: Bygg Swift-testet
+        run: |
+          cd scripts/mlx
+          xcodebuild -scheme mlx-pianissimo -destination 'platform=macOS,arch=arm64' \
+            -configuration Release -derivedDataPath build -skipMacroValidation -skipPackagePluginValidation build \
+            | tail -30
+
+      - name: Swift med mlx-audio-swift
+        run: |
+          bin=scripts/mlx/build/Build/Products/Release/mlx-pianissimo
+          python scripts/mlx/prepare.py KlangAI/pianissimo-sv-mlx bf16 | tee -a resultat.txt
+          python scripts/mlx/prepare.py KlangAI/pianissimo-sv-mlx-8bit q8 | tee -a resultat.txt
+          "$bin" "$PWD/bf16" test.wav | tee -a resultat.txt
+          "$bin" "$PWD/q8" test.wav | tee -a resultat.txt
+
+      - name: Sammanfattning
+        if: always()
+        run: |
+          test -f resultat.txt && cat resultat.txt >> "$GITHUB_STEP_SUMMARY" || true

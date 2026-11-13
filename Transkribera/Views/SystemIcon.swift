@@ -26,6 +26,7 @@ enum SystemIcon: String, CaseIterable {
     case showNames = "eye"
     case ownWindow = "macwindow.badge.plus"
     case backToPlayer = "arrow.uturn.backward"
+    case listen = "play.fill"
 
     var symbolName: String { rawValue }
 }

@@ -9,13 +9,22 @@ public struct WordTimingData: Codable, Hashable, Sendable {
     /// Sant när det är osäkert vem som sa ordet (se `SpeakerAssignment`). Sparas med
     /// ordtiderna; saknas i äldre transkriberingar.
     public var uncertainSpeaker: Bool?
+    /// Experiment "Korskolla med KB Large" (`CrossCheck`): vad den andra modellen hörde här.
+    /// Gäller det här ordet och `alternativeLength - 1` ord till. Saknas oftast.
+    public var alternative: String?
+    public var alternativeLength: Int?
 
-    public init(word: String, start: Double, end: Double, probability: Double, uncertainSpeaker: Bool? = nil) {
+    public init(
+        word: String, start: Double, end: Double, probability: Double, uncertainSpeaker: Bool? = nil,
+        alternative: String? = nil, alternativeLength: Int? = nil
+    ) {
         self.word = word
         self.start = start
         self.end = end
         self.probability = probability
         self.uncertainSpeaker = uncertainSpeaker
+        self.alternative = alternative
+        self.alternativeLength = alternativeLength
     }
 }
 
@@ -24,6 +33,19 @@ extension WordTimingData {
     /// Snabbare än att avkoda orden, så att listan kan visa ⚠ utan att bli trög.
     public static func hasUncertainSpeaker(inEncoded data: Data) -> Bool {
         data.range(of: Data(#""uncertainSpeaker":true"#.utf8)) != nil
+    }
+
+    /// Hur många ord i JSON-kodade ord (som de sparas) som har en annan tolkning (`CrossCheck`).
+    /// Snabbare än att avkoda orden, så att listan bara avkodar segment som har några.
+    public static func alternativeCount(inEncoded data: Data) -> Int {
+        let needle = Data(#""alternative":"#.utf8)
+        var count = 0
+        var start = data.startIndex
+        while let range = data.range(of: needle, in: start..<data.endIndex) {
+            count += 1
+            start = range.upperBound
+        }
+        return count
     }
 }
 

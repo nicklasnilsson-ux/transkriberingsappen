@@ -27,8 +27,9 @@ class ModelFailureTests(unittest.TestCase):
         self.assertIn("computeOptions: avoidsNeuralEngine", SERVICE)
         self.assertIn("embedderModelInfo: .embedder(computeUnits: Self.speakerKitWithoutNeuralEngine)", SERVICE)
         self.assertIn("computeUnits: avoidsNeuralEngine ? Self.withoutNeuralEngine : .all", SERVICE)
-        # Pianissimo, Whisper och talarsteget har var sitt nytt försök.
-        self.assertEqual(len(re.findall(r"catch let error where canRetryWithoutNeuralEngine\(error\)", SERVICE)), 3)
+        # Pianissimo, Whisper, talarsteget, "Fånga korta svar" och korskollen med KB Large har
+        # var sitt nytt försök.
+        self.assertEqual(len(re.findall(r"catch let error where canRetryWithoutNeuralEngine\(error\)", SERVICE)), 5)
         self.assertIn("!avoidsNeuralEngine && FailureExplainer.isModelComputeFailure", SERVICE)
 
     def test_nemotron_failure_is_logged_not_swallowed(self):

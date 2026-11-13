@@ -35,11 +35,15 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--mobius", required=True, type=Path, help="mobius/models/stt/parakeet-tdt-v3-0.6b/coreml")
     parser.add_argument("--out", required=True, type=Path)
+    # FLOAT16 är den vanliga modellen. FLOAT32 är testvarianten pianissimo-sv-fp32
+    # (2026-11-13): full precision, som originalet, för att se om 16 bitar kostar ord.
+    parser.add_argument("--precision", choices=["FLOAT16", "FLOAT32"], default="FLOAT16")
+    parser.add_argument("--name", default="pianissimo-sv", help="mappen under --out")
     args = parser.parse_args()
 
     mobius = args.mobius.resolve()
-    work = (args.out / "work").resolve()
-    final = (args.out / "pianissimo-sv").resolve()
+    work = (args.out / f"work-{args.name}").resolve()
+    final = (args.out / args.name).resolve()
     final.mkdir(parents=True, exist_ok=True)
     sys.path.insert(0, str(mobius))
 
@@ -67,7 +71,7 @@ def main():
         output_dir=work,
         preprocessor_cu="CPU_ONLY",
         mel_encoder_cu="CPU_ONLY",
-        compute_precision="FLOAT16",
+        compute_precision=args.precision,
     )
 
     for source, target in COMPONENTS.items():
@@ -92,6 +96,7 @@ def main():
             "exporter": "FluidInference/mobius parakeet-tdt-v3-0.6b/coreml",
             "attention": "rel_pos (full) i 15 s fönster",
             "vocab_size": vocab_size,
+            "compute_precision": args.precision,
         }, f, indent=2)
 
     shutil.rmtree(work, ignore_errors=True)

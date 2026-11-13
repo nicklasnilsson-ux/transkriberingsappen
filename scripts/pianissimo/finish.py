@@ -3,8 +3,12 @@
     python finish.py --packages in/pianissimo-sv --out out/pianissimo-sv
 
 Kodaren kvantiseras till 8 bitar per kanal (ungefär halva storleken, samma
-felfrekvens enligt Fluid Inference:s mätningar på Parakeet), och alla delar
-kompileras till .mlmodelc som FluidAudio läser direkt.
+felfrekvens enligt Fluid Inference:s mätningar på Parakeet, aldrig mätt på
+Pianissimo), och alla delar kompileras till .mlmodelc som FluidAudio läser direkt.
+
+Med --encoder original kvantiseras kodaren inte, utan behåller paketens precision.
+Det ger testvarianterna pianissimo-sv-fp16 (16 bitar) och pianissimo-sv-fp32 (32 bitar,
+från convert.py --precision FLOAT32), 2026-11-13, för att mäta om förminskningen kostar ord.
 """
 
 import argparse
@@ -34,6 +38,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--packages", required=True, type=Path)
     parser.add_argument("--out", required=True, type=Path)
+    parser.add_argument("--encoder", choices=["int8", "original"], default="int8")
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
 
@@ -41,7 +46,7 @@ def main():
         package = args.packages / f"{name}.mlpackage"
         if not package.is_dir():
             raise SystemExit(f"Saknar {package}")
-        if name == "Encoder":
+        if name == "Encoder" and args.encoder == "int8":
             model = ct.models.MLModel(str(package), skip_model_load=True)
             config = cto.OptimizationConfig(
                 global_config=cto.OpLinearQuantizerConfig(mode="linear_symmetric", granularity="per_channel")
@@ -57,7 +62,9 @@ def main():
         shutil.copy(args.packages / filename, args.out / filename)
 
     info = json.loads((args.out / "conversion.json").read_text())
-    info["encoder_weights"] = "int8 (linear_symmetric, per_channel)"
+    info["encoder_weights"] = (
+        "int8 (linear_symmetric, per_channel)" if args.encoder == "int8" else info.get("compute_precision", "FLOAT16")
+    )
     (args.out / "conversion.json").write_text(json.dumps(info, indent=2))
     print("Klar:", sorted(p.name for p in args.out.iterdir()))
 

@@ -4,6 +4,11 @@ name: Pianissimo-modell
 # FluidAudio och lägger den som zip i releasen "pianissimo-v1", varifrån appen
 # laddar ner den. Exporten körs på Linux (mer minne), kvantisering, kompilering
 # och ett röktest på macOS. Körs när den här filen eller skripten ändras, eller manuellt.
+#
+# Tre varianter: pianissimo-sv (kodaren i int8, den vanliga), pianissimo-sv-fp16
+# (kodaren i 16 bitar) och pianissimo-sv-fp32 (allt i 32 bitar, som originalet). De två
+# sista är test 2026-11-13 av om förminskningen kostar ord. Bara en variant som saknas
+# i releasen byggs och laddas upp; en som finns skrivs aldrig över.
 
 on:
   push:
@@ -22,6 +27,10 @@ concurrency:
 env:
   RELEASE_TAG: pianissimo-v1
   ASSET: pianissimo-sv.zip
+  FP16_NAME: pianissimo-sv-fp16
+  FP16_ASSET: pianissimo-sv-fp16.zip
+  FP32_NAME: pianissimo-sv-fp32
+  FP32_ASSET: pianissimo-sv-fp32.zip
   PACKAGES_ASSET: pianissimo-sv-mlpackage.zip
   # Fasta versioner så att resultatet går att återskapa.
   MOBIUS_COMMIT: 26f5fa8059d5ab3d34449adce6ff6ed86734e522
@@ -33,17 +42,27 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       missing: ${{ steps.check.outputs.missing }}
+      int8: ${{ steps.check.outputs.int8 }}
+      fp16: ${{ steps.check.outputs.fp16 }}
+      fp32: ${{ steps.check.outputs.fp32 }}
     steps:
       - id: check
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           assets=$(gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --json assets -q '.assets[].name' 2>/dev/null || true)
-          if grep -qx "$ASSET" <<<"$assets"; then
-            echo "missing=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "missing=true" >> "$GITHUB_OUTPUT"
-          fi
+          int8=true; fp16=true; fp32=true
+          grep -qx "$ASSET" <<<"$assets" && int8=false
+          grep -qx "$FP16_ASSET" <<<"$assets" && fp16=false
+          # Större än 2 GB läggs i delar (.part0, .part1 …); part0 laddas upp sist.
+          grep -qx "$FP32_ASSET" <<<"$assets" && fp32=false
+          grep -qx "$FP32_ASSET.part0" <<<"$assets" && fp32=false
+          echo "int8=$int8" >> "$GITHUB_OUTPUT"
+          echo "fp16=$fp16" >> "$GITHUB_OUTPUT"
+          echo "fp32=$fp32" >> "$GITHUB_OUTPUT"
+          if [ "$int8" = true ] || [ "$fp16" = true ] || [ "$fp32" = true ]; then missing=true; else missing=false; fi
+          echo "missing=$missing" >> "$GITHUB_OUTPUT"
+          echo "Saknas: int8=$int8 fp16=$fp16 fp32=$fp32"
 
   export:
     name: Exportera till CoreML (Linux)
@@ -69,30 +88,47 @@ jobs:
           uv sync
 
       - name: Exportera
+        if: needs.check.outputs.int8 == 'true' || needs.check.outputs.fp16 == 'true'
         run: |
           mobius="$(cd ../mobius/models/stt/parakeet-tdt-v3-0.6b/coreml && pwd)"
           uv run --project "$mobius" python scripts/pianissimo/convert.py --mobius "$mobius" --out out
           du -sh out/pianissimo-sv/*
+
+      - name: Exportera i 32 bitar
+        if: needs.check.outputs.fp32 == 'true'
+        run: |
+          mobius="$(cd ../mobius/models/stt/parakeet-tdt-v3-0.6b/coreml && pwd)"
+          uv run --project "$mobius" python scripts/pianissimo/convert.py --mobius "$mobius" --out out \
+            --precision FLOAT32 --name "$FP32_NAME"
+          du -sh "out/$FP32_NAME"/*
 
       - name: Lägg paketen i releasen
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           cd out
-          zip -qr "$PACKAGES_ASSET" pianissimo-sv
+          rm -rf work-*
+          zip -qr "$PACKAGES_ASSET" pianissimo-sv*
           unzip -tq "$PACKAGES_ASSET" >/dev/null
           ls -lh "$PACKAGES_ASSET"
+          # GitHub tar inte filer över 2 GB; 32 bitar blir större, så paketen delas.
+          python3 ../scripts/pianissimo/split.py "$PACKAGES_ASSET"
+          rm "$PACKAGES_ASSET"
+          ls -lh "$PACKAGES_ASSET".part*
           gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 \
             || gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" \
                  --target "$GITHUB_SHA" --prerelease --latest=false \
                  --title "Pianissimo (CoreML)" \
                  --notes "KlangAI:s svenska taligenkänningsmodell Pianissimo (https://huggingface.co/KlangAI/pianissimo-sv), en vidareträning av NVIDIA Parakeet TDT v3, konverterad till CoreML för FluidAudio. Appen laddar ner den automatiskt – du behöver inte ladda ner något här. Licens: CC BY 4.0 (KlangAI)." \
             || gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null
-          gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --clobber "$PACKAGES_ASSET"
+          for old in $(gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --json assets -q '.assets[].name' | grep "^$PACKAGES_ASSET" || true); do
+            gh release delete-asset "$RELEASE_TAG" "$old" -R "$GITHUB_REPOSITORY" --yes
+          done
+          gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --clobber "$PACKAGES_ASSET".part*
 
   finish:
     name: Kvantisera, kompilera och testa (macOS)
-    needs: export
+    needs: [check, export]
     runs-on: macos-15
     timeout-minutes: 120
     steps:
@@ -106,14 +142,32 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release download "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" -p "$PACKAGES_ASSET" -D in --clobber
+          gh release download "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" -p "$PACKAGES_ASSET.part*" -D in --clobber
+          cat in/"$PACKAGES_ASSET".part* > "in/$PACKAGES_ASSET"
+          rm in/"$PACKAGES_ASSET".part*
           unzip -q "in/$PACKAGES_ASSET" -d in
+          rm "in/$PACKAGES_ASSET"
 
       - name: Kvantisera kodaren och kompilera
+        if: needs.check.outputs.int8 == 'true'
         run: |
           pip install "coremltools==9.0b1"
           python scripts/pianissimo/finish.py --packages in/pianissimo-sv --out out/pianissimo-sv
           du -sh out/pianissimo-sv/*
+
+      - name: Kompilera med kodaren i fp16
+        if: needs.check.outputs.fp16 == 'true'
+        run: |
+          pip install "coremltools==9.0b1"
+          python scripts/pianissimo/finish.py --packages in/pianissimo-sv --out "out/$FP16_NAME" --encoder original
+          du -sh "out/$FP16_NAME"/*
+
+      - name: Kompilera i 32 bitar
+        if: needs.check.outputs.fp32 == 'true'
+        run: |
+          pip install "coremltools==9.0b1"
+          python scripts/pianissimo/finish.py --packages "in/$FP32_NAME" --out "out/$FP32_NAME" --encoder original
+          du -sh "out/$FP32_NAME"/*
 
       - name: Röktest med svensk talsyntes
         run: |
@@ -126,17 +180,38 @@ jobs:
           afconvert -f WAVE -d LEI16@16000 test.aiff test.wav
           git clone --depth 1 --branch "$FLUIDAUDIO_VERSION" https://github.com/FluidInference/FluidAudio ../FluidAudio
           (cd ../FluidAudio && swift build -c release --product fluidaudiocli)
-          ../FluidAudio/.build/release/fluidaudiocli transcribe test.wav \
-            --local-model-dir out/pianissimo-sv --model-version v3 | tee transcript.txt
-          grep -qi "test" transcript.txt
+          for dir in out/*/; do
+            ../FluidAudio/.build/release/fluidaudiocli transcribe test.wav \
+              --local-model-dir "$dir" --model-version v3 | tee transcript.txt
+            grep -qi "test" transcript.txt
+          done
 
       - name: Publicera i ${{ env.RELEASE_TAG }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           cd out
-          ditto -c -k --keepParent pianissimo-sv "$ASSET"
-          unzip -tq "$ASSET" >/dev/null
-          ls -lh "$ASSET"
-          gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --clobber "$ASSET"
-          gh release delete-asset "$RELEASE_TAG" "$PACKAGES_ASSET" -R "$GITHUB_REPOSITORY" --yes
+          # Bara varianter som saknades byggdes; ingen befintlig fil skrivs över.
+          # Över 2 GB tar GitHub inte emot, så då laddas filen upp i delar som appen
+          # sätter ihop. part0 laddas upp sist, så att en avbruten uppladdning syns.
+          publish() {
+            local dir="$1" asset="$2"
+            [ -d "$dir" ] || return 0
+            ditto -c -k --keepParent "$dir" "$asset"
+            unzip -tq "$asset" >/dev/null
+            ls -lh "$asset"
+            if [ "$(stat -f%z "$asset")" -lt 2000000000 ]; then
+              gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" "$asset"
+            else
+              python3 ../scripts/pianissimo/split.py "$asset"
+              for part in $(ls "$asset".part* | sort -r); do
+                gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" "$part"
+              done
+            fi
+          }
+          publish pianissimo-sv "$ASSET"
+          publish "$FP16_NAME" "$FP16_ASSET"
+          publish "$FP32_NAME" "$FP32_ASSET"
+          for part in $(gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --json assets -q '.assets[].name' | grep "^$PACKAGES_ASSET" || true); do
+            gh release delete-asset "$RELEASE_TAG" "$part" -R "$GITHUB_REPOSITORY" --yes
+          done

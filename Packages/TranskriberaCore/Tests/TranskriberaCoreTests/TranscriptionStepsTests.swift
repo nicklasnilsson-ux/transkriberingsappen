@@ -16,6 +16,12 @@ final class TranscriptionStepsTests: XCTestCase {
         XCTAssertNil(TranscriptionStep.label(for: .gapCheck, in: plan))
     }
 
+    func testCrossCheckIsTheLastStep() {
+        let plan = TranscriptionStep.plan(needsModel: false, checksGaps: false, identifiesSpeakers: true, crossChecks: true)
+        XCTAssertEqual(plan, [.audio, .transcribe, .speakers, .crossCheck])
+        XCTAssertEqual(TranscriptionStep.label(for: .crossCheck, in: plan), "Steg 4 av 4")
+    }
+
     func testNoLabelForASingleStepOrNoPlan() {
         XCTAssertNil(TranscriptionStep.label(for: .transcribe, in: [.transcribe]))
         XCTAssertNil(TranscriptionStep.label(for: .model, in: []))

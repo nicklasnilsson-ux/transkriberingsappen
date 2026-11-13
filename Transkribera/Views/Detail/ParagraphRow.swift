@@ -122,7 +122,8 @@ struct ParagraphRow: View {
                 query: query,
                 words: active && showsOriginal ? row.segment.words : [],
                 currentTime: active ? currentTime : nil,
-                currentOccurrence: currentHit?.id == row.id ? currentHit?.occurrence : nil
+                currentOccurrence: currentHit?.id == row.id ? currentHit?.occurrence : nil,
+                alternatives: Alternatives(row.segment, displayText: text)
             )
         }
         return result

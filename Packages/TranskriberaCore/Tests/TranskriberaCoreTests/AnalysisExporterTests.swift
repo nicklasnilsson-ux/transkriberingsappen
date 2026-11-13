@@ -10,6 +10,15 @@ final class AnalysisExporterTests: XCTestCase {
         language: "Svenska"
     )
 
+    func testHeaderNamesTheModelAndExperiments() {
+        var withModel = metadata
+        withModel.model = "Pianissimo (korta svar, Nemotron 3)"
+        let segments = [SegmentData(start: 0, end: 2, text: "Hej.", speaker: "Talare 1")]
+        let output = AnalysisExporter.markdown(segments, metadata: withModel, timeZone: utc)
+        XCTAssertTrue(output.contains("- Språk: Svenska\n- Modell: Pianissimo (korta svar, Nemotron 3)\n"), output)
+        XCTAssertFalse(AnalysisExporter.markdown(segments, metadata: metadata, timeZone: utc).contains("Modell:"))
+    }
+
     func testOneTimestampPerSpeakerChange() {
         let segments = [
             SegmentData(start: 0, end: 2, text: " Hur hittade du knappen?", speaker: "Moderator"),

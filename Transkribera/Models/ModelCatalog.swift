@@ -12,6 +12,11 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
     case kbMediumStrict = "kb-whisper-medium-strict"
     case kbLargeStrict = "kb-whisper-large-strict"
     case pianissimo = "pianissimo-sv"
+    /// Test 2026-11-13: Pianissimo med kodaren i 16 bitar i stället för 8 (`scripts/pianissimo/finish.py
+    /// --encoder original`). Dold; används av experimentet "Pianissimo-version" och Testlabbet.
+    case pianissimoFP16 = "pianissimo-sv-fp16"
+    /// Test 2026-11-13: Pianissimo i 32 bitar, som originalet (`convert.py --precision FLOAT32`).
+    case pianissimoFP32 = "pianissimo-sv-fp32"
     case tiny = "tiny"
     case base = "base"
     case small = "small"
@@ -72,7 +77,7 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
     var family: Family {
         switch self {
         case .kbBase, .kbSmall, .kbMedium, .kbLarge, .kbMediumStrict, .kbLargeStrict: return .kb
-        case .pianissimo: return .klang
+        case .pianissimo, .pianissimoFP16, .pianissimoFP32: return .klang
         default: return .openAI
         }
     }
@@ -94,6 +99,8 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
         case .kbMediumStrict: return "KB Medium ordagrann"
         case .kbLargeStrict: return "KB Large ordagrann"
         case .pianissimo: return "Pianissimo"
+        case .pianissimoFP16: return "Pianissimo 16 bitar"
+        case .pianissimoFP32: return "Pianissimo 32 bitar"
         case .tiny: return "Tiny"
         case .base: return "Base"
         case .small: return "Small"
@@ -110,6 +117,8 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
         case .kbMedium, .kbMediumStrict: return "1,4 GB"
         case .kbLarge, .kbLargeStrict: return "1,3 GB"
         case .pianissimo: return "650 MB"
+        case .pianissimoFP16: return "1,2 GB"
+        case .pianissimoFP32: return "2,4 GB"
         case .tiny: return "75 MB"
         case .base: return "145 MB"
         case .small: return "480 MB"
@@ -121,7 +130,8 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
     /// Relativ hastighet på Apple Silicon, 1 (långsammast) – 5 (snabbast).
     var speed: Int {
         switch self {
-        case .tiny, .base, .kbBase, .pianissimo: return 5
+        case .tiny, .base, .kbBase, .pianissimo, .pianissimoFP16: return 5
+        case .pianissimoFP32: return 4
         case .small, .kbSmall: return 4
         case .largeV3Turbo, .largeV3TurboCompressed: return 3
         case .kbMedium, .kbMediumStrict: return 2
@@ -148,7 +158,7 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
     var swedishAccuracy: Int {
         switch self {
         case .kbLarge, .kbLargeStrict: return 5
-        case .kbMedium, .kbMediumStrict, .kbSmall, .pianissimo: return 4
+        case .kbMedium, .kbMediumStrict, .kbSmall, .pianissimo, .pianissimoFP16, .pianissimoFP32: return 4
         case .kbBase, .largeV3Turbo, .largeV3TurboCompressed: return 3
         case .small: return 2
         case .tiny, .base: return 1
@@ -167,6 +177,7 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
         case .kbMediumStrict: return 6.8
         case .kbLargeStrict: return 5.3
         case .pianissimo: return 6.5  // Klangs mätning på FLEURS (KB Large: 5,1 i samma mätning)
+        case .pianissimoFP16, .pianissimoFP32: return nil
         case .tiny: return 59.2
         case .base: return 39.6
         case .small: return 20.6
@@ -212,6 +223,10 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
             return "Välj den när ljudet är dåligt eller du vill ha några färre ordfel. Tar längre tid och behöver mer minne."
         case .pianissimo:
             return "Snabbast och ger en komplett text. Välj den till de flesta svenska intervjuer och möten, även långa. Namn i ordlistan rättas i efterhand."
+        case .pianissimoFP16:
+            return "Test: Pianissimo med kodaren i 16 bitar i stället för 8. Dubbelt så stor nedladdning."
+        case .pianissimoFP32:
+            return "Test: Pianissimo i 32 bitar, som originalet. Fyra gånger så stor nedladdning."
         case .tiny:
             return "Minsta modellen, bra för att snabbt testa appen. Gör många fel på svenska."
         case .base:

@@ -76,6 +76,11 @@ public enum AnalysisExporter {
         if let language = metadata.language {
             header.append("- Språk: \(language)")
         }
+        // Modellen och experimenten som användes, så att en fil aldrig tappar den uppgiften
+        // (2026-11-13: filnamnen försvann vid uppladdning och modellerna förväxlades).
+        if let model = metadata.model?.trimmed, !model.isEmpty {
+            header.append("- Modell: \(model)")
+        }
         if paragraphs.contains(where: { ($0.uncertain || $0.hasUncertainPart) && $0.speaker != nil }) {
             header.append("- \(uncertainMark) = osäkert vem som sa repliken")
         }

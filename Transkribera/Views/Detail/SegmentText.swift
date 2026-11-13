@@ -1,6 +1,23 @@
 import SwiftUI
 import TranskriberaCore
 
+/// Orden i ett segment som har en annan tolkning (`CrossCheck`), med segmentets nummer för länken.
+struct Alternatives {
+    let segmentIndex: Int
+    let words: [WordTimingData]
+
+    /// `nil` när segmentet inte har några, eller när texten som visas inte är originalet
+    /// (anonymiserad eller rättad): då stämmer orden inte med texten.
+    @MainActor
+    init?(_ segment: TranscriptSegment, displayText: String) {
+        guard segment.alternativeCount > 0,
+              displayText.trimmingCharacters(in: .whitespacesAndNewlines) == segment.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        else { return nil }
+        segmentIndex = segment.index
+        words = segment.words
+    }
+}
+
 /// Bygger en AttributedString för ett segment med sökträffar och det ord
 /// som just nu spelas upp markerade.
 enum SegmentText {
@@ -9,9 +26,24 @@ enum SegmentText {
         query: String,
         words: [WordTimingData],
         currentTime: Double?,
-        currentOccurrence: Int? = nil
+        currentOccurrence: Int? = nil,
+        alternatives: Alternatives? = nil
     ) -> AttributedString {
         var attributed = AttributedString(text)
+
+        // Experimentet Korskolla: ord som den andra körningen hörde annorlunda är prickat
+        // understrukna och går att klicka på (menyn öppnas av `CrossCheckMenu`).
+        if let alternatives {
+            let ranges = CrossCheck.wordRanges(alternatives.words, in: text)
+            for (index, word) in alternatives.words.enumerated() where word.alternative != nil {
+                let last = min(alternatives.words.count - 1, index + max(1, word.alternativeLength ?? 1) - 1)
+                guard let lower = ranges[index]?.lowerBound, let upper = ranges[last]?.upperBound,
+                      let range = Range(lower..<upper, in: attributed),
+                      let link = CrossCheck.link(segment: alternatives.segmentIndex, word: index) else { continue }
+                attributed[range].link = link
+                attributed[range].underlineStyle = Text.LineStyle(pattern: .dot, color: .accentColor)
+            }
+        }
 
         // Markera ordet som spelas upp (karaoke-stil) med hjälp av ordtidsstämplarna.
         if let currentTime,

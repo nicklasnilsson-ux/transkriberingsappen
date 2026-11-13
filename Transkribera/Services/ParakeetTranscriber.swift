@@ -115,4 +115,36 @@ actor ParakeetTranscriber {
         }
         return Output(segments: SentenceSegmenter.segments(from: words), confidence: confidence)
     }
+
+    /// Kortaste ljud (sekunder) som skickas till modellen. Kortare repliker ("Ja.") fylls ut
+    /// med tystnad i slutet.
+    static let shortestClip = 1.0
+
+    /// Orden i en kort bit av ljudet ("Fånga korta svar"), med tider från början av hela ljudet
+    /// (`offset` = bitens start i sekunder).
+    func words(
+        samples: [Float],
+        offset: Double,
+        carefulSeams: Bool = false,
+        tuning: DecoderTuning = .production
+    ) async throws -> [WordTimingData] {
+        let manager = try manager(Setup(carefulSeams: carefulSeams, tuning: tuning))
+        var clip = samples
+        let shortest = Int(Self.shortestClip * 16_000)
+        if clip.count < shortest { clip += [Float](repeating: 0, count: shortest - clip.count) }
+
+        let layers = await manager.decoderLayerCount
+        var state = try TdtDecoderState(decoderLayers: layers)
+        let result = try await manager.transcribe(clip, decoderState: &state)
+        let tokens = (result.tokenTimings ?? []).map {
+            TimedToken(text: $0.token, start: $0.startTime + offset, end: $0.endTime + offset)
+        }
+        let words = TokenWords.words(from: tokens)
+        if words.isEmpty {
+            let text = TextCleaning.clean(result.text)
+            let end = offset + Double(samples.count) / 16_000
+            return text.isEmpty ? [] : [WordTimingData(word: " " + text, start: offset, end: end, probability: Double(result.confidence))]
+        }
+        return words
+    }
 }

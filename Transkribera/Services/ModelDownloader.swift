@@ -29,8 +29,14 @@ enum ModelDownloader {
         to destination: URL,
         progress: @escaping @Sendable (Double) -> Void
     ) async throws {
-        let url = releasesURL.appending(path: release).appending(path: asset)
-        let zip = try await downloadFile(from: url, progress: progress)
+        let base = releasesURL.appending(path: release)
+        let zip: URL
+        do {
+            zip = try await downloadFile(from: base.appending(path: asset), progress: progress)
+        } catch DownloadError.httpStatus(404) {
+            // Filer över GitHubs gräns på 2 GiB ligger i delar (se scripts/pianissimo/split.py).
+            zip = try await downloadParts(of: asset, from: base, progress: progress)
+        }
         defer { try? FileManager.default.removeItem(at: zip) }
 
         let parent = destination.deletingLastPathComponent()
@@ -40,6 +46,40 @@ enum ModelDownloader {
         guard FileManager.default.fileExists(atPath: destination.path) else {
             throw DownloadError.unzipFailed
         }
+    }
+
+    /// Laddar ner `<asset>.part0`, `.part1` … tills nästa del saknas och sätter ihop dem.
+    /// Antalet delar är okänt i förväg, så förloppet räknar med minst en del till.
+    private static func downloadParts(
+        of asset: String,
+        from base: URL,
+        progress: @escaping @Sendable (Double) -> Void
+    ) async throws -> URL {
+        let joined = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString + ".zip")
+        FileManager.default.createFile(atPath: joined.path, contents: nil)
+        let output = try FileHandle(forWritingTo: joined)
+        defer { try? output.close() }
+        var index = 0
+        while index < 10 {
+            let done = index
+            let part: URL
+            do {
+                part = try await downloadFile(from: base.appending(path: "\(asset).part\(index)")) { p in
+                    progress(min(1, (Double(done) + p) / Double(done + 2)))
+                }
+            } catch DownloadError.httpStatus(404) where index > 0 {
+                break
+            }
+            defer { try? FileManager.default.removeItem(at: part) }
+            let input = try FileHandle(forReadingFrom: part)
+            defer { try? input.close() }
+            while let chunk = try input.read(upToCount: 64 * 1024 * 1024), !chunk.isEmpty {
+                try output.write(contentsOf: chunk)
+            }
+            index += 1
+        }
+        progress(1)
+        return joined
     }
 
     private static func downloadFile(

@@ -1,9 +1,9 @@
 import Foundation
 import TranskriberaCore
 
-/// Testlabbet kör samma inspelning med flera inställningar efter varandra och sparar
-/// varje text, en logg per körning och en sammanfattning i en mapp, så att inställningarna
-/// går att jämföra mot ett facit. Vanliga transkriberingar påverkas inte.
+/// Testlabbet kör en eller flera inspelningar med flera inställningar efter varandra och sparar
+/// varje text, en logg per körning och en sammanfattning i en mapp per inspelning, så att
+/// inställningarna går att jämföra mot ett facit. Vanliga transkriberingar påverkas inte.
 @MainActor
 @Observable
 final class TestLab {
@@ -17,7 +17,7 @@ final class TestLab {
     }
 
     /// Vilken lista som visas. Byts listan markeras alla dess körningar.
-    var kind: TestLabPlan.Kind = .comparison {
+    var kind: TestLabPlan.Kind = .crossCheck {
         didSet {
             guard kind != oldValue else { return }
             selected = Set(kind.runs.map(\.id))
@@ -27,7 +27,7 @@ final class TestLab {
         }
     }
     var plan: [TestLabRun] { kind.runs }
-    var selected = Set(TestLabPlan.Kind.comparison.runs.map(\.id))
+    var selected = Set(TestLabPlan.Kind.crossCheck.runs.map(\.id))
     private(set) var statuses: [String: Status] = [:]
     private(set) var isRunning = false
     /// Vad som händer just nu, t.ex. "Körning 3 av 13: KB: utan upprepningsspärr".
@@ -35,6 +35,8 @@ final class TestLab {
     /// Mappen som den senaste körningen skrev till.
     private(set) var folder: URL?
     private(set) var message: String?
+    /// Facit per inspelning (t.ex. Klangs text), valt i fönstret. Jämförelsen hoppas över utan facit.
+    var facits: [UUID: URL] = [:]
     @ObservationIgnored private var task: Task<Void, Never>?
 
     static var baseDirectory: URL {
@@ -46,8 +48,8 @@ final class TestLab {
         transcript.status == .completed && FileManager.default.fileExists(atPath: transcript.mediaURL.path)
     }
 
-    func start(transcript: Transcript, queue: TranscriptionQueue) {
-        guard !isRunning else { return }
+    func start(transcripts: [Transcript], queue: TranscriptionQueue) {
+        guard !isRunning, !transcripts.isEmpty else { return }
         guard queue.isIdle else {
             message = "Vänta tills transkriberingarna i kön är klara. Testlabbet och vanliga transkriberingar kan inte köra samtidigt."
             return
@@ -55,12 +57,13 @@ final class TestLab {
         let runs = plan.filter { selected.contains($0.id) }
         guard !runs.isEmpty else { return }
 
-        let source = Source(
-            title: transcript.title,
-            createdAt: transcript.createdAt,
-            duration: transcript.duration,
-            mediaURL: transcript.mediaURL
-        )
+        let sources = transcripts.map { transcript in
+            let facit = facits[transcript.id].flatMap { url in
+                (try? String(contentsOf: url, encoding: .utf8)).map { (name: url.lastPathComponent, text: $0) }
+            }
+            return Source(title: transcript.title, createdAt: transcript.createdAt, duration: transcript.duration,
+                          mediaURL: transcript.mediaURL, facit: facit)
+        }
         queue.hold()
         isRunning = true
         message = nil
@@ -73,7 +76,7 @@ final class TestLab {
                 options: [.userInitiated, .idleSystemSleepDisabled],
                 reason: "Testlabbet kör transkriberingar"
             )
-            await self?.run(runs, source: source, transcriber: queue.transcriber)
+            await self?.run(runs, sources: sources, transcriber: queue.transcriber)
             ProcessInfo.processInfo.endActivity(activity)
             queue.release()
             self?.isRunning = false
@@ -93,19 +96,72 @@ final class TestLab {
         var createdAt: Date
         var duration: Double
         var mediaURL: URL
+        var facit: (name: String, text: String)?
     }
 
-    private func run(_ runs: [TestLabRun], source: Source, transcriber: TranscriberService) async {
+    /// Jämförelserna med facit, för den gemensamma sammanfattningen.
+    private var facitLines: [String] = []
+    private var facitTotals = FacitTotals()
+
+    struct FacitTotals {
+        var meaningErrors = 0, marks = 0, rightMarks = 0, caught = 0, minutes = 0.0
+        mutating func add(_ result: FacitComparison.Result, minutes: Double) {
+            guard !result.marks.isEmpty || result.caught > 0 else { return }
+            meaningErrors += result.meaningErrors.count
+            marks += result.marks.count
+            rightMarks += result.marks.filter(\.isError).count
+            caught += result.caught
+            self.minutes += minutes
+        }
+    }
+
+    /// Inspelningarna en i taget. Flera inspelningar får en gemensam mapp med en mapp per inspelning.
+    private func run(_ runs: [TestLabRun], sources: [Source], transcriber: TranscriberService) async {
+        var failures: [String] = []
+        facitLines = []
+        facitTotals = FacitTotals()
+        do {
+            let parent = sources.count > 1 ? try makeFolder(for: "\(sources.count) inspelningar") : nil
+            folder = parent
+            for (index, source) in sources.enumerated() {
+                try Task.checkCancellation()
+                statuses = Dictionary(uniqueKeysWithValues: plan.map { ($0.id, selected.contains($0.id) ? .waiting : .skipped) })
+                let prefix = sources.count > 1 ? "Inspelning \(index + 1) av \(sources.count) · " : ""
+                // Numret först, så att två inspelningar med samma namn får var sin mapp.
+                let folder = try makeFolder(for: parent == nil ? source.title : "\(index + 1) \(source.title)", in: parent)
+                if parent == nil { self.folder = folder }
+                do {
+                    try await run(runs, source: source, folder: folder, prefix: prefix, transcriber: transcriber)
+                } catch let error where !(error is CancellationError) && !Task.isCancelled {
+                    // En inspelning som inte går att köra stoppar inte de andra.
+                    failures.append("\(source.title): \(error.localizedDescription)")
+                }
+            }
+            if !facitLines.isEmpty, let top = folder {
+                try Self.write(facitSummary(), to: top.appending(path: "jämförelse med facit.txt"))
+            }
+            message = failures.isEmpty
+                ? "Klart. \(runs.count) körningar per inspelning sparade\(sources.count > 1 ? " för \(sources.count) inspelningar" : "")."
+                : "Klart, men det här gick inte: " + failures.joined(separator: "; ")
+        } catch {
+            for (id, status) in statuses where status == .waiting || status == .running {
+                statuses[id] = .cancelled
+            }
+            message = error is CancellationError || Task.isCancelled
+                ? "Avbrutet. Det som hann bli klart finns i mappen."
+                : "Testlabbet stannade: \(error.localizedDescription)"
+        }
+    }
+
+    /// En inspelning med alla körningar. Kastar vid avbrott och när ljudet inte går att läsa.
+    private func run(_ runs: [TestLabRun], source: Source, folder: URL, prefix: String, transcriber: TranscriberService) async throws {
         let clock = ContinuousClock()
         let appVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "okänd"
         let base = TranscriptionOptions.fromDefaults()
         let anonymization = AnonymizationSettings.options()
 
         do {
-            let folder = try makeFolder(for: source.title)
-            self.folder = folder
-
-            stepText = "Ljudet läses in"
+            stepText = prefix + "Ljudet läses in"
             let audioStart = clock.now
             let samples = try await AudioLoader.loadSamples(from: source.mediaURL)
             let audioSeconds = Self.seconds(clock.now - audioStart)
@@ -117,7 +173,7 @@ final class TestLab {
             var turns: [SpeakerTurn]?
             var diarizer = "av"
             if base.identifySpeakers, runs.contains(where: { $0.speakers == .shared }) {
-                stepText = "Talarna identifieras"
+                stepText = prefix + "Talarna identifieras"
                 let found = try await transcriber.speakerTurns(samples: samples, options: base)
                 turns = found.turns
                 diarizer = "\(found.diarizer), \(Set(found.turns.map(\.speaker)).count) talare"
@@ -136,13 +192,15 @@ final class TestLab {
             for (index, run) in runs.enumerated() {
                 try Task.checkCancellation()
                 statuses[run.id] = .running
-                stepText = "Körning \(index + 1) av \(runs.count): \(run.title)"
+                stepText = prefix + "Körning \(index + 1) av \(runs.count): \(run.title)"
 
                 var options = base
                 options.model = run.engine.model
                 options.tuning = run.tuning
                 options.levelVolume = run.levelVolume
                 options.carefulSeams = run.carefulSeams
+                // Korskollen gäller bara körningar som ber om den, oavsett inställningarna.
+                options.crossCheck = run.crossCheck ? .kbLarge : .off
                 var runTurns: [SpeakerTurn]?
                 switch run.speakers {
                 case .shared:
@@ -190,6 +248,25 @@ final class TestLab {
                     report.pianissimoConfidence = diagnostics.pianissimoConfidence
 
                     var segments = output.segments
+                    if let facit = source.facit {
+                        let result = FacitComparison.compare(segments, facit: facit.text)
+                        let name = "\(source.title) – \(run.title)"
+                        let minutes = source.duration / 60
+                        try Self.write(
+                            FacitComparison.report(result, title: name, facitName: facit.name, minutes: minutes,
+                                                   anonymize: { text in anonymization.map { Anonymizer.anonymize(text, options: $0) } ?? text }),
+                            to: folder.appending(path: "\(run.id)-facit.txt")
+                        )
+                        facitLines.append(FacitComparison.summaryLine(result, title: name, minutes: minutes))
+                        facitTotals.add(result, minutes: minutes)
+                    }
+                    if run.crossCheck {
+                        let list = CrossCheck.report(
+                            CrossCheck.marks(in: segments), other: CrossCheckSource.kbLarge.label, minutes: source.duration / 60,
+                            anonymize: { text in anonymization.map { Anonymizer.anonymize(text, options: $0) } ?? text }
+                        )
+                        try Self.write(list, to: folder.appending(path: "\(run.id)-ord-att-lyssna-pa.txt"))
+                    }
                     if let anonymization {
                         let anonymizationStart = clock.now
                         segments = Anonymizer.anonymize(segments, options: anonymization).segments
@@ -217,23 +294,29 @@ final class TestLab {
                 // Byte order mark, så att Excel läser åäö rätt.
                 try Self.write("\u{FEFF}" + lines.joined(separator: "\n") + "\n", to: folder.appending(path: "sammanfattning.csv"))
             }
-            message = "Klart. \(runs.count) körningar sparade."
-        } catch {
-            for (id, status) in statuses where status == .waiting || status == .running {
-                statuses[id] = .cancelled
-            }
-            message = error is CancellationError || Task.isCancelled
-                ? "Avbrutet. Det som hann bli klart finns i mappen."
-                : "Testlabbet stannade: \(error.localizedDescription)"
         }
     }
 
-    private func makeFolder(for title: String) throws -> URL {
+    private func facitSummary() -> String {
+        var out = "Jämförelse med facit. Facit har också fel, så siffrorna är ungefärliga.\n\n"
+        out += facitLines.joined(separator: "\n") + "\n"
+        let t = facitTotals
+        if t.marks > 0 || t.caught > 0 {
+            let perHour = t.minutes > 0 ? Int((Double(t.marks) / t.minutes * 60).rounded()) : 0
+            let share = t.marks > 0 ? Int((Double(t.rightMarks) / Double(t.marks) * 100).rounded()) : 0
+            let found = t.meaningErrors > 0 ? Int((Double(t.caught) / Double(t.meaningErrors) * 100).rounded()) : 0
+            out += "\nMarkera ord att lyssna på, alla inspelningar: \(t.marks) markeringar (\(perHour) per timme), "
+            out += "\(t.rightMarks) riktiga fel (\(share) %), \(t.caught) av \(t.meaningErrors) innebördsfel markerade (\(found) %).\n"
+        }
+        return out
+    }
+
+    private func makeFolder(for title: String, in parent: URL? = nil) throws -> URL {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "sv_SE")
         formatter.dateFormat = "yyyy-MM-dd HH.mm"
         let name = String(AnalysisExporter.fileName(for: "\(formatter.string(from: Date())) \(title)").dropLast(3))
-        let folder = Self.baseDirectory.appending(path: name, directoryHint: .isDirectory)
+        let folder = (parent ?? Self.baseDirectory).appending(path: name, directoryHint: .isDirectory)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         return folder
     }
@@ -285,6 +368,8 @@ extension TestLabRun.Engine {
         case .kbLargeStrict: return .kbLargeStrict
         case .pianissimo: return .pianissimo
         case .largeV3Turbo: return .largeV3Turbo
+        case .pianissimoFP16: return .pianissimoFP16
+        case .pianissimoFP32: return .pianissimoFP32
         }
     }
 }

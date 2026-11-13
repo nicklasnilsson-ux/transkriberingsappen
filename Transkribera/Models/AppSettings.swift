@@ -29,6 +29,11 @@ enum SettingsKey {
     static let pianissimoCarefulSeams = "pianissimoCarefulSeams"
     static let levelVolume = "levelVolume"
     static let sortformerDiarization = "sortformerDiarization"
+    static let rescueShortReplies = "rescueShortReplies"
+    /// `CrossCheckSource.rawValue`.
+    static let crossCheck = "crossCheck"
+    /// Experiment: vilken Pianissimo som används, `PianissimoVersion.rawValue`.
+    static let pianissimoVersion = "pianissimoVersion"
     /// Textstorlek på läsytan i punkter, ett av `ReadingTextSize.steps`.
     static let readingTextSize = "readingTextSize"
     /// Fråga innan Transkribera igen (på som standard). Gäller bara när det finns plats för
@@ -153,7 +158,9 @@ struct TranscriptionOverrides: Equatable {
 
     func applied(to options: TranscriptionOptions) -> TranscriptionOptions {
         var o = options
-        if let modelRaw { o.model = WhisperModel.resolved(modelRaw) }
+        if let modelRaw {
+            o.model = WhisperModel.resolved(modelRaw)
+        }
         if let language { o.languageCode = language == "auto" ? nil : language }
         if let identifySpeakers { o.identifySpeakers = identifySpeakers }
         if let speakerCount { o.speakerCount = speakerCount }
@@ -182,10 +189,22 @@ struct TranscriptionOptions {
     var levelVolume = true
     /// Talaridentifiering med Nemotron 3 Diarization (FluidAudio), byggd för korta repliker. Används när antal talare är automatiskt, annars SpeakerKit.
     var sortformerDiarization = true
+    /// Experiment "Fånga korta svar": korta repliker som saknas i texten transkriberas för
+    /// sig och läggs in (`ShortReplyRescue`). Bara med Pianissimo och "Skilj på vem som pratar".
+    var rescueShortReplies = false
+    /// Experiment "Korskolla": ljudet transkriberas en gång till, och där körningarna hörde
+    /// olika får ordet en prickad understrykning (`CrossCheck`). Bara Pianissimo.
+    var crossCheck = CrossCheckSource.off
     /// Taligenkänningens spärrar och gränser. Ändras bara av Testlabbet.
     var tuning = DecoderTuning.production
 
     var appliesLevelVolume: Bool { levelVolume && !model.usesParakeet }
+    var appliesShortReplyRescue: Bool { rescueShortReplies && identifySpeakers && model.usesParakeet }
+    /// Kontrollen som körs, eller `nil`.
+    var appliedCrossCheck: CrossCheckSource? {
+        guard model.usesParakeet, !translateToEnglish, crossCheck != .off else { return nil }
+        return crossCheck
+    }
 
     /// Modellens namn som sparas med transkriberingen, med experimenten som användes,
     /// så att olika körningar går att skilja åt vid en jämförelse.
@@ -193,6 +212,8 @@ struct TranscriptionOptions {
         var extras: [String] = []
         if carefulSeams, model.usesParakeet { extras.append("noggranna skarvar") }
         if appliesLevelVolume { extras.append("jämnad volym") }
+        if appliesShortReplyRescue { extras.append("korta svar") }
+        if let check = appliedCrossCheck { extras.append("ord att lyssna på markerade med \(check.label)") }
         extras += tuning.differences
         if identifySpeakers {
             if sortformerDiarization, speakerCount.exact == nil { extras.append("Nemotron 3") }
@@ -201,6 +222,8 @@ struct TranscriptionOptions {
     }
 
     static func fromDefaults(_ defaults: UserDefaults = .standard) -> TranscriptionOptions {
+        // 16 och 32 bitar finns bara i Testlabbet sedan 2026-11-13 (ingen mätbar skillnad mot 8 bitar).
+        // Ett tidigare sparat val av dem används inte.
         let model = WhisperModel.resolved(defaults.string(forKey: SettingsKey.model))
         let language = defaults.string(forKey: SettingsKey.language) ?? "sv"
         return TranscriptionOptions(
@@ -213,7 +236,64 @@ struct TranscriptionOptions {
             translateToEnglish: defaults.string(forKey: SettingsKey.task) == "translate",
             carefulSeams: defaults.bool(forKey: SettingsKey.pianissimoCarefulSeams),
             levelVolume: defaults.object(forKey: SettingsKey.levelVolume) as? Bool ?? true,
-            sortformerDiarization: (defaults.object(forKey: SettingsKey.sortformerDiarization) as? Bool ?? true) && ShortReplyDiarizer.isSupported
+            sortformerDiarization: (defaults.object(forKey: SettingsKey.sortformerDiarization) as? Bool ?? true) && ShortReplyDiarizer.isSupported,
+            rescueShortReplies: defaults.bool(forKey: SettingsKey.rescueShortReplies),
+            crossCheck: CrossCheckSource(rawValue: defaults.string(forKey: SettingsKey.crossCheck) ?? "") ?? .off
         )
+    }
+}
+
+/// Vem som lyssnar en gång till i experimentet "Korskolla" (`CrossCheck`).
+///
+/// Bara KB Large ordagrann (beslut Nicklas 2026-11-13). På mötet 2026-11-12 fångade den flest
+/// innebördsfel; Pianissimo i repliker och en vanlig omkörning av Pianissimo hör för likt
+/// Pianissimo, och mindre KB-modeller hör sämre än Pianissimo (FLEURS: KB Medium 6,6 %,
+/// KB Small 7,3 %, Pianissimo 6,5 %, KB Large 5,1 %). Ett sparat "pianissimoReplies" läses som av.
+enum CrossCheckSource: String, CaseIterable, Identifiable {
+    case off
+    /// KB Large ordagrann. Cirka 25 gånger längre tid än Pianissimo.
+    case kbLarge
+
+    var id: String { rawValue }
+
+    /// Modellen som lyssnar en gång till.
+    var model: WhisperModel { .kbLargeStrict }
+
+    var label: String {
+        switch self {
+        case .off: return "Av"
+        case .kbLarge: return "KB Large"
+        }
+    }
+}
+
+/// Experiment 2026-11-13: vilken Pianissimo som används. Den vanliga har kodaren förminskad till
+/// 8 bitar, vilket aldrig mätts på svenska. Testlabbets lista "Pianissimo: 8, 16 och 32 bitar"
+/// jämför dem på flera filer på en gång.
+enum PianissimoVersion: String, CaseIterable, Identifiable {
+    case standard
+    case fp16
+    case fp32
+
+    var id: String { rawValue }
+
+    static func current(_ defaults: UserDefaults = .standard) -> PianissimoVersion {
+        PianissimoVersion(rawValue: defaults.string(forKey: SettingsKey.pianissimoVersion) ?? "") ?? .standard
+    }
+
+    var model: WhisperModel {
+        switch self {
+        case .standard: return .pianissimo
+        case .fp16: return .pianissimoFP16
+        case .fp32: return .pianissimoFP32
+        }
+    }
+
+    var label: String {
+        switch self {
+        case .standard: return "Vanlig (8 bitar)"
+        case .fp16: return "16 bitar"
+        case .fp32: return "32 bitar"
+        }
     }
 }
