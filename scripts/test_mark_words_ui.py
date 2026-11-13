@@ -28,6 +28,12 @@ class MarkWordsUITests(unittest.TestCase):
         self.assertNotIn(".precision", offered)
         self.assertIn(".crossCheck", offered)
 
+    def test_old_comparison_list_is_gone(self):
+        # 13 inställningar och fyllnadsordsledtrådar provades 2026-10-31: inget hjälpte.
+        self.assertNotIn("case comparison", PLAN)
+        self.assertNotIn("public static let standard", PLAN)
+        self.assertNotIn("Jämför inställningar", PLAN)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -17,7 +17,7 @@ final class TestLab {
     }
 
     /// Vilken lista som visas. Byts listan markeras alla dess körningar.
-    var kind: TestLabPlan.Kind = .comparison {
+    var kind: TestLabPlan.Kind = .crossCheck {
         didSet {
             guard kind != oldValue else { return }
             selected = Set(kind.runs.map(\.id))
@@ -27,7 +27,7 @@ final class TestLab {
         }
     }
     var plan: [TestLabRun] { kind.runs }
-    var selected = Set(TestLabPlan.Kind.comparison.runs.map(\.id))
+    var selected = Set(TestLabPlan.Kind.crossCheck.runs.map(\.id))
     private(set) var statuses: [String: Status] = [:]
     private(set) var isRunning = false
     /// Vad som händer just nu, t.ex. "Körning 3 av 13: KB: utan upprepningsspärr".

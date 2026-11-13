@@ -149,8 +149,6 @@ struct TestLabView: View {
     private var footer: String {
         let common = "Varje körning sparas som en textfil (som Exportera för analys) och en logg utan text. Vanliga transkriberingar påverkas inte, men nya filer väntar i kön tills labbet är klart."
         switch lab.kind {
-        case .comparison:
-            return "Varje vald inspelning körs med varje markerad inställning. Talarna identifieras en gång per inspelning och används i alla dess körningar. " + common
         case .precision:
             return "Varje vald inspelning körs med Pianissimo i 8 bitar (som i dag), 16 och 32 bitar. Allt annat är som dina vanliga inställningar, och talarna är desamma i alla tre. 16 och 32 bitar laddas ner första gången (1,2 och 2,4 GB). " + common
         case .crossCheck:

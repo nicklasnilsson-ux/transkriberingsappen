@@ -36,35 +36,6 @@ final class DecoderTuningTests: XCTestCase {
     }
 }
 
-final class TestLabPlanTests: XCTestCase {
-    let plan = TestLabPlan.standard
-
-    func testRunsHaveUniqueNumberedIDsInOrder() {
-        XCTAssertEqual(Set(plan.map(\.id)).count, plan.count)
-        for (index, run) in plan.enumerated() {
-            XCTAssertTrue(run.id.hasPrefix(String(format: "%02d-", index + 1)), run.id)
-            XCTAssertNil(run.id.rangeOfCharacter(from: CharacterSet(charactersIn: "åäöÅÄÖ /:")), run.id)
-        }
-    }
-
-    /// Referensen körs en gång med KB och en gång med Pianissimo, utan ändringar.
-    func testReferencesChangeNothing() {
-        let references = plan.filter { $0.differences.isEmpty }
-        XCTAssertEqual(references.map(\.id), ["01-kb-referens", "05-pianissimo-referens"])
-    }
-
-    /// Varje försök ändrar en sak, utom den som uttryckligen kombinerar ledtråd och huvudpass.
-    func testEachExperimentChangesOneThing() {
-        let combined: Set = ["04-kb-fyllnadstext-huvudpass"]
-        for run in plan where !run.differences.isEmpty && !combined.contains(run.id) {
-            XCTAssertEqual(run.differences.count, 1, "\(run.id): \(run.differences)")
-        }
-        for id in combined {
-            XCTAssertGreaterThan(plan.first { $0.id == id }?.differences.count ?? 0, 1, id)
-        }
-    }
-}
-
 final class TestLabTimingPlanTests: XCTestCase {
     let plan = TestLabPlan.timing
 
@@ -90,10 +61,11 @@ final class TestLabTimingPlanTests: XCTestCase {
         }
     }
 
-    /// Jämförelselistan använder talare som tagits fram en gång, som förut.
-    func testComparisonStillSharesSpeakers() {
-        XCTAssertTrue(TestLabPlan.standard.allSatisfy { $0.speakers == .shared })
-        XCTAssertEqual(TestLabPlan.Kind.comparison.runs, TestLabPlan.standard)
+    /// Listorna som visas i Testlabbet. De gamla (jämför inställningar, precision) är borttagna
+    /// respektive dolda sedan 2026-11-13; ingen ska komma tillbaka utan att någon valt det.
+    func testOfferedListsAreTheCurrentOnes() {
+        XCTAssertEqual(TestLabPlan.Kind.offered, [.crossCheck, .timing])
+        XCTAssertEqual(TestLabPlan.Kind.allCases.count, 3, "crossCheck, timing och den dolda precisionslistan")
         XCTAssertEqual(TestLabPlan.Kind.timing.runs, TestLabPlan.timing)
         XCTAssertEqual(TestLabPlan.Kind.crossCheck.runs, TestLabPlan.crossCheck)
     }
@@ -136,7 +108,7 @@ final class TestLabReportTests: XCTestCase {
     }
 
     func testReportCarriesNoText() throws {
-        let report = TestLabReport(run: TestLabPlan.standard[0], appVersion: "0.6.0", startedAt: Date())
+        let report = TestLabReport(run: TestLabPlan.timing[0], appVersion: "0.6.0", startedAt: Date())
         let json = try XCTUnwrap(String(data: report.encoded(), encoding: .utf8))
         XCTAssertFalse(json.contains("\"text\""))
     }

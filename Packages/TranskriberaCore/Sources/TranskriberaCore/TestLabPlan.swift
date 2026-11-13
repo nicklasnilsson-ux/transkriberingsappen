@@ -92,7 +92,6 @@ public struct TestLabRun: Codable, Hashable, Identifiable, Sendable {
 public enum TestLabPlan {
     /// Listorna som går att välja i Testlabbet.
     public enum Kind: String, CaseIterable, Identifiable, Sendable {
-        case comparison
         case timing
         case precision
         case crossCheck
@@ -101,11 +100,10 @@ public enum TestLabPlan {
 
         /// Listorna som visas. Precisionslistan är dold sedan 2026-11-13: 8, 16 och 32 bitar
         /// mättes lika på fyra inspelningar. Den finns kvar ifall frågan kommer tillbaka.
-        public static let offered: [Kind] = [.comparison, .timing, .crossCheck]
+        public static let offered: [Kind] = [.crossCheck, .timing]
 
         public var title: String {
             switch self {
-            case .comparison: return "Jämför inställningar"
             case .timing: return "Tidsmätning"
             case .precision: return "Pianissimo: 8, 16 och 32 bitar"
             case .crossCheck: return "Markera ord att lyssna på (KB Large)"
@@ -114,7 +112,6 @@ public enum TestLabPlan {
 
         public var runs: [TestLabRun] {
             switch self {
-            case .comparison: return TestLabPlan.standard
             case .timing: return TestLabPlan.timing
             case .precision: return TestLabPlan.precision
             case .crossCheck: return TestLabPlan.crossCheck
@@ -149,34 +146,4 @@ public enum TestLabPlan {
     public static let crossCheck: [TestLabRun] = [
         TestLabRun(id: "01-pianissimo-korskollad", title: "Pianissimo med ord att lyssna på (KB Large)", engine: .pianissimo, crossCheck: true)
     ]
-
-    /// Listan som körs som standard. Varje körning ändrar en sak mot referensen, utom de
-    /// som uttryckligen kombinerar. Referensen körs två gånger för att mäta bruset.
-    public static let standard: [TestLabRun] = {
-        func kb(_ id: String, _ title: String, _ change: (inout DecoderTuning) -> Void = { _ in }) -> TestLabRun {
-            var tuning = DecoderTuning.production
-            change(&tuning)
-            return TestLabRun(id: id, title: title, engine: .kbLargeStrict, tuning: tuning)
-        }
-        func pianissimo(_ id: String, _ title: String, carefulSeams: Bool = false,
-                        _ change: (inout DecoderTuning) -> Void = { _ in }) -> TestLabRun {
-            var tuning = DecoderTuning.production
-            change(&tuning)
-            return TestLabRun(id: id, title: title, engine: .pianissimo, tuning: tuning, carefulSeams: carefulSeams)
-        }
-        // Första omgången (13 körningar, v0.6.0) visade att spärrar och omkörningar inte spelar roll.
-        // Nu provas ledtråd för fyllnadsord, eftersom KB-Whisper rensar bort eh och mm helt.
-        let list = "Eh, öh, mm, ja, jaha, alltså, liksom."
-        let text = "Eh, ja alltså, det är ju så att, mm, vi har liksom, öh, ja precis. Mm, jaha, nej men eh, det stämmer."
-        return [
-            kb("01-kb-referens", "KB: som i dag"),
-            kb("02-kb-fyllnadslista", "KB: ledtråd med fyllnadsord som lista") { $0.stylePrompt = list },
-            kb("03-kb-fyllnadstext", "KB: ledtråd med fyllnadsord i löpande text") { $0.stylePrompt = text },
-            kb("04-kb-fyllnadstext-huvudpass", "KB: ledtråd i löpande text, bara i huvudpasset") {
-                $0.stylePrompt = text
-                $0.stylePromptInGapCheck = false
-            },
-            pianissimo("05-pianissimo-referens", "Pianissimo: som i dag")
-        ]
-    }()
 }
