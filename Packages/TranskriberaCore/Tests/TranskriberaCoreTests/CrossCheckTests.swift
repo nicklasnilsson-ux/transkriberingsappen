@@ -42,12 +42,24 @@ final class CrossCheckTests: XCTestCase {
         XCTAssertEqual(marks(result), ["inte→bara/2"])
     }
 
-    func testWordsThatSoundDifferentAreMarkedButInflectionsAreNot() {
-        let (result, _) = CrossCheck.mark(
-            [segment("Vi följer samma praxis och går igenom fakturan sen.")],
-            against: words("Vi följer samma access och går igenom fakturorna sen.")
+    /// Regeln sedan 2026-11-13 (beslut Nicklas): bara skillnader i ord som ändrar innebörden.
+    /// Ord som låter helt olika, böjningar och ord som bara den andra hörde markeras inte längre;
+    /// på mötet gav de en markering var 22:a sekund och fångade nästan inga fler innebördsfel.
+    func testOnlyDifferencesInMeaningWordsAreMarked() {
+        let (result, marked) = CrossCheck.mark(
+            [segment("Vi följer samma praxis och går igenom fakturan sen, det får vi göra.")],
+            against: words("Vi följer samma access och går igenom fakturorna sen, sa hon, det måste vi göra.")
         )
-        XCTAssertEqual(marks(result), ["praxis→access/1"])
+        XCTAssertEqual(marks(result), ["får→måste/1"])
+        XCTAssertEqual(marked, 1)
+    }
+
+    func testMeaningRuleLooksAtBothSides() {
+        XCTAssertTrue(CrossCheck.changesMeaning(["bör"], ["behöver"]))
+        XCTAssertTrue(CrossCheck.changesMeaning([], ["inte"]))
+        XCTAssertTrue(CrossCheck.changesMeaning(["inte"], []))
+        XCTAssertFalse(CrossCheck.changesMeaning(["praxis"], ["access"]))
+        XCTAssertFalse(CrossCheck.changesMeaning(["inte", "praxis"], ["inte", "access"]), "Samma innebördsord på båda sidor")
     }
 
     func testCaseSpellingPunctuationAndFillersAreNotMarked() {
@@ -67,8 +79,8 @@ final class CrossCheckTests: XCTestCase {
     func testAlternativeTakesCapitalAndPunctuationFromTheWordsItReplaces() {
         let (result, _) = CrossCheck.mark([segment("Bör vi börja?")], against: words("behöver vi börja"))
         XCTAssertEqual(marks(result), ["Bör→Behöver/1"])
-        let (end, _) = CrossCheck.mark([segment("Det är praxis.")], against: words("Det är access"))
-        XCTAssertEqual(marks(end), ["praxis.→access./1"])
+        let (end, _) = CrossCheck.mark([segment("Det går nog.")], against: words("Det går inte"))
+        XCTAssertEqual(marks(end), ["nog.→inte./1"])
     }
 
     func testLongDifferencesAreNotMarked() {
@@ -148,10 +160,39 @@ final class CrossCheckTests: XCTestCase {
         XCTAssertNil(CrossCheck.parse(URL(string: "https://example.com/12/3")!))
     }
 
+    // MARK: - Lista för Testlabbet
+
+    func testMarksListHasTimeSpeakerContextAndBothReadings() {
+        let mine = [segment("Hej.", from: 0, speaker: "Talare 1"),
+                    segment("Från nästa månad bör alla beställningar gå via portalen.", from: 60, speaker: "Talare 2")]
+        let (result, _) = CrossCheck.mark(mine, against: words("Hej. Från nästa månad behöver alla beställningar gå via portalen."))
+        let list = CrossCheck.marks(in: result, context: 2)
+        XCTAssertEqual(list.count, 1)
+        XCTAssertEqual(list.first?.time ?? 0, 60.3, accuracy: 0.001)
+        XCTAssertEqual(list.first?.speaker, "Talare 2")
+        XCTAssertEqual(list.first?.heard, "bör")
+        XCTAssertEqual(list.first?.other, "behöver")
+        XCTAssertEqual(list.first?.before, "nästa månad")
+        XCTAssertEqual(list.first?.after, "alla beställningar")
+        let text = CrossCheck.report(list, other: "KB Large", minutes: 30)
+        XCTAssertTrue(text.hasPrefix("Korskoll med KB Large: 1 ställe (2 per timme)."), text)
+        XCTAssertTrue(text.contains("01:00  Talare 2  …nästa månad [bör] alla beställningar…  →  KB Large: behöver"), text)
+    }
+
+    func testMultiWordMarkListsAllItsWordsAndReportIsAnonymized() {
+        let (result, _) = CrossCheck.mark([segment("Så man ska inte bara skriva saker.")], against: words("Så man ska bara skriva saker."))
+        let list = CrossCheck.marks(in: result)
+        XCTAssertEqual(list.map(\.heard), ["inte bara"])
+        XCTAssertEqual(list.map(\.other), ["bara"])
+        let text = CrossCheck.report(list, other: "KB Large", minutes: 1, anonymize: { $0.replacingOccurrences(of: "skriva", with: "[X]") })
+        XCTAssertTrue(text.contains("[X]"))
+        XCTAssertFalse(text.contains("skriva"))
+    }
+
     // MARK: - Lagring
 
     func testMarksAreCountedWithoutDecodingAndOldWordsStillDecode() throws {
-        let (marked, _) = CrossCheck.mark([segment("Vi bör gå och praxis.")], against: words("Vi behöver gå och access."))
+        let (marked, _) = CrossCheck.mark([segment("Vi bör gå och får se.")], against: words("Vi behöver gå och kan se."))
         let data = try JSONEncoder().encode(marked[0].words)
         XCTAssertEqual(WordTimingData.alternativeCount(inEncoded: data), 2)
         XCTAssertEqual(WordTimingData.alternativeCount(inEncoded: try JSONEncoder().encode(words("Vi bör gå."))), 0)

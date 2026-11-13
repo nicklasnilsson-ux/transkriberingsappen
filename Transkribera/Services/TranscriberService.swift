@@ -440,8 +440,6 @@ final class TranscriberService {
         // ledtråd, och Whisper stavar ibland fel trots den.
         segments = VocabularyCorrection.apply(segments, vocabulary: TextCleaning.wordList(options.vocabulary))
 
-        /// Talarturerna, för korskollen med Pianissimo i repliker.
-        var turns: [SpeakerTurn] = speakerTurns ?? []
         if let speakerTurns {
             let assigned = SpeakerAssignment.assign(segments, turns: speakerTurns)
             if assigned.contains(where: { $0.speaker != nil }) {
@@ -467,7 +465,6 @@ final class TranscriberService {
             }
             if Self.hasLowMemory { await releaseSpeakerModels() }
             segments = diarized.segments
-            turns = diarized.turns
             diagnostics.diarizer = diarized.diarizer
             diagnostics.speakersSeconds = Self.seconds(clock.now - speakersStart)
             if !diarized.turns.isEmpty, segments.contains(where: { $0.speaker != nil }) {
@@ -476,7 +473,7 @@ final class TranscriberService {
         }
         segments = segments.filter { !TextCleaning.isNonSpeechMarker($0.text) }
         if let check = options.appliedCrossCheck {
-            segments = try await crossCheck(segments, with: check, input: input, turns: turns, options: options)
+            segments = try await crossCheck(segments, with: check, input: input, options: options)
         }
         return TranscriptionOutput(segments: segments, language: language, diagnostics: diagnostics, notice: notice)
     }
@@ -488,7 +485,6 @@ final class TranscriberService {
         _ segments: [SegmentData],
         with check: CrossCheckSource,
         input: [Float],
-        turns: [SpeakerTurn],
         options: TranscriptionOptions
     ) async throws -> [SegmentData] {
         do {
@@ -498,8 +494,6 @@ final class TranscriberService {
                 return segments
             case .kbLarge:
                 other = try await kbLargeWords(input, options: options)
-            case .pianissimoReplies:
-                other = try await pianissimoReplyWords(input, turns: turns, options: options)
             }
             let (result, marked) = CrossCheck.mark(segments, against: other)
             ErrorLog.append(model: options.model.displayName, step: .recognize,
@@ -536,33 +530,6 @@ final class TranscriberService {
             results = try await whisperTranscribe(kit: reloaded, samples: leveled, options: kbOptions, phase: .crossCheck)
         }
         return Self.segments(from: results).flatMap(\.words)
-    }
-
-    /// Pianissimo en gång till, med ljudet delat i repliker efter talarna (`ReplyPlan`).
-    private func pianissimoReplyWords(_ input: [Float], turns: [SpeakerTurn], options: TranscriptionOptions) async throws -> [WordTimingData] {
-        guard !turns.isEmpty else { return [] }
-        try await prepare(model: options.model)
-        phase = .crossChecking(fraction: 0)
-        let rate = AudioLoader.sampleRate
-        let duration = Double(input.count) / rate
-        var words: [WordTimingData] = []
-        for piece in ReplyPlan.pieces(turns: turns, duration: duration) {
-            try Task.checkCancellation()
-            let from = max(0, min(input.count, Int(piece.start * rate)))
-            let to = max(from, min(input.count, Int(piece.end * rate)))
-            let clip = Array(input[from..<to])
-            do {
-                words += try await parakeet.words(samples: clip, offset: Double(from) / rate,
-                                                  carefulSeams: options.carefulSeams, tuning: options.tuning)
-            } catch let error where canRetryWithoutNeuralEngine(error) {
-                await stopUsingNeuralEngine(after: error, model: options.model, step: .recognize)
-                try await prepare(model: options.model)
-                words += try await parakeet.words(samples: clip, offset: Double(from) / rate,
-                                                  carefulSeams: options.carefulSeams, tuning: options.tuning)
-            }
-            advanceCrossCheck(to: piece.end / max(duration, 1))
-        }
-        return words
     }
 
     private func advanceCrossCheck(to fraction: Double) {

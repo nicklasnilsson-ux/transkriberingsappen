@@ -95,6 +95,7 @@ final class TestLabTimingPlanTests: XCTestCase {
         XCTAssertTrue(TestLabPlan.standard.allSatisfy { $0.speakers == .shared })
         XCTAssertEqual(TestLabPlan.Kind.comparison.runs, TestLabPlan.standard)
         XCTAssertEqual(TestLabPlan.Kind.timing.runs, TestLabPlan.timing)
+        XCTAssertEqual(TestLabPlan.Kind.crossCheck.runs, TestLabPlan.crossCheck)
     }
 }
 
@@ -149,5 +150,16 @@ final class TestLabReportTests: XCTestCase {
         XCTAssertEqual(plan[1].differences, ["kodaren i 16 bitar i stället för 8"])
         XCTAssertEqual(plan[2].differences, ["hela modellen i 32 bitar"])
         XCTAssertTrue(plan.allSatisfy { $0.tuning == .production && $0.speakers == .shared && !$0.carefulSeams })
+    }
+
+    /// 2026-11-13: korskollen är en vanlig Pianissimo plus KB Large, och bara den listan korskollar.
+    func testCrossCheckListIsPianissimoCheckedByKBLarge() {
+        let plan = TestLabPlan.Kind.crossCheck.runs
+        XCTAssertEqual(plan.map(\.engine), [.pianissimo])
+        XCTAssertEqual(plan[0].differences, ["korskollad med KB Large"])
+        XCTAssertTrue(plan.allSatisfy { $0.crossCheck && $0.tuning == .production && $0.speakers == .shared })
+        for kind in TestLabPlan.Kind.allCases where kind != .crossCheck {
+            XCTAssertFalse(kind.runs.contains(where: \.crossCheck), kind.title)
+        }
     }
 }

@@ -116,6 +116,8 @@ struct TestLabView: View {
             return "Varje vald inspelning körs med varje markerad inställning. Talarna identifieras en gång per inspelning och används i alla dess körningar. " + common
         case .precision:
             return "Varje vald inspelning körs med Pianissimo i 8 bitar (som i dag), 16 och 32 bitar. Allt annat är som dina vanliga inställningar, och talarna är desamma i alla tre. 16 och 32 bitar laddas ner första gången (1,2 och 2,4 GB). " + common
+        case .crossCheck:
+            return "Varje vald inspelning körs med Pianissimo som vanligt, och KB Large ordagrann lyssnar en gång till. Där de hörde olika i ett ord som ändrar innebörden (inte, bör, måste …) hamnar stället i filen som slutar på -korskoll.txt, med tid, talare och båda tolkningarna. Gå igenom listan med ljudet och notera vem som hade rätt. KB Large tar cirka en fjärdedel av inspelningens längd. " + common
         case .timing:
             return "Mäter hur lång tid hela kedjan tar med varje modell, med och utan talare: ljudet, transkriberingen, talarna och anonymiseringen, var för sig. Modeller som saknas laddas ner först, och den tiden räknas för sig. Övriga inställningar är dina vanliga. Sammanfattningen visar också tiden per timme ljud och vilken Mac den kördes på. " + common
         }
@@ -132,7 +134,7 @@ struct TestLabView: View {
 
     /// Grov uppskattning: KB Large tar ungefär en fjärdedel av inspelningens längd per
     /// körning, Pianissimo en femtondel. Large v3 Turbo och Pianissimo i 16/32 bitar är inte
-    /// uppmätta; deras andelar är gissningar. Talarna en gång, plus en gång per körning med
+    /// uppmätta; deras andelar är gissningar. Korskollen kör KB Large en gång till. Talarna en gång, plus en gång per körning med
     /// egna talare. Flera inspelningar läggs ihop.
     private func estimate(for transcripts: [Transcript]) -> String {
         let duration = transcripts.reduce(0) { $0 + $1.duration }
@@ -146,7 +148,7 @@ struct TestLabView: View {
             case .pianissimoFP16: engine = 0.1
             case .pianissimoFP32: engine = 0.3
             }
-            return total + engine + (run.speakers == .own ? 0.03 : 0)
+            return total + engine + (run.speakers == .own ? 0.03 : 0) + (run.crossCheck ? 0.25 : 0)
         }
         let minutes = Int((duration * factor / 60).rounded())
         return minutes < 60 ? "cirka \(minutes) min" : "cirka \(minutes / 60) h \(minutes % 60) min"

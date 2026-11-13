@@ -202,14 +202,10 @@ struct TranscriptionOptions {
 
     var appliesLevelVolume: Bool { levelVolume && !model.usesParakeet }
     var appliesShortReplyRescue: Bool { rescueShortReplies && identifySpeakers && model.usesParakeet }
-    /// Kontrollen som körs, eller `nil`. Pianissimo i repliker kräver talarna.
+    /// Kontrollen som körs, eller `nil`.
     var appliedCrossCheck: CrossCheckSource? {
-        guard model.usesParakeet, !translateToEnglish else { return nil }
-        switch crossCheck {
-        case .off: return nil
-        case .kbLarge: return .kbLarge
-        case .pianissimoReplies: return identifySpeakers ? .pianissimoReplies : nil
-        }
+        guard model.usesParakeet, !translateToEnglish, crossCheck != .off else { return nil }
+        return crossCheck
     }
 
     /// Modellens namn som sparas med transkriberingen, med experimenten som användes,
@@ -250,27 +246,24 @@ struct TranscriptionOptions {
 
 /// Vem som lyssnar en gång till i experimentet "Korskolla" (`CrossCheck`).
 ///
-/// Mötet 2026-11-12 (37 ställen där Pianissimo skilde sig från Klang i ett ord som ändrar
-/// innebörden): KB Large var oense på 23 av dem (69 % av dess flaggor gällde fel), Pianissimo
-/// i repliker på 25 (55 %), en vanlig omkörning av Pianissimo bara på 9. Felen beror alltså
-/// mer på hur ljudet delas än på slumpen. Båda finns kvar tills vi vet vilken som är bäst.
+/// Bara KB Large ordagrann (beslut Nicklas 2026-11-13). På mötet 2026-11-12 fångade den flest
+/// innebördsfel; Pianissimo i repliker och en vanlig omkörning av Pianissimo hör för likt
+/// Pianissimo, och mindre KB-modeller hör sämre än Pianissimo (FLEURS: KB Medium 6,6 %,
+/// KB Small 7,3 %, Pianissimo 6,5 %, KB Large 5,1 %). Ett sparat "pianissimoReplies" läses som av.
 enum CrossCheckSource: String, CaseIterable, Identifiable {
     case off
     /// KB Large ordagrann. Cirka 25 gånger längre tid än Pianissimo.
     case kbLarge
-    /// Pianissimo igen, med ljudet delat i repliker efter talarna (`ReplyPlan`). Snabbt.
-    case pianissimoReplies
 
     var id: String { rawValue }
 
     /// Modellen som lyssnar en gång till.
-    var model: WhisperModel { self == .kbLarge ? .kbLargeStrict : .pianissimo }
+    var model: WhisperModel { .kbLargeStrict }
 
     var label: String {
         switch self {
         case .off: return "Av"
         case .kbLarge: return "KB Large"
-        case .pianissimoReplies: return "Pianissimo i repliker"
         }
     }
 }

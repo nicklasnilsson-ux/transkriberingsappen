@@ -128,11 +128,12 @@ private struct TranscriptionSettingsView: View {
                 }
                 .disabled(!usesParakeet)
                 .help("Den vanliga Pianissimo har modellens största del förminskad till 8 bitar. 16 och 32 bitar testar om förminskningen kostar ord. Laddar ner 1,2 respektive 2,4 GB första gången; 32 bitar är långsammare. Jämför flera filer på en gång i Testlabbet (⌥⇧⌘T).")
-                Picker("Korskolla", selection: $crossCheck) {
-                    ForEach(CrossCheckSource.allCases) { Text($0.label).tag($0) }
-                }
+                Toggle("Korskolla med KB Large", isOn: Binding(
+                    get: { crossCheck == .kbLarge },
+                    set: { crossCheck = $0 ? .kbLarge : .off }
+                ))
                 .disabled(!usesParakeet)
-                .help("Ljudet transkriberas en gång till. Där körningarna hörde olika ord blir ordet prickat understruket; klicka på det för att välja och lyssna. KB Large tar cirka 25 gånger längre tid. Pianissimo i repliker går fort men kräver \"Skilj på vem som pratar\".")
+                .help("KB Large lyssnar en gång till. Där den hörde ett annat ord som ändrar innebörden (inte, bör, måste …) blir Pianissimos ord prickat understruket; klicka på det för att välja och lyssna. Tar cirka 25 gånger längre tid. Prova hellre i Testlabbet (⌥⇧⌘T), som sparar alla ställen i en lista.")
             } header: {
                 Text("Experiment")
             } footer: {

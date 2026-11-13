@@ -9,9 +9,11 @@ import Foundation
 /// stället för "behöver", ett "inte" som saknades), men sällan på samma ställe. Fem av sex
 /// sådana fel syntes som en skillnad mellan modellerna.
 ///
-/// Bara skillnader som kan spela roll markeras: ord som låter helt olika, och ord som ändrar
-/// innebörden ("inte", "bör", "måste" …). Stavning, skiljetecken och utfyllnadsord ("eh")
-/// markeras inte.
+/// Bara skillnader där ett ord som ändrar innebörden ("inte", "bör", "måste" …) skiljer sig
+/// markeras (beslut Nicklas 2026-11-13). Mätt på mötet med Klang som facit: regeln "innebördsord
+/// eller ord som låter helt olika" gav en markering var 22:a sekund, den här en per 1,5 minut och
+/// fångade nästan lika många innebördsfel (19 mot 21 av 37). Stavning, böjningar, ord som bara
+/// låter olika, skiljetecken och utfyllnadsord ("eh") markeras inte.
 public enum CrossCheck {
     /// Ord som ändrar innebörden även när resten är likt.
     static let meaningWords: Set<String> = [
@@ -24,8 +26,6 @@ public enum CrossCheck {
     static let shortAnswers: Set<String> = ["ja", "nej", "jo", "precis", "okej", "ok", "aa", "jaa", "japp"]
     /// Längre skillnader är oftast ett parti som den ena tappade; det går inte att välja i en meny.
     static let longestSpan = 6
-    /// Under den här likheten (0–1, bokstäver) räknas två ord som olika ord.
-    static let differentWords = 0.5
 
     /// Ett ord i jämförelsen.
     struct Token {
@@ -121,17 +121,15 @@ public enum CrossCheck {
         let otherKeys = Array(theirKeys[change.old])
         let otherText = theirs[change.old].map(trimmed)
         guard mineKeys.count <= longestSpan, otherKeys.count <= longestSpan else { return nil }
-        let changesMeaning = !Set(mineKeys).symmetricDifference(otherKeys).isDisjoint(with: meaningWords)
+        guard changesMeaning(mineKeys, otherKeys) else { return nil }
 
         if !mineKeys.isEmpty, !otherKeys.isEmpty {
             // Ord mot ord.
-            guard changesMeaning || similarity(mineKeys.joined(separator: " "), otherKeys.joined(separator: " ")) < differentWords else { return nil }
             return (change.new, otherText.joined(separator: " "))
         }
         if !otherKeys.isEmpty {
             // Den andra hörde ord som saknas här. Grannordet markeras, så att menyn visar
             // "bara" mot "inte bara" och inte ett tomt val.
-            guard changesMeaning || otherKeys.count >= 2 else { return nil }
             guard !otherKeys.allSatisfy(shortAnswers.contains) else { return nil }
             let at = change.new.lowerBound
             let next = at < mine.count ? at : nil
@@ -144,8 +142,8 @@ public enum CrossCheck {
             }
             return nil
         }
-        // Ord som bara finns här. Visas bara när de ändrar innebörden ("inte").
-        guard changesMeaning, !mineKeys.isEmpty else { return nil }
+        // Ord som bara finns här ("inte").
+        guard !mineKeys.isEmpty else { return nil }
         let end = change.new.upperBound
         if end < mine.count, mine[end].segment == mine[change.new.lowerBound].segment {
             return (change.new.lowerBound..<end + 1, trimmed(mine[end].raw))
@@ -155,6 +153,12 @@ public enum CrossCheck {
             return (start - 1..<change.new.upperBound, trimmed(mine[start - 1].raw))
         }
         return nil
+    }
+
+    /// Sant när ett ord som ändrar innebörden finns hos den ena men inte den andra. Det är
+    /// regeln för vad som markeras.
+    static func changesMeaning(_ mine: [String], _ other: [String]) -> Bool {
+        !Set(mine).symmetricDifference(other).isDisjoint(with: meaningWords)
     }
 
     /// Den andras ord med samma stor bokstav och skiljetecken som orden de ersätter, så att
@@ -184,21 +188,6 @@ public enum CrossCheck {
         word.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    /// Hur lika två texter är, 0–1, räknat på bokstäverna (som difflib.ratio).
-    static func similarity(_ a: String, _ b: String) -> Double {
-        let x = Array(a), y = Array(b)
-        guard !x.isEmpty, !y.isEmpty else { return x.isEmpty && y.isEmpty ? 1 : 0 }
-        var previous = [Int](repeating: 0, count: y.count + 1)
-        for i in 1...x.count {
-            var row = [Int](repeating: 0, count: y.count + 1)
-            for j in 1...y.count {
-                row[j] = x[i - 1] == y[j - 1] ? previous[j - 1] + 1 : max(previous[j], row[j - 1])
-            }
-            previous = row
-        }
-        return 2 * Double(previous[y.count]) / Double(x.count + y.count)
-    }
-
     /// Länken som ett markerat ord får i texten: segmentets och ordets nummer.
     public static let linkScheme = "transkribera-korskoll"
 
@@ -216,6 +205,63 @@ public enum CrossCheck {
 
     static func normalized(_ word: String) -> String {
         word.lowercased().filter { $0.isLetter || $0.isNumber }
+    }
+
+    // MARK: - Lista för Testlabbet
+
+    /// Ett markerat ställe, för listan som Testlabbet sparar.
+    public struct Mark: Equatable, Sendable {
+        public var time: Double
+        public var speaker: String?
+        /// Orden som står i texten.
+        public var heard: String
+        /// Vad den andra modellen hörde.
+        public var other: String
+        public var before: String
+        public var after: String
+    }
+
+    /// Alla markeringar i ordning, med `context` ord före och efter inom samma stycke.
+    public static func marks(in segments: [SegmentData], context: Int = 6) -> [Mark] {
+        var result: [Mark] = []
+        for segment in segments {
+            let words = segment.words
+            for (index, word) in words.enumerated() {
+                guard let other = word.alternative else { continue }
+                let end = min(words.count, index + max(1, word.alternativeLength ?? 1))
+                func text(_ range: Range<Int>) -> String {
+                    words[range].map { trimmed($0.word) }.filter { !$0.isEmpty }.joined(separator: " ")
+                }
+                result.append(Mark(
+                    time: word.start,
+                    speaker: segment.speaker,
+                    heard: text(index..<end),
+                    other: other,
+                    before: text(max(0, index - context)..<index),
+                    after: text(end..<min(words.count, end + context))
+                ))
+            }
+        }
+        return result
+    }
+
+    /// Listan som text: en rad per ställe, att gå igenom med ljudet bredvid.
+    /// `anonymize` körs på varje rad när anonymiseringen är på.
+    public static func report(_ marks: [Mark], other: String, minutes: Double,
+                              anonymize: (String) -> String = { $0 }) -> String {
+        let rate = minutes > 0 ? String(format: "%.0f", Double(marks.count) / minutes * 60) : "–"
+        var out = """
+        Korskoll med \(other): \(marks.count) \(marks.count == 1 ? "ställe" : "ställen") (\(rate) per timme).
+        Varje rad: tid, talare, texten med Pianissimos ord inom [ ], och vad \(other) hörde.
+        Lyssna på tiden och skriv P om Pianissimo hade rätt, K om \(other) hade rätt, B om båda fel.
+
+
+        """
+        for mark in marks {
+            let line = "\(mark.before) [\(mark.heard)] \(mark.after)".trimmingCharacters(in: .whitespaces)
+            out += "\(TimeFormatting.short(mark.time))  \(mark.speaker ?? "–")  …\(line)…  →  \(other): \(mark.other)\n"
+        }
+        return anonymize(out)
     }
 
     // MARK: - Välja i menyn

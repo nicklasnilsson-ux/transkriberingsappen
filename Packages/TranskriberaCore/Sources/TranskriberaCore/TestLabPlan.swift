@@ -48,6 +48,9 @@ public struct TestLabRun: Codable, Hashable, Identifiable, Sendable {
     public var levelVolume: Bool
     public var carefulSeams: Bool
     public var speakers: Speakers
+    /// Experiment "Korskolla": hela ljudet körs också med KB Large ordagrann och skillnaderna i
+    /// innebördsord markeras (`CrossCheck`). Bara Pianissimo.
+    public var crossCheck: Bool
 
     public init(
         id: String,
@@ -56,7 +59,8 @@ public struct TestLabRun: Codable, Hashable, Identifiable, Sendable {
         tuning: DecoderTuning = .production,
         levelVolume: Bool = true,
         carefulSeams: Bool = false,
-        speakers: Speakers = .shared
+        speakers: Speakers = .shared,
+        crossCheck: Bool = false
     ) {
         self.id = id
         self.title = title
@@ -65,6 +69,7 @@ public struct TestLabRun: Codable, Hashable, Identifiable, Sendable {
         self.levelVolume = levelVolume
         self.carefulSeams = carefulSeams
         self.speakers = speakers
+        self.crossCheck = crossCheck
     }
 
     /// Det som skiljer från en vanlig transkribering med samma modell, i klartext.
@@ -74,6 +79,7 @@ public struct TestLabRun: Codable, Hashable, Identifiable, Sendable {
         if engine == .pianissimoFP16 { out.append("kodaren i 16 bitar i stället för 8") }
         if engine == .pianissimoFP32 { out.append("hela modellen i 32 bitar") }
         if engine == .kbLargeStrict, !levelVolume { out.append("volymutjämning av") }
+        if crossCheck { out.append("korskollad med KB Large") }
         switch speakers {
         case .shared: break
         case .none: out.append("utan talare")
@@ -89,6 +95,7 @@ public enum TestLabPlan {
         case comparison
         case timing
         case precision
+        case crossCheck
 
         public var id: String { rawValue }
 
@@ -97,6 +104,7 @@ public enum TestLabPlan {
             case .comparison: return "Jämför inställningar"
             case .timing: return "Tidsmätning"
             case .precision: return "Pianissimo: 8, 16 och 32 bitar"
+            case .crossCheck: return "Korskolla med KB Large"
             }
         }
 
@@ -105,6 +113,7 @@ public enum TestLabPlan {
             case .comparison: return TestLabPlan.standard
             case .timing: return TestLabPlan.timing
             case .precision: return TestLabPlan.precision
+            case .crossCheck: return TestLabPlan.crossCheck
             }
         }
     }
@@ -128,6 +137,13 @@ public enum TestLabPlan {
         TestLabRun(id: "01-pianissimo-8-bitar", title: "Pianissimo som i dag (kodaren i 8 bitar)", engine: .pianissimo),
         TestLabRun(id: "02-pianissimo-16-bitar", title: "Pianissimo 16 bitar", engine: .pianissimoFP16),
         TestLabRun(id: "03-pianissimo-32-bitar", title: "Pianissimo 32 bitar", engine: .pianissimoFP32)
+    ]
+
+    /// Experimentet "Korskolla" (2026-11-13). Pianissimo körs som vanligt, KB Large ordagrann lyssnar
+    /// en gång till, och skillnaderna i innebördsord sparas som en lista (`-korskoll.txt`) att gå
+    /// igenom med ljudet. Bara KB Large som andra lyssnare (beslut Nicklas).
+    public static let crossCheck: [TestLabRun] = [
+        TestLabRun(id: "01-pianissimo-korskollad", title: "Pianissimo, korskollad med KB Large", engine: .pianissimo, crossCheck: true)
     ]
 
     /// Listan som körs som standard. Varje körning ändrar en sak mot referensen, utom de

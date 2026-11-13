@@ -171,6 +171,8 @@ final class TestLab {
                 options.tuning = run.tuning
                 options.levelVolume = run.levelVolume
                 options.carefulSeams = run.carefulSeams
+                // Korskollen gäller bara körningar som ber om den, oavsett inställningarna.
+                options.crossCheck = run.crossCheck ? .kbLarge : .off
                 var runTurns: [SpeakerTurn]?
                 switch run.speakers {
                 case .shared:
@@ -218,6 +220,13 @@ final class TestLab {
                     report.pianissimoConfidence = diagnostics.pianissimoConfidence
 
                     var segments = output.segments
+                    if run.crossCheck {
+                        let list = CrossCheck.report(
+                            CrossCheck.marks(in: segments), other: CrossCheckSource.kbLarge.label, minutes: source.duration / 60,
+                            anonymize: { text in anonymization.map { Anonymizer.anonymize(text, options: $0) } ?? text }
+                        )
+                        try Self.write(list, to: folder.appending(path: "\(run.id)-korskoll.txt"))
+                    }
                     if let anonymization {
                         let anonymizationStart = clock.now
                         segments = Anonymizer.anonymize(segments, options: anonymization).segments
