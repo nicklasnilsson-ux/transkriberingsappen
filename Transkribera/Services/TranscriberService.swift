@@ -303,8 +303,7 @@ final class TranscriberService {
         steps = TranscriptionStep.plan(
             needsModel: !modelReady,
             checksGaps: !options.model.usesParakeet,
-            identifiesSpeakers: options.identifySpeakers,
-            speakersFirst: options.appliesSpeakersFirst
+            identifiesSpeakers: options.identifySpeakers
         )
         defer { steps = [] }
         do {
@@ -391,14 +390,7 @@ final class TranscriberService {
         let input = options.appliesLevelVolume ? VolumeLeveler.level(samples, sampleRate: AudioLoader.sampleRate) : samples
         var segments: [SegmentData]
         let language: String?
-        /// Sant när "Talare först" redan har satt talarna.
-        var speakersDone = false
-        if options.model.usesParakeet, speakerTurns == nil, options.appliesSpeakersFirst,
-           let first = try await speakersFirst(samples: samples, input: input, options: options, diagnostics: &diagnostics) {
-            segments = first
-            speakersDone = true
-            language = "sv"
-        } else if options.model.usesParakeet {
+        if options.model.usesParakeet {
             let output: ParakeetTranscriber.Output
             do {
                 output = try await runParakeet(input, options: options)
@@ -441,17 +433,17 @@ final class TranscriberService {
         // ledtråd, och Whisper stavar ibland fel trots den.
         segments = VocabularyCorrection.apply(segments, vocabulary: TextCleaning.wordList(options.vocabulary))
 
-        if speakersDone {
-            // Talarna är redan satta per replik.
-        } else if let speakerTurns {
+        if let speakerTurns {
             let assigned = SpeakerAssignment.assign(segments, turns: speakerTurns)
-            if assigned.contains(where: { $0.speaker != nil }) { segments = assigned }
+            if assigned.contains(where: { $0.speaker != nil }) {
+                segments = try await rescueShortReplies(assigned, turns: speakerTurns, input: input, options: options, diagnostics: &diagnostics)
+            }
         } else if options.identifySpeakers {
             // Med lite minne körs en modell i taget: taligenkänningen släpps innan talarna.
             if Self.hasLowMemory { await releaseRecognitionModel() }
             phase = .identifyingSpeakers
             let speakersStart = clock.now
-            var diarized: (segments: [SegmentData], diarizer: String)
+            var diarized: (segments: [SegmentData], diarizer: String, turns: [SpeakerTurn])
             do {
                 do {
                     diarized = try await diarizedSegments(samples: samples, segments: segments, options: options)
@@ -461,89 +453,71 @@ final class TranscriberService {
                 }
             } catch let timeout as SpeakerStepTimedOut {
                 // Texten är klar; bara talarna saknas. Det ska synas, inte bara loggas.
-                diarized = (segments, "Ingen (tidsgräns)")
+                diarized = (segments, "Ingen (tidsgräns)", [])
                 notice = "Talarna kunde inte identifieras: steget tog längre än \(timeout.seconds / 60) minuter och avbröts. Texten är klar utan talare. Kör om med \"Skilj på talare\" avstängt, eller starta om appen och försök igen."
             }
             if Self.hasLowMemory { await releaseSpeakerModels() }
             segments = diarized.segments
             diagnostics.diarizer = diarized.diarizer
             diagnostics.speakersSeconds = Self.seconds(clock.now - speakersStart)
+            if !diarized.turns.isEmpty, segments.contains(where: { $0.speaker != nil }) {
+                segments = try await rescueShortReplies(segments, turns: diarized.turns, input: input, options: options, diagnostics: &diagnostics)
+            }
         }
         segments = segments.filter { !TextCleaning.isNonSpeechMarker($0.text) }
         return TranscriptionOutput(segments: segments, language: language, diagnostics: diagnostics, notice: notice)
     }
 
-    /// "Talare först": identifierar talarna, delar ljudet i repliker (`ReplyPlan`) och låter
-    /// Pianissimo transkribera varje replik för sig. Ger `nil` när talarna inte gick att
-    /// identifiera; då körs den vanliga vägen (allt först, talare sedan).
-    private func speakersFirst(
-        samples: [Float],
+    /// Experiment "Fånga korta svar" (`ShortReplyRescue`): korta turer vars ord saknas i
+    /// texten transkriberas för sig med Pianissimo och läggs in som egna repliker. Den
+    /// vanliga texten ändras inte. Går något fel behålls texten som den var.
+    private func rescueShortReplies(
+        _ segments: [SegmentData],
+        turns: [SpeakerTurn],
         input: [Float],
         options: TranscriptionOptions,
         diagnostics: inout TranscriptionDiagnostics
-    ) async throws -> [SegmentData]? {
-        let clock = ContinuousClock()
-        // Med lite minne körs en modell i taget, som i den vanliga vägen.
-        if Self.hasLowMemory { await releaseRecognitionModel() }
-        phase = .identifyingSpeakers
-        let speakersStart = clock.now
-        var diarized: (turns: [SpeakerTurn], diarizer: String)?
+    ) async throws -> [SegmentData] {
+        guard options.appliesShortReplyRescue else { return segments }
+        let rate = AudioLoader.sampleRate
+        let duration = Double(input.count) / rate
+        let candidates = ShortReplyRescue.candidates(segments: segments, turns: turns, duration: duration)
+        guard !candidates.isEmpty else { return segments }
         do {
-            diarized = try await speakerTurns(samples: samples, options: options)
+            // Med lite minne släpptes taligenkänningen före talarna; den behövs igen.
+            try await prepare(model: options.model)
+            phase = .transcribing(fraction: 0)
+            var rescued: [(turn: SpeakerTurn, words: [WordTimingData])] = []
+            for (index, candidate) in candidates.enumerated() {
+                try Task.checkCancellation()
+                let from = max(0, min(input.count, Int(candidate.clipStart * rate)))
+                let to = max(from, min(input.count, Int(candidate.clipEnd * rate)))
+                let clip = Array(input[from..<to])
+                let words: [WordTimingData]
+                do {
+                    words = try await parakeet.words(samples: clip, offset: Double(from) / rate,
+                                                     carefulSeams: options.carefulSeams, tuning: options.tuning)
+                } catch let error where canRetryWithoutNeuralEngine(error) {
+                    await stopUsingNeuralEngine(after: error, model: options.model, step: .recognize)
+                    try await prepare(model: options.model)
+                    words = try await parakeet.words(samples: clip, offset: Double(from) / rate,
+                                                     carefulSeams: options.carefulSeams, tuning: options.tuning)
+                }
+                rescued.append((candidate.turn, words))
+                advanceTranscribing(to: Double(index + 1) / Double(candidates.count))
+            }
+            let (result, added) = ShortReplyRescue.insertCounting(rescued, into: segments, turns: turns)
+            diagnostics.diarizer = "\(diagnostics.diarizer ?? "talare"), korta svar: \(added) av \(candidates.count)"
+            ErrorLog.append(model: options.model.displayName, step: .recognize,
+                            technical: "Info: Fånga korta svar: \(candidates.count) korta turer utan text, \(added) svar inlagda")
+            return result
         } catch is CancellationError {
             throw CancellationError()
         } catch {
-            ErrorLog.append(model: options.model.displayName, step: .identifySpeakers,
-                            technical: "Talare först: talarna kunde inte identifieras (\(error.localizedDescription)). Kör den vanliga vägen.")
+            ErrorLog.append(model: options.model.displayName, step: .recognize,
+                            technical: "Fånga korta svar avbröts (\(error.localizedDescription)). Texten behålls utan dem.")
+            return segments
         }
-        if Self.hasLowMemory {
-            await releaseSpeakerModels()
-            try await prepare(model: options.model)
-        }
-        guard let found = diarized, !found.turns.isEmpty else {
-            phase = .transcribing(fraction: nil)
-            return nil
-        }
-        diagnostics.diarizer = "\(found.diarizer), talare först"
-        diagnostics.speakersSeconds = Self.seconds(clock.now - speakersStart)
-
-        let rate = AudioLoader.sampleRate
-        let duration = Double(input.count) / rate
-        let pieces = ReplyPlan.pieces(turns: found.turns, duration: duration)
-        phase = .transcribing(fraction: 0)
-        let transcriptionStart = clock.now
-        var words: [[WordTimingData]] = []
-        for piece in pieces {
-            try Task.checkCancellation()
-            let from = max(0, min(input.count, Int(piece.start * rate)))
-            let to = max(from, min(input.count, Int(piece.end * rate)))
-            let clip = Array(input[from..<to])
-            let pieceWords: [WordTimingData]
-            do {
-                pieceWords = try await parakeet.words(samples: clip, offset: Double(from) / rate,
-                                                      carefulSeams: options.carefulSeams, tuning: options.tuning)
-            } catch let error where canRetryWithoutNeuralEngine(error) {
-                await stopUsingNeuralEngine(after: error, model: options.model, step: .recognize)
-                try await prepare(model: options.model)
-                pieceWords = try await parakeet.words(samples: clip, offset: Double(from) / rate,
-                                                      carefulSeams: options.carefulSeams, tuning: options.tuning)
-            }
-            words.append(pieceWords)
-            advanceTranscribing(to: piece.end / duration)
-            if let last = pieceWords.last { liveText = TextCleaning.clean(last.word) }
-        }
-        diagnostics.transcriptionSeconds = Self.seconds(clock.now - transcriptionStart)
-
-        let segments = ReplyPlan.segments(pieces: pieces, words: words, turns: found.turns)
-        saveSpeakerTurns(
-            SpeakerDiagnostics(
-                diarizer: diagnostics.diarizer ?? found.diarizer,
-                speakers: options.speakerCount.label,
-                turns: found.turns,
-                segments: segments
-            )
-        )
-        return segments
     }
 
     private func runParakeet(_ input: [Float], options: TranscriptionOptions) async throws -> ParakeetTranscriber.Output {
@@ -738,7 +712,7 @@ final class TranscriberService {
         samples: [Float],
         segments: [SegmentData],
         options: TranscriptionOptions
-    ) async throws -> (segments: [SegmentData], diarizer: String) {
+    ) async throws -> (segments: [SegmentData], diarizer: String, turns: [SpeakerTurn]) {
         let (turns, diarizerName) = try await speakerTurns(samples: samples, options: options)
 
         // Talare sätts per ord, så att repliker utan paus emellan ändå delas upp rätt.
@@ -753,7 +727,7 @@ final class TranscriberService {
         )
 
         // Om diariseringen inte gav något – behåll segmenten utan talare.
-        return (assigned.contains { $0.speaker != nil } ? assigned : segments, diarizerName)
+        return (assigned.contains { $0.speaker != nil } ? assigned : segments, diarizerName, turns)
     }
 
     /// Vem som talar när, och vilken modell som kom fram till det. Varje modell har en tidsgräns

@@ -16,15 +16,6 @@ final class TranscriptionStepsTests: XCTestCase {
         XCTAssertNil(TranscriptionStep.label(for: .gapCheck, in: plan))
     }
 
-    func testSpeakersFirstIdentifiesSpeakersBeforeTranscribing() {
-        let plan = TranscriptionStep.plan(needsModel: false, checksGaps: false, identifiesSpeakers: true, speakersFirst: true)
-        XCTAssertEqual(plan, [.audio, .speakers, .transcribe])
-        XCTAssertEqual(
-            TranscriptionStep.plan(needsModel: false, checksGaps: false, identifiesSpeakers: false, speakersFirst: true),
-            [.audio, .transcribe]
-        )
-    }
-
     func testNoLabelForASingleStepOrNoPlan() {
         XCTAssertNil(TranscriptionStep.label(for: .transcribe, in: [.transcribe]))
         XCTAssertNil(TranscriptionStep.label(for: .model, in: []))

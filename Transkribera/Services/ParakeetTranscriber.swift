@@ -120,7 +120,7 @@ actor ParakeetTranscriber {
     /// med tystnad i slutet.
     static let shortestClip = 1.0
 
-    /// Orden i en bit av ljudet ("Talare först"), med tider från början av hela ljudet
+    /// Orden i en kort bit av ljudet ("Fånga korta svar"), med tider från början av hela ljudet
     /// (`offset` = bitens start i sekunder).
     func words(
         samples: [Float],

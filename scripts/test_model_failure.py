@@ -27,7 +27,7 @@ class ModelFailureTests(unittest.TestCase):
         self.assertIn("computeOptions: avoidsNeuralEngine", SERVICE)
         self.assertIn("embedderModelInfo: .embedder(computeUnits: Self.speakerKitWithoutNeuralEngine)", SERVICE)
         self.assertIn("computeUnits: avoidsNeuralEngine ? Self.withoutNeuralEngine : .all", SERVICE)
-        # Pianissimo, Whisper, talarsteget och "Talare först" har var sitt nytt försök.
+        # Pianissimo, Whisper, talarsteget och "Fånga korta svar" har var sitt nytt försök.
         self.assertEqual(len(re.findall(r"catch let error where canRetryWithoutNeuralEngine\(error\)", SERVICE)), 4)
         self.assertIn("!avoidsNeuralEngine && FailureExplainer.isModelComputeFailure", SERVICE)
 

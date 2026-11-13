@@ -30,7 +30,7 @@ private struct TranscriptionSettingsView: View {
     @AppStorage(SettingsKey.wordTimestamps) private var wordTimestamps = true
     @AppStorage(SettingsKey.recordMicrophone) private var recordMicrophone = true
     @AppStorage(SettingsKey.pianissimoCarefulSeams) private var carefulSeams = false
-    @AppStorage(SettingsKey.speakersFirst) private var speakersFirst = false
+    @AppStorage(SettingsKey.rescueShortReplies) private var rescueShortReplies = false
     @AppStorage(SettingsKey.levelVolume) private var levelVolume = true
     @AppStorage(SettingsKey.askBeforeRetranscribe) private var askBeforeRetranscribe = true
     @AppStorage(SettingsKey.model) private var modelRaw = WhisperModel.default.rawValue
@@ -118,9 +118,9 @@ private struct TranscriptionSettingsView: View {
                 Toggle("Noggrannare skarvar", isOn: $carefulSeams)
                     .disabled(!usesParakeet)
                     .help("Pianissimo lyssnar på 15 sekunder i taget. Med det här provar den flera sätt att skarva bitarna och väljer det säkraste.")
-                Toggle("Talare först", isOn: $speakersFirst)
+                Toggle("Fånga korta svar", isOn: $rescueShortReplies)
                     .disabled(!usesParakeet || !identifySpeakers)
-                    .help("Talarna identifieras först och varje replik transkriberas för sig. Tänkt att fånga korta svar som \"Ja.\". Kan klippa meningar där två hörs samtidigt. Kräver \"Skilj på vem som pratar\".")
+                    .help("Korta svar som \"Ja.\" och \"Mm.\" som saknas i texten transkriberas för sig och läggs in efter meningen de hördes i. Resten av texten ändras inte. Kräver \"Skilj på vem som pratar\".")
             } header: {
                 Text("Experiment")
             } footer: {

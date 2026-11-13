@@ -11,20 +11,12 @@ public enum TranscriptionStep: Equatable, Sendable {
 
     /// Stegen som körs, i ordning. Modellsteget finns bara när modellen måste laddas
     /// ner eller in, och luckkontrollen bara för Whisper-modellerna.
-    /// Med `speakersFirst` ("Talare först") identifieras talarna före taligenkänningen.
-    public static func plan(
-        needsModel: Bool,
-        checksGaps: Bool,
-        identifiesSpeakers: Bool,
-        speakersFirst: Bool = false
-    ) -> [TranscriptionStep] {
+    public static func plan(needsModel: Bool, checksGaps: Bool, identifiesSpeakers: Bool) -> [TranscriptionStep] {
         var steps: [TranscriptionStep] = []
         if needsModel { steps.append(.model) }
-        steps.append(.audio)
-        if identifiesSpeakers && speakersFirst { steps.append(.speakers) }
-        steps.append(.transcribe)
+        steps += [.audio, .transcribe]
         if checksGaps { steps.append(.gapCheck) }
-        if identifiesSpeakers && !speakersFirst { steps.append(.speakers) }
+        if identifiesSpeakers { steps.append(.speakers) }
         return steps
     }
 
