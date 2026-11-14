@@ -165,7 +165,9 @@ final class TranscriptionQueue {
 
     /// Raderar flera. Kräver en bekräftelse (`DeleteConfirmation`), så det går inte utan fråga.
     func delete(_ transcripts: [Transcript], confirmation: DeleteConfirmation) {
-        for transcript in transcripts { delete(transcript) }
+        for transcript in transcripts { remove(transcript) }
+        save()
+        Database.eraseTracesOfDeletedText()
     }
 
     func cancel(_ transcript: Transcript) {
@@ -188,11 +190,21 @@ final class TranscriptionQueue {
     }
 
     func delete(_ transcript: Transcript) {
+        remove(transcript)
+        save()
+        Database.eraseTracesOfDeletedText()
+    }
+
+    /// Transkriberingar som raderats. En körning som redan pågick när filen raderades får aldrig
+    /// skriva sin text i databasen igen (se `process`).
+    private var deletedIDs: Set<UUID> = []
+
+    private func remove(_ transcript: Transcript) {
+        deletedIDs.insert(transcript.id)
         cancel(transcript)
         pending.removeAll { $0.id == transcript.id }
         MediaStore.delete(fileName: transcript.mediaFileName)
         context.delete(transcript)
-        save()
     }
 
     private func startWorkerIfNeeded() {
@@ -209,7 +221,8 @@ final class TranscriptionQueue {
     private func process(_ transcript: Transcript) async {
         let options = (overridesByID.removeValue(forKey: transcript.id) ?? TranscriptionOverrides())
             .applied(to: TranscriptionOptions.fromDefaults())
-        currentTranscriptID = transcript.id
+        let id = transcript.id
+        currentTranscriptID = id
         transcript.status = .transcribing
         // Modellen som texten som visas gjordes med. Den behövs när den förra versionen sparas,
         // och när körningen avbryts eller misslyckas.
@@ -229,16 +242,19 @@ final class TranscriptionQueue {
 
         do {
             let output = try await wait.wait(for: job)
+            if finishIfDeleted(id) { return }
             // Den förra versionen sparas, och de äldsta som inte får plats raderas först nu,
             // när den nya finns (se `Transcript.addNewVersion`).
             transcript.addNewVersion(output, previousModelName: previousModelName, in: context)
             transcript.status = .completed
             transcript.errorMessage = output.segments.isEmpty ? "Inget tal hittades i filen." : output.notice
         } catch is CancellationError {
+            if finishIfDeleted(id) { return }
             if !transcript.segments.isEmpty { transcript.modelName = previousModelName }
             transcript.status = transcript.segments.isEmpty ? .failed : .completed
             transcript.errorMessage = transcript.segments.isEmpty ? "Avbruten" : nil
         } catch {
+            if finishIfDeleted(id) { return }
             if !transcript.segments.isEmpty { transcript.modelName = previousModelName }
             transcript.status = .failed
             transcript.errorMessage = error.localizedDescription
@@ -248,6 +264,16 @@ final class TranscriptionQueue {
         currentWait = nil
         currentTranscriptID = nil
         save()
+    }
+
+    /// Raderades filen medan den transkriberades kastas resultatet bort utan att databasen rörs,
+    /// så att ingen text hamnar kvar efter raderingen.
+    private func finishIfDeleted(_ id: UUID) -> Bool {
+        guard deletedIDs.contains(id) else { return false }
+        currentJob = nil
+        currentWait = nil
+        currentTranscriptID = nil
+        return true
     }
 
     /// Transkriberingar som inte blev klara förra gången appen kördes läggs i kön igen.
