@@ -81,6 +81,8 @@ Schemat är versionerat (`SchemaV1`, `SchemaV2` och `TranskriberaMigrationPlan` 
 Första gången en ny version startar kopieras databasen till `Säkerhetskopior`; går den inte
 att öppna flyttas den dit och appen startar med en tom lista och ett meddelande, i stället
 för att krascha.
+Raderar användaren en transkribering tas alla kopior i `Säkerhetskopior` bort och databasen packas om,
+eftersom kopiorna annars skulle ha kvar texten. Nästa nya version tar en ny kopia.
 
 ## Engångsinställning: signeringsnyckeln
 

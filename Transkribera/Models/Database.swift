@@ -1,4 +1,5 @@
 import Foundation
+import SQLite3
 import SwiftData
 
 // MARK: - Schemaversioner
@@ -158,6 +159,48 @@ enum Database {
             print("Migreringsplanen kunde inte öppna databasen, provar utan: \(error)")
             return try ModelContainer(for: schema, configurations: ModelConfiguration(schema: schema, url: url))
         }
+    }
+
+    // MARK: Radering
+
+    /// Kallas efter att en transkribering raderats. Texten ska inte gå att nå på något sätt när
+    /// filen är borta, så här tas det som annars skulle ha kvar den bort:
+    /// - säkerhetskopiorna av databasen (de innehåller den raderade texten),
+    /// - raderade rader inuti databasfilen och dess loggfil (SQLite lämnar dem kvar annars).
+    /// Nästa gång en ny version startar tas en ny säkerhetskopi, då utan den raderade texten.
+    static func eraseTracesOfDeletedText() {
+        let url = storeURL
+        let backups = backupsDirectory
+        Task.detached(priority: .utility) {
+            eraseBackups(in: backups)
+            compact(storeAt: url)
+        }
+    }
+
+    /// Tar bort alla databaskopior, även de som flyttades undan för att databasen inte gick att öppna.
+    static func eraseBackups(in directory: URL) {
+        let fm = FileManager.default
+        guard let items = try? fm.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) else { return }
+        for item in items { try? fm.removeItem(at: item) }
+    }
+
+    /// Skriver om databasen så att raderade rader inte ligger kvar i filen: töm loggfilen
+    /// (`-wal`) in i databasen och packa om (`VACUUM`). Misslyckas det, till exempel för att
+    /// databasen är upptagen, görs inget. Returnerar om det lyckades.
+    @discardableResult
+    static func compact(storeAt url: URL) -> Bool {
+        var db: OpaquePointer?
+        guard sqlite3_open_v2(url.path(percentEncoded: false), &db, SQLITE_OPEN_READWRITE, nil) == SQLITE_OK else {
+            sqlite3_close(db)
+            return false
+        }
+        defer { sqlite3_close(db) }
+        sqlite3_busy_timeout(db, 5_000)
+        let ok = sqlite3_exec(db, "PRAGMA secure_delete = ON;", nil, nil, nil) == SQLITE_OK
+            && sqlite3_exec(db, "VACUUM;", nil, nil, nil) == SQLITE_OK
+            && sqlite3_exec(db, "PRAGMA wal_checkpoint(TRUNCATE);", nil, nil, nil) == SQLITE_OK
+        if !ok { print("Kunde inte packa om databasen efter radering: \(String(cString: sqlite3_errmsg(db)))") }
+        return ok
     }
 
     // MARK: Säkerhetskopior

@@ -6,6 +6,9 @@ avsnitt här (se docs/RELEASE.md). Skriv för användaren, inte för utvecklaren
 
 ## [Kommande]
 
+### Rättat
+- När du raderar en fil försvinner nu all text som hör till den. Förut fanns texten kvar i appens säkerhetskopior av databasen och som rester inuti databasfilen. Nu tas säkerhetskopiorna bort när du raderar något (en ny tas nästa gång du uppdaterar appen), och databasen skrivs om så att inget raderat finns kvar. Pågår en transkribering när du raderar filen kastas resultatet bort.
+
 ## [0.9.37] – 2026-11-11
 
 ### Rättat
